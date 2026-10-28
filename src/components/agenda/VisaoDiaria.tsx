@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeAlerta, IconeMais } from "@/components/ui/Icons";
 import { DIAS_SEMANA_CURTO, diaDaSemana, paraData } from "@/lib/date";
-import { FAIXAS_HORARIAS, HOJE, caminhoAvatar } from "@/lib/mock-data";
+import { FAIXAS_HORARIAS, HOJE } from "@/lib/arena";
+import { caminhoAvatar } from "@/lib/dados";
 import {
   choveuEm,
   horariosNaFaixaData,

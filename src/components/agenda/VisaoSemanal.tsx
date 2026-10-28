@@ -2,7 +2,7 @@
 
 import { EventoChip } from "./EventoChip";
 import { DIAS_SEMANA_CURTO, ORDEM_SEMANA, diaDaSemana, formatarDiaMes } from "@/lib/date";
-import { FAIXAS_HORARIAS, HOJE } from "@/lib/mock-data";
+import { FAIXAS_HORARIAS, HOJE } from "@/lib/arena";
 import { IconeMais } from "@/components/ui/Icons";
 import { choveuEm, horariosNaFaixaData, type FiltroAgenda } from "@/lib/selectors";
 import type { Horario } from "@/lib/types";

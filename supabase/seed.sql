@@ -1,5 +1,4 @@
 -- Dados de demonstracao gerados por scripts/gerar-seed.ts.
-
 -- Apague antes de usar o sistema com dados reais.
 
 insert into public.professores (id, nome, cor, especialidade, valor_hora_aula) values

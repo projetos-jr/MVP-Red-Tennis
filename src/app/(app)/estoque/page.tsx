@@ -13,7 +13,7 @@ import {
   IconeFinanceiro,
   IconeSubiu,
 } from "@/components/ui/Icons";
-import { CATEGORIAS_PRODUTO } from "@/lib/mock-data";
+import { CATEGORIAS_PRODUTO } from "@/lib/arena";
 import {
   filtrarProdutos,
   maisVendidos,

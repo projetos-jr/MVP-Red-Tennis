@@ -5,7 +5,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { IconeAlerta, IconeCheck } from "@/components/ui/Icons";
 import { formatarData } from "@/lib/date";
-import { caminhoAvatar } from "@/lib/mock-data";
+import { caminhoAvatar } from "@/lib/dados";
 import { nomeDoAluno } from "@/lib/selectors";
 import { ESTILO_FORMA_PAGAMENTO, formatarMoeda } from "@/lib/theme";
 import type { Pagamento } from "@/lib/types";

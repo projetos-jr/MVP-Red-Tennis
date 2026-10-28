@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "./Logo";
 import { ABAS } from "./abas";
 import { IconeSair } from "@/components/ui/Icons";
-import { ARENA } from "@/lib/mock-data";
+import { ARENA } from "@/lib/arena";
 import { useApp } from "@/store/AppStore";
 
 
@@ -14,8 +14,8 @@ export function Topbar() {
   const router = useRouter();
   const { usuario, sair } = useApp();
 
-  function sairDoSistema() {
-    sair();
+  async function sairDoSistema() {
+    await sair();
     router.push("/");
   }
 

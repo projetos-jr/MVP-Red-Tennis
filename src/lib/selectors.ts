@@ -2,31 +2,31 @@
  * ============================================================================
  *  SELETORES — camada de leitura dos dados
  * ============================================================================
- *  Toda a UI le dados atraves destas funcoes, nunca direto do mock. Cada
- *  funcao aqui corresponde, na pratica, a um endpoint que o backend precisara
- *  expor: trocar o import de `mock-data` por chamadas HTTP nao deve exigir
- *  mudanca nos componentes.
+ *  Toda a UI le dados atraves destas funcoes. Os dados vem do Supabase,
+ *  carregados uma vez apos o login (`carregar.ts` -> `dados.ts`).
  * ============================================================================
  */
 
 import {
-  ALUNOS,
-  CONSUMOS,
-  DIAS_COM_CHUVA,
-  IDS_INSCRITOS_RANKING,
-  LINHAS_PIRAMIDE,
   FAIXAS_HORARIAS,
   HOJE,
-  HORARIOS,
-  MENSALIDADE_POR_ALUNO,
-  PAGAMENTOS,
-  MOVIMENTOS_ESTOQUE,
-  PRODUTOS,
-  PROFESSORES,
+  LINHAS_PIRAMIDE,
   QUADRAS,
   SEM_PROFESSOR,
   pisoDaQuadra,
-} from "./mock-data";
+} from "./arena";
+import {
+  ALUNOS,
+  CONSUMOS,
+  DIAS_COM_CHUVA,
+  HORARIOS,
+  IDS_INSCRITOS_RANKING,
+  MENSALIDADE_POR_ALUNO,
+  MOVIMENTOS_ESTOQUE,
+  PAGAMENTOS,
+  PRODUTOS,
+  PROFESSORES,
+} from "./dados";
 import { diaDaSemana, diferencaEmDias, horaParaMinutos, somarDias } from "./date";
 import type {
   Aluno,

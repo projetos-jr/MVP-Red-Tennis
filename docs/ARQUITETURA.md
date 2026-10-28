@@ -1,20 +1,27 @@
-# Arquitetura e handoff para o backend
+# Arquitetura
 
-Documento para a equipe que for construir o backend em cima deste front-end.
-
-## Princípio
-
-Nenhum componente lê dados diretamente do mock. Toda leitura passa por
-`src/lib/selectors.ts`. Essa camada existe justamente para ser trocada:
+## Visão geral
 
 ```
-Componentes  →  selectors.ts  →  mock-data.ts        (hoje)
-Componentes  →  selectors.ts  →  fetch/API           (depois)
+Supabase (Postgres + Auth)
+   │  carregar.ts — lê todas as tabelas após o login e converte para types.ts
+   ▼
+dados.ts — guarda a base carregada (ALUNOS, HORARIOS, PAGAMENTOS…)
+   │
+   ▼
+selectors.ts — cálculos de cada tela (ocupação, financeiro, ranking…)
+   │
+   ▼
+Componentes
 ```
 
-Trocar o mock por chamadas HTTP reais **não deve exigir mudança nos
-componentes** — apenas na implementação das funções de `selectors.ts` (e na
-transformação delas em funções assíncronas).
+A arena tem algumas centenas de registros, então a base inteira é carregada
+uma vez após o login e os seletores trabalham em memória. Quando o volume
+crescer (anos de histórico de aulas e pagamentos), o caminho é filtrar por
+período em `carregar.ts` ou mover cálculos pesados para views/funções no banco.
+
+As telas internas só são montadas depois da carga (`components/layout/Protegido.tsx`),
+por isso os seletores sempre encontram `dados.ts` preenchido.
 
 ## Contrato de dados
 
@@ -50,42 +57,41 @@ transformação delas em funções assíncronas).
    parte coberta pelo convênio; o complemento é a diferença.
 
 5. **Conflito é derivado, não armazenado.** `temConflito` é calculado por
-   sobreposição na mesma quadra (`marcarConflitos` em `mock-data.ts`). No
+   sobreposição na mesma quadra (`marcarConflitos` em `selectors.ts`). No
    backend, a regra deveria impedir o conflito na escrita — e a UI continua
    sinalizando os que existirem.
 
-## Seletores e os endpoints correspondentes
+## Banco de dados
 
-| Seletor | Endpoint sugerido |
+Estrutura em `supabase/migrations/`. Principais diferenças em relação aos tipos
+das telas (a tradução fica em `src/lib/carregar.ts`):
+
+| Banco | Telas (`types.ts`) |
 | --- | --- |
-| `listarAlunos()` / `buscarAluno(id)` | `GET /alunos`, `GET /alunos/:id` |
-| `listarHorarios(filtro)` | `GET /horarios?quadra&professor&tipo` |
-| `horariosDaData(data, filtro)` | `GET /agenda?data=` |
-| `ocupacaoDasQuadras(data)` | `GET /quadras/ocupacao?data=` |
-| `resumoDoDia(data)` | `GET /dashboard/resumo?data=` |
-| `filtrarPagamentos(filtro)` | `GET /pagamentos?status&forma&busca` |
-| `resumoFinanceiro(data)` | `GET /financeiro/resumo?mes=` |
-| `fluxoDeCaixa(dias)` | `GET /financeiro/fluxo-caixa?dias=` |
-| `totaisPorForma(data)` | `GET /financeiro/formas-pagamento?mes=` |
-| `resumoProfessores()` | `GET /professores/comissoes` |
-| `rankingGeral()` / `piramideDaEtapa()` | `GET /ranking`, `GET /ranking/etapa-atual` |
-| `resumoAluno(aluno)` | `GET /alunos/:id/resumo` |
+| `professor_id` (FK) | nome do professor (`"Sem professor"` quando nulo) |
+| `quadra_id` (`'1'`…`'4'`, `'paredao'`) | `Quadra` (número ou `"paredao"`) |
+| `horario_alunos` (tabela de ligação) | `Horario.alunosIds` |
+| `consumos.aluno_id` / `professor_id` | `pessoaId` + `tipoPessoa` |
+| `pagamentos.data_limite` | `diasEmAtraso`, calculado na leitura |
+| `criado_em` (timestamptz) | `"YYYY-MM-DDTHH:mm"` no fuso da arena |
 
-Escritas que o protótipo simula em memória (`src/store/AppStore.tsx`) e que
-viram endpoints:
+Segurança: RLS em todas as tabelas, liberando acesso completo a quem está
+ativo em `colaboradores` (função `privado.eh_colaborador()`). Permissão por
+cargo (ex.: professor ver só a própria agenda) ainda não existe.
 
-| Ação na UI | Endpoint sugerido |
+## Estado e gravações
+
+`src/store/AppStore.tsx` cuida da sessão (Supabase Auth), da carga e das
+gravações. Cada ação atualiza a tela na hora e grava em seguida; se falhar,
+avisa o usuário e recarrega a base.
+
+| Ação na UI | Gravação |
 | --- | --- |
-| Adicionar observação na ficha | `POST /alunos/:id/comentarios` |
-| Congelar / reativar plano | `PATCH /alunos/:id/plano` |
-| Login do colaborador | `POST /auth/login` |
-
-## Estado da aplicação
-
-`src/store/AppStore.tsx` guarda o que o usuário altera durante a demonstração:
-usuário logado, novos comentários e o congelamento de planos. Tudo volta ao
-estado inicial a cada reload. É o ponto natural para trocar `useState` por
-chamadas reais (ou por um cliente de dados como React Query).
+| Novo horário / remover horário | `horarios` + `horario_alunos` |
+| Observação na ficha | `comentarios` |
+| Congelar / reativar plano | `alunos.plano_congelado` |
+| Lançar consumo | função `lancar_consumo` (consumo + baixa no estoque, numa transação) |
+| Entrada / perda de estoque | `movimentos_estoque` (gatilho atualiza `produtos.quantidade`) |
 
 ## Datas
 
@@ -158,14 +164,14 @@ Pontos de atenção para a implementação real:
 ## Grade de horários com fonte injetável
 
 As funções de agenda em `selectors.ts` recebem um último parâmetro opcional
-`fonte: Horario[]`, que por padrão é a grade do mock. A UI passa a grade do
+`fonte: Horario[]`, que por padrão é a grade carregada do banco. A UI passa a grade do
 store (`useApp().horarios`), que inclui os horários criados durante a sessão.
 Com API real, esse parâmetro deixa de ser necessário — a função passa a buscar
 do servidor — mas a separação entre "dados" e "regra de leitura" continua valendo.
 
 ## Pisos das quadras
 
-`PISO_DAS_QUADRAS` em `mock-data.ts` define qual área é de saibro e qual é de
+`PISO_DAS_QUADRAS` em `arena.ts` define qual área é de saibro e qual é de
 cimento (hoje, a quadra 1). O componente `Quadra3D` usa esse dado para escolher
 a escala de cor. No backend isso vira um atributo da entidade quadra, junto com
 outras características que a arena já diferencia (cobertura, iluminação).

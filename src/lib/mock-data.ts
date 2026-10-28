@@ -2,25 +2,27 @@
  * ============================================================================
  *  DADOS MOCKADOS — MVP Red Tennis
  * ============================================================================
- *  Fonte unica de dados do MVP. Nao ha backend, banco ou API: tudo abaixo e
- *  gerado em memoria no momento em que o modulo e importado.
+ *  Dados ficticios de demonstracao. O sistema le do Supabase; este arquivo so
+ *  e usado por `scripts/gerar-seed.ts` para gerar `supabase/seed.sql`.
  *
- *  Para a equipe que for construir o backend:
- *   - as entidades seguem `types.ts`, que e o contrato a ser replicado na API;
- *   - a leitura acontece sempre via `selectors.ts` (equivalente aos futuros
- *     endpoints), nunca diretamente nos componentes;
- *   - datas historicas sao ancoradas em `HOJE`, entao a demo sempre parece
- *     "em uso" independentemente do dia em que for apresentada.
+ *  As datas historicas sao ancoradas em `HOJE`: a carga reflete o dia em que
+ *  o script rodou.
  * ============================================================================
  */
 
 import {
+  HOJE,
+  QUADRAS,
+  SEM_PROFESSOR,
+} from "./arena";
+import {
   diferencaEmDias,
-  hojeISO,
   inicioDaSemana,
   somarDias,
   somarMeses,
 } from "./date";
+export * from "./arena";
+
 import type {
   Aluno,
   CategoriaProduto,
@@ -42,65 +44,6 @@ import type {
   Torneio,
 } from "./types";
 
-/** Data de referencia da demonstracao (fuso da arena). */
-export const HOJE = hojeISO();
-
-export const HORA_ABERTURA = 7;
-export const HORA_FECHAMENTO = 22;
-
-/** Faixas horarias da grade da agenda: 07:00 ... 21:00 (ultima aula termina 22:00). */
-export const FAIXAS_HORARIAS: string[] = Array.from(
-  { length: HORA_FECHAMENTO - HORA_ABERTURA },
-  (_, i) => `${String(HORA_ABERTURA + i).padStart(2, "0")}:00`,
-);
-
-export const QUADRAS: Quadra[] = [1, 2, 3, 4, "paredao"];
-
-/**
- * Piso de cada area.
- * A quadra 1 e de cimento; as demais e o paredao sao de saibro.
- */
-export const PISO_DAS_QUADRAS: Record<string, PisoQuadra> = {
-  "1": "cimento",
-  "2": "saibro",
-  "3": "saibro",
-  "4": "saibro",
-  paredao: "saibro",
-};
-
-export function pisoDaQuadra(quadra: Quadra): PisoQuadra {
-  return PISO_DAS_QUADRAS[String(quadra)] ?? "saibro";
-}
-
-export const ARENA = {
-  nome: "Red Tennis",
-  endereco: "3 quadras de saibro · 1 de cimento · paredão",
-  horarioFuncionamento: "07h às 22h",
-  gestor: "Francisco",
-  equipe: "Lucas",
-};
-
-/** Usuarios da tela de login — reforca o conceito de acesso individual por colaborador. */
-export const USUARIOS = [
-  {
-    id: "u-francisco",
-    nome: "Francisco Menezes",
-    usuario: "francisco",
-    cargo: "Diretor · Acesso total",
-  },
-  {
-    id: "u-lucas",
-    nome: "Lucas Ferreira",
-    usuario: "lucas",
-    cargo: "Operação · Agenda e caixa",
-  },
-  {
-    id: "u-renata",
-    nome: "Renata Coelho",
-    usuario: "renata",
-    cargo: "Professora · Agenda própria",
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Gerador pseudoaleatorio deterministico (mulberry32).
@@ -163,8 +106,6 @@ export const PROFESSORES: Professor[] = [
 
 export const NOMES_PROFESSORES = PROFESSORES.map((p) => p.nome);
 
-/** Usado em locações e reservas de ranking, onde não há professor alocado. */
-export const SEM_PROFESSOR = "Sem professor";
 
 // ---------------------------------------------------------------------------
 // Alunos (base)
@@ -898,22 +839,6 @@ export const MENSALIDADE_POR_ALUNO: Record<string, number> = Object.fromEntries(
 // ---------------------------------------------------------------------------
 // Ranking e torneios
 // ---------------------------------------------------------------------------
-/**
- * Formato da piramide do torneio: 6 faixas, do topo para a base.
- * 1 + 2 + 3 + 4 + 6 + 7 = 23 posicoes, uma para cada membro inscrito.
- * As faixas sao agrupadas nas 4 categorias definidas com o cliente:
- * A = faixas 1-2 (3 jogadores), B = faixas 3-4 (7), C = faixa 5 (6), D = faixa 6 (7).
- */
-export const LINHAS_PIRAMIDE = [1, 2, 3, 4, 6, 7];
-
-export const CATEGORIA_POR_LINHA: CategoriaRanking[] = [
-  "A",
-  "A",
-  "B",
-  "B",
-  "C",
-  "D",
-];
 
 export const TORNEIOS: Torneio[] = [
   {
@@ -991,12 +916,6 @@ const PRODUTOS_BASE: ProdutoBase[] = [
   { id: "p24", nome: "Viseira Red Tennis", categoria: "Acessórios", unidade: "unidade", precoCusto: 22, precoVenda: 55, quantidade: 14, estoqueMinimo: 6 },
 ];
 
-export const CATEGORIAS_PRODUTO: CategoriaProduto[] = [
-  "Bebidas",
-  "Cervejas",
-  "Lanches",
-  "Acessórios",
-];
 
 export const PRODUTOS: Produto[] = PRODUTOS_BASE.map((produto, indice) => {
   const rng = criarRng(8800 + indice * 13);

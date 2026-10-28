@@ -51,9 +51,7 @@ const professorId = (nome: string) => idProfessor.get(nome) ?? null;
 const inscritos = new Set(IDS_INSCRITOS_RANKING);
 
 const blocos: string[] = [
-  "-- Dados de demonstracao gerados por scripts/gerar-seed.ts.",
-  "-- Apague antes de usar o sistema com dados reais.",
-  "",
+  "-- Dados de demonstracao gerados por scripts/gerar-seed.ts.\n-- Apague antes de usar o sistema com dados reais.",
   inserir(
     "professores",
     ["id", "nome", "cor", "especialidade", "valor_hora_aula"],

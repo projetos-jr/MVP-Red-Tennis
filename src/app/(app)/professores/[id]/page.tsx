@@ -15,7 +15,7 @@ import {
   IconeVoltar,
 } from "@/components/ui/Icons";
 import { DIAS_SEMANA_CURTO } from "@/lib/date";
-import { caminhoAvatar } from "@/lib/mock-data";
+import { caminhoAvatar } from "@/lib/dados";
 import {
   agendaDoProfessor,
   buscarProfessor,

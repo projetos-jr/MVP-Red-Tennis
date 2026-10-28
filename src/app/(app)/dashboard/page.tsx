@@ -23,7 +23,8 @@ import {
   horaAtualArena,
   saudacao,
 } from "@/lib/date";
-import { HOJE, caminhoAvatar } from "@/lib/mock-data";
+import { HOJE } from "@/lib/arena";
+import { caminhoAvatar } from "@/lib/dados";
 import {
   horariosDoDia,
   nomeCompacto,

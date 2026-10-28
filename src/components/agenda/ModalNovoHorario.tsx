@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeAlerta, IconeBusca, IconeCheck, IconeFechar } from "@/components/ui/Icons";
 import { DIAS_SEMANA_LONGO, ORDEM_SEMANA, horaParaMinutos, minutosParaHora } from "@/lib/date";
-import { FAIXAS_HORARIAS, QUADRAS } from "@/lib/mock-data";
+import { FAIXAS_HORARIAS, QUADRAS } from "@/lib/arena";
 import { listarProfessores } from "@/lib/selectors";
 import { ESTILO_TIPO, ORDEM_TIPOS, rotuloQuadra } from "@/lib/theme";
 import type { Horario, Quadra, TipoAlocacao } from "@/lib/types";
