@@ -25,7 +25,7 @@ import {
   somarDias,
   somarMeses,
 } from "@/lib/date";
-import { HOJE, QUADRAS } from "@/lib/mock-data";
+import { HOJE, QUADRAS } from "@/lib/arena";
 import {
   contarConflitos,
   listarHorarios,

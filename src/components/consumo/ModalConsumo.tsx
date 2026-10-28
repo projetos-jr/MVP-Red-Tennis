@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { IconeBusca, IconeCopo } from "@/components/ui/Icons";
-import { CATEGORIAS_PRODUTO } from "@/lib/mock-data";
+import { CATEGORIAS_PRODUTO } from "@/lib/arena";
 import { nivelDoEstoque } from "@/lib/selectors";
 import {
   ESTILO_CATEGORIA_PRODUTO,

@@ -1,7 +1,7 @@
 "use client";
 
 import { DIAS_SEMANA_CURTO, ORDEM_SEMANA, gradeDoMes, mesmoMes, paraData } from "@/lib/date";
-import { HOJE } from "@/lib/mock-data";
+import { HOJE } from "@/lib/arena";
 import { choveuEm, horariosDaData, type FiltroAgenda } from "@/lib/selectors";
 import type { Horario } from "@/lib/types";
 import { ESTILO_TIPO, ORDEM_TIPOS } from "@/lib/theme";

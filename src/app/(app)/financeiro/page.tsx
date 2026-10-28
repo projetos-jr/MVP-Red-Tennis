@@ -18,7 +18,7 @@ import {
   IconeUsuarios,
 } from "@/components/ui/Icons";
 import { formatarMesAno } from "@/lib/date";
-import { HOJE } from "@/lib/mock-data";
+import { HOJE } from "@/lib/arena";
 import {
   filtrarPagamentos,
   fluxoDeCaixa,

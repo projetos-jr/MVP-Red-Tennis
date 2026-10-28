@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeTrofeu } from "@/components/ui/Icons";
-import { CATEGORIA_POR_LINHA } from "@/lib/mock-data";
+import { CATEGORIA_POR_LINHA } from "@/lib/arena";
 import { ESTILO_CATEGORIA } from "@/lib/theme";
 import { nomeCompacto } from "@/lib/selectors";
 import type { PosicaoPiramide } from "@/lib/selectors";

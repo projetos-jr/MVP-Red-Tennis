@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { IconeBola, IconeTrofeu, IconeUsuarios } from "@/components/ui/Icons";
 import { formatarData } from "@/lib/date";
-import { IDS_INSCRITOS_RANKING, TORNEIOS } from "@/lib/mock-data";
+import { IDS_INSCRITOS_RANKING, TORNEIOS } from "@/lib/dados";
 import { nomeCompacto, piramideDaEtapa, rankingGeral } from "@/lib/selectors";
 import { ESTILO_CATEGORIA } from "@/lib/theme";
 import type { CategoriaRanking } from "@/lib/types";
@@ -23,6 +23,19 @@ export default function PaginaRanking() {
 
   const etapaAtual = TORNEIOS[0];
   const lider = geral[0];
+
+  if (!etapaAtual || !lider) {
+    return (
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">
+          Ranking &amp; Torneios
+        </h1>
+        <p className="text-sm text-areia-600">
+          Ainda não há torneios ou alunos cadastrados no ranking.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

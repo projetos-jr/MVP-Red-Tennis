@@ -7,8 +7,8 @@ A arena tem 3 quadras de saibro, 1 de cimento e 1 paredão, e funciona das 7h à
 22h. Hoje a operação depende de planilhas, papel e um sistema antigo. Este MVP
 mostra como seria a operação em um sistema moderno.
 
-> **Este projeto não tem backend.** Todos os dados são fictícios e vivem em
-> memória. É um artefato de demonstração — não um produto em produção.
+Os dados ficam no **Supabase** (banco Postgres + login), e o site roda na
+**Cloudflare**. Veja [Banco de dados](#banco-de-dados-supabase).
 
 **Demonstração online:** <https://mvp-red-tennis.vercel.app>
 
@@ -23,8 +23,10 @@ npm install
 npm run dev
 ```
 
-Acesse <http://localhost:3000>. Não há nenhuma configuração adicional, variável
-de ambiente, banco de dados ou serviço externo.
+Acesse <http://localhost:3000> e entre com um usuário cadastrado (veja
+[Banco de dados](#banco-de-dados-supabase)). Por padrão o projeto aponta para o
+Supabase de produção; para usar outro, defina `NEXT_PUBLIC_SUPABASE_URL` e
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em `.env.local`.
 
 | Comando | O que faz |
 | --- | --- |
@@ -58,11 +60,44 @@ A partir daí, cada push na `main` publica uma nova versão.
 
 ---
 
+## Banco de dados (Supabase)
+
+Projeto **Red Tennis** no Supabase, região São Paulo (`sa-east-1`).
+
+- **Estrutura:** `supabase/migrations/` — cada arquivo é uma alteração do banco,
+  aplicada em ordem. Mudou a estrutura? Crie um novo arquivo; nunca edite um que
+  já foi aplicado.
+- **Segurança:** RLS ligado em todas as tabelas. Só quem está na tabela
+  `colaboradores` (e ativo) lê ou altera dados; visitantes anônimos não veem nada.
+- **Dados de demonstração:** `supabase/seed.sql`, gerado por
+  `npx tsx scripts/gerar-seed.ts` a partir de `src/lib/mock-data.ts`. Devem ser
+  apagados antes de cadastrar clientes reais.
+
+### Liberar um colaborador
+
+1. No painel do Supabase: **Authentication → Users → Add user → Create new
+   user**, com e-mail, senha e "Auto Confirm User" marcado.
+2. No **SQL Editor**, cadastre a pessoa como colaboradora:
+
+   ```sql
+   insert into public.colaboradores (id, nome, cargo, perfil)
+   select id, 'Francisco Menezes', 'Diretor · Acesso total', 'diretor'
+   from auth.users where email = 'francisco@exemplo.com';
+   ```
+
+   `perfil` é `diretor`, `operacao` ou `professor`. Para bloquear alguém, mude
+   `ativo` para `false`.
+
+Recomendado: em **Authentication → Sign In / Providers**, desligar "Allow new
+users to sign up", para que só o painel crie contas.
+
+---
+
 ## As telas
 
 | Tela | Rota | O que mostra |
 | --- | --- | --- |
-| **Login** | `/` | Tela branca e centralizada, com acesso individual por colaborador. Sem validação — qualquer entrada abre o sistema. |
+| **Login** | `/` | Tela branca e centralizada. Cada colaborador entra com o próprio e-mail e senha. |
 | **Dashboard** | `/dashboard` | As 4 quadras + paredão em perspectiva 3D. O piso escurece conforme a ocupação do dia. Clicar em uma quadra abre a agenda dela. |
 | **Agenda** | `/agenda` | Grade semanal (7h–22h) e panorama mensal, com filtro por quadra, professor e tipo, legenda de cores, alerta de conflito e **criação de novos horários**. |
 | **Ficha do Aluno** | `/alunos/[id]` | Matrícula, histórico de aulas com motivos de falta, saldo de reposição em minutos, pagamentos, congelamento de plano, consumo no balcão e observações do gestor. |
@@ -92,10 +127,10 @@ Nada disso altera a versão de computador: as mudanças vivem todas em
 breakpoints `md:` para baixo, e as telas em 1024px, 1440px e 1920px continuam
 pixel a pixel idênticas ao que eram antes.
 
-### O que dá para fazer ao vivo na demonstração
+### O que fica gravado no banco
 
-O MVP não tem backend, mas as ações abaixo funcionam de verdade durante a
-sessão (o estado volta ao inicial a cada recarregamento da página):
+As ações abaixo aparecem na hora na tela e são gravadas no Supabase. Se a
+gravação falhar, o sistema avisa e volta a mostrar o que está salvo:
 
 - **Marcar um horário** — botão "Novo horário" na Agenda, ou clicar direto num
   espaço livre da grade. O formulário avisa se a quadra já está ocupada naquele
@@ -156,18 +191,26 @@ src/
 │   ├── financeiro/           # Gráficos e tabelas
 │   └── ranking/              # Pirâmide e lista
 ├── lib/
-│   ├── types.ts              # Contrato de dados (base para o backend)
-│   ├── mock-data.ts          # Todos os dados fictícios
-│   ├── selectors.ts          # Camada de leitura (equivale aos endpoints)
+│   ├── types.ts              # Contrato de dados
+│   ├── supabase.ts           # Cliente do Supabase
+│   ├── carregar.ts           # Leitura do banco -> tipos de types.ts
+│   ├── dados.ts              # Dados carregados, usados pelos seletores
+│   ├── arena.ts              # Dados fixos (quadras, horário de funcionamento)
+│   ├── mock-data.ts          # Dados fictícios (só para gerar o seed)
+│   ├── selectors.ts          # Camada de leitura
 │   ├── theme.ts              # Cores, siglas e formatadores
 │   ├── date.ts               # Datas no fuso da arena
 │   └── branding.ts           # Troca do logo
 └── store/
-    └── AppStore.tsx          # Estado em memória (horários, estoque, consumo, comentários)
+    └── AppStore.tsx          # Login, carga dos dados e gravações
+supabase/
+├── migrations/               # Estrutura do banco
+└── seed.sql                  # Dados de demonstração
+scripts/
+└── gerar-seed.ts             # Gera o seed.sql
 ```
 
-Quem for construir o backend deve começar por
-**[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**.
+Detalhes da arquitetura em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**.
 
 ---
 
@@ -190,18 +233,18 @@ aponte as constantes em `src/lib/branding.ts` para os novos caminhos.
 ### Fotos dos alunos
 
 As fotos dos 23 membros já estão em `public/avatars/`, nomeadas com o id de cada
-pessoa. Para incluir mais alguém: salve `public/avatars/<id>.jpg` e adicione o id
-em `IDS_COM_FOTO`, em `src/lib/mock-data.ts`. Quem não está nessa lista aparece
+pessoa. Para incluir mais alguém: salve `public/avatars/<id>.jpg` e preencha a
+coluna `avatar_url` do aluno com `/avatars/<id>.jpg`. Quem não tem foto aparece
 com as iniciais sobre uma cor estável derivada do id — veja
 `public/avatars/README.md`.
 
 ---
 
-## Dados fictícios
+## Dados de demonstração
 
-Gerados de forma **determinística** em `src/lib/mock-data.ts` — a demonstração
-mostra sempre os mesmos dados, e as datas são ancoradas em "hoje" para que o
-sistema pareça em uso em qualquer dia de apresentação.
+Gerados de forma **determinística** em `src/lib/mock-data.ts` e gravados no
+banco por `supabase/seed.sql`. As datas são ancoradas no dia em que o seed foi
+gerado.
 
 - **23 membros reais** cadastrados pelo cliente, com foto em `public/avatars/`
   — são os inscritos na etapa atual do ranking, na ordem definida pela arena
@@ -222,8 +265,8 @@ sistema pareça em uso em qualquer dia de apresentação.
 Itens levantados na Reunião Diagnóstica que **não** fazem parte deste MVP:
 
 - Integração real com Stone, Bradesco ou Total Pass (aqui são apenas representadas)
-- Backend, banco de dados ou persistência de qualquer tipo
-- Autenticação real (senha, sessão, permissão por cargo)
+- Permissão por cargo (hoje todo colaborador ativo tem acesso completo)
+- Telas de cadastro de aluno, pagamento, produto e torneio
 - Chaveamento automático do ranking e atualização da pirâmide por resultados
 - Área do Cliente, site público e matrícula online
 - Comandas (consumo no local)
@@ -231,4 +274,4 @@ Itens levantados na Reunião Diagnóstica que **não** fazem parte deste MVP:
 
 ---
 
-MVP desenvolvido pela **UFABC Júnior**. Dados fictícios, para demonstração.
+Sistema desenvolvido pela **UFABC Júnior**.

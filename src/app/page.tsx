@@ -1,34 +1,47 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Logo } from "@/components/layout/Logo";
 import { IconeCadeado, IconeSeta, IconeUsuario } from "@/components/ui/Icons";
-import { ARENA, USUARIOS } from "@/lib/mock-data";
+import { ARENA } from "@/lib/arena";
 import { useApp } from "@/store/AppStore";
 
 /**
- * Tela de login — mockada.
+ * Tela de login.
  *
- * Nao ha autenticacao real: qualquer entrada (ou o botao direto) leva ao
- * Dashboard. A escolha de colaborador existe para reforcar o conceito de
- * acesso individual levantado na Reuniao Diagnostica.
+ * Cada colaborador entra com o proprio e-mail e senha (Supabase Auth). Os
+ * usuarios sao criados no painel do Supabase e liberados na tabela
+ * `colaboradores`.
  *
  * Visual deliberadamente limpo: fundo branco e marca centralizada, sem
  * elementos decorativos competindo com o formulario.
  */
 export default function PaginaLogin() {
   const router = useRouter();
-  const { entrar } = useApp();
-  const [usuarioId, setUsuarioId] = useState(USUARIOS[0].id);
-  const [login, setLogin] = useState("");
+  const { situacao, erro: erroAcesso, entrar, sair } = useApp();
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  function acessar(evento?: FormEvent) {
-    evento?.preventDefault();
-    entrar(usuarioId);
-    router.push("/dashboard");
+  // Ja logado (ou acabou de entrar): segue para o Dashboard.
+  useEffect(() => {
+    if (situacao === "carregando" || situacao === "pronto") {
+      router.replace("/dashboard");
+    }
+  }, [situacao, router]);
+
+  async function acessar(evento: FormEvent) {
+    evento.preventDefault();
+    setEnviando(true);
+    setErro(null);
+    const falha = await entrar(email, senha);
+    setEnviando(false);
+    if (falha) setErro(falha);
   }
+
+  const mensagem = erro ?? (situacao === "erro" ? erroAcesso : null);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12">
@@ -44,68 +57,22 @@ export default function PaginaLogin() {
 
         <form onSubmit={acessar} className="mt-8 space-y-5">
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-areia-500">
-              Perfil de acesso
-            </label>
-            <div className="grid gap-2">
-              {USUARIOS.map((u) => {
-                const ativo = u.id === usuarioId;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => {
-                      setUsuarioId(u.id);
-                      setLogin(u.usuario);
-                    }}
-                    className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
-                      ativo
-                        ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
-                        : "border-areia-200 bg-white hover:border-saibro-300"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
-                        ativo
-                          ? "bg-saibro-600 text-white"
-                          : "bg-areia-100 text-areia-600"
-                      }`}
-                    >
-                      {u.nome
-                        .split(" ")
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-areia-900">
-                        {u.nome}
-                      </span>
-                      <span className="block truncate text-xs text-areia-500">
-                        {u.cargo}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
             <label
-              htmlFor="login"
+              htmlFor="email"
               className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-areia-500"
             >
-              Usuário
+              E-mail
             </label>
             <div className="relative">
               <IconeUsuario className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
               <input
-                id="login"
-                value={login}
-                onChange={(e) => setLogin(e.target.value)}
-                placeholder="usuario"
-                autoComplete="off"
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@redtennis.com.br"
+                autoComplete="username"
                 className="campo pl-9"
               />
             </div>
@@ -123,19 +90,43 @@ export default function PaginaLogin() {
               <input
                 id="senha"
                 type="password"
+                required
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="••••••••"
-                autoComplete="off"
+                autoComplete="current-password"
                 className="campo pl-9"
               />
             </div>
           </div>
 
-          <button type="submit" className="btn-primario w-full">
-            Entrar no sistema
+          {mensagem && (
+            <p
+              role="alert"
+              className="rounded-xl border border-tijolo-200 bg-tijolo-50 px-3.5 py-2.5 text-sm text-tijolo-800"
+            >
+              {mensagem}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={enviando || situacao === "verificando"}
+            className="btn-primario w-full disabled:opacity-60"
+          >
+            {enviando ? "Entrando…" : "Entrar no sistema"}
             <IconeSeta className="h-4 w-4" />
           </button>
+
+          {situacao === "erro" && (
+            <button
+              type="button"
+              onClick={() => void sair()}
+              className="w-full text-center text-xs text-areia-500 underline"
+            >
+              Entrar com outra conta
+            </button>
+          )}
         </form>
 
         <p className="mt-10 text-center text-xs text-areia-400">
