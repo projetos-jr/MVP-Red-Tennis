@@ -16,7 +16,7 @@ mostra como seria a operação em um sistema moderno.
 
 ## Como rodar
 
-Requer **Node.js 18.18+**.
+Requer **Node.js 20.9+**.
 
 ```bash
 npm install
@@ -32,6 +32,29 @@ de ambiente, banco de dados ou serviço externo.
 | `npm run build` | Gera o build de produção |
 | `npm run start` | Sobe o build de produção |
 | `npm run lint` | Roda o ESLint |
+| `npm run preview` | Gera o build para a Cloudflare e roda localmente, como em produção |
+| `npm run deploy` | Gera o build para a Cloudflare e publica |
+
+---
+
+## Publicação na Cloudflare
+
+O projeto roda na Cloudflare (Workers) por meio do adaptador
+[OpenNext](https://opennext.js.org/cloudflare). A configuração fica em
+`wrangler.jsonc` e `open-next.config.ts`.
+
+**Pelo painel (recomendado):** em *Workers & Pages → Create → Import a
+repository*, escolha este repositório e preencha:
+
+| Campo | Valor |
+| --- | --- |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+
+A partir daí, cada push na `main` publica uma nova versão.
+
+**Pela linha de comando:** `npx wrangler login` uma vez e depois
+`npm run deploy`.
 
 ---
 
