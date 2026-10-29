@@ -2,19 +2,27 @@
  * Dados de exemplo: financeiro.
  *
  * - Mensalidades dos ultimos 6 meses de cada matricula (o mes corrente com
- *   pagamentos pendentes e em atraso);
+ *   pagamentos pendentes e em atraso). As do mes seguinte NAO existem: e o
+ *   que o botao "Gerar mensalidades" demonstra;
  * - locacoes avulsas (pagas, ou aguardando pagamento dentro do prazo);
  * - inscricoes de torneio e algumas aulas experimentais;
- * - contas a pagar mensais (energia, agua, manutencao...);
- * - repasses dos professores dos dois ultimos meses fechados.
+ * - contas a pagar mensais (energia, agua, manutencao...), inclusive as do mes
+ *   seguinte e uma atrasada;
+ * - repasses dos professores fechados ate dois meses atras. O ultimo mes
+ *   terminado fica sem fechamento, para a tela demonstrar "Fechar repasse".
  *
  * Os lancamentos de consumo e de fornecedor vem da semente do estoque.
  */
 
-import { formatarDiaMes, somarDias, somarMeses } from "../../date";
+import { formatarDiaMes, somarDias } from "../../date";
 import { HOJE } from "../constantes";
 import { duracaoEmMinutos, rotuloDaQuadra } from "../regras/agenda";
-import { precoDaLocacao } from "../regras/financeiro";
+import {
+  emReais,
+  mesCurto,
+  precoDaLocacao,
+  somarMesesNaCompetencia,
+} from "../regras/financeiro";
 import type {
   Aluno,
   Lancamento,
@@ -29,18 +37,6 @@ import type {
 } from "../tipos";
 import { criarRng, doisDigitos, escolher, inteiro, type Sorteio } from "./aleatorio";
 import { CONFIGURACOES_INICIAIS, PERFIL_POR_ALUNO } from "./cadastros";
-
-const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-
-/** "2026-10" -> "out/2026" */
-function rotuloDoMes(competencia: string): string {
-  const [ano, mes] = competencia.split("-").map(Number);
-  return `${MESES_CURTOS[mes - 1]}/${ano}`;
-}
-
-function emReais(valor: number): number {
-  return Math.round(valor * 100) / 100;
-}
 
 /** Datas nunca depois de hoje (um pagamento nao pode estar no futuro). */
 function ateHoje(data: string): string {
@@ -94,12 +90,21 @@ const DESPESAS_MENSAIS = [
   { item: "Contabilidade", favorecido: "Escritório de contabilidade", base: 650, variacao: 0 },
 ];
 
+/** Despesa do mes passado que ficou sem pagar (mostra uma conta a pagar em atraso). */
+const DESPESA_ATRASADA = "Manutenção do saibro";
+
 export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
   const lancamentos: Lancamento[] = [];
   const alunoPorId = new Map(dados.alunos.map((a) => [a.id, a]));
   const planoPorId = new Map(dados.planos.map((p) => [p.id, p]));
-  const competencias = [5, 4, 3, 2, 1, 0].map((k) => somarMeses(HOJE, -k).slice(0, 7));
   const competenciaAtual = HOJE.slice(0, 7);
+  // Contadas a partir do mes (e nao de HOJE): em 31/10, "um mes atras" pela
+  // data cairia em 01/10 e setembro sumiria.
+  const competencias = [5, 4, 3, 2, 1, 0].map((k) =>
+    somarMesesNaCompetencia(competenciaAtual, -k),
+  );
+  const competenciaAnterior = somarMesesNaCompetencia(competenciaAtual, -1);
+  const competenciaSeguinte = somarMesesNaCompetencia(competenciaAtual, 1);
 
   // --- Mensalidades -------------------------------------------------------------
   dados.matriculas.forEach((matricula, indice) => {
@@ -130,7 +135,7 @@ export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
         pessoaId: aluno.id,
         pessoaTipo: "aluno",
         nomePagante: pagante(rng, aluno),
-        item: `Mensalidade ${rotuloDoMes(competencia)} · ${plano.nome}`,
+        item: `Mensalidade ${mesCurto(competencia)} · ${plano.nome}`,
         valor: matricula.valorMensal,
         vencimento,
         pagoEm,
@@ -234,34 +239,39 @@ export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
   }
 
   // --- Contas a pagar mensais ---------------------------------------------------------
+  // Vencem no dia 10. Pagas as que ja venceram, menos a manutencao do saibro
+  // do mes passado; as do mes seguinte ainda estao em aberto.
   const rngDespesas = criarRng(2468);
-  competencias.forEach((competencia) => {
+  [...competencias, competenciaSeguinte].forEach((competencia) => {
     DESPESAS_MENSAIS.forEach((despesa, i) => {
       const vencimento = `${competencia}-10`;
       const valor = emReais(despesa.base + (rngDespesas() - 0.5) * 2 * despesa.variacao);
-      const pago =
-        competencia !== competenciaAtual || (vencimento < HOJE && rngDespesas() < 0.9);
+      const atrasada = competencia === competenciaAnterior && despesa.item === DESPESA_ATRASADA;
+      const pago = vencimento < HOJE && !atrasada;
       lancamentos.push({
         id: `lc-dp-${competencia}-${i + 1}`,
         tipo: "pagar",
         categoria: "Despesa",
         nomePagante: despesa.favorecido,
-        item: `${despesa.item} · ${rotuloDoMes(competencia)}`,
+        item: `${despesa.item} · ${mesCurto(competencia)}`,
         valor,
         vencimento,
         pagoEm: pago ? ateHoje(somarDias(vencimento, -inteiro(rngDespesas, 0, 2))) : undefined,
         formaPagamento: pago ? "Bradesco" : undefined,
         competencia,
-        criadoEm: `${competencia}-01T08:00:00`,
+        // A conta do mes seguinte ja chegou: foi lancada no inicio deste mes.
+        criadoEm: `${competencia > competenciaAtual ? competenciaAtual : competencia}-01T08:00:00`,
       });
     });
   });
 
-  // --- Repasses dos professores (dois ultimos meses fechados) --------------------------
+  // --- Repasses dos professores (fechados ate dois meses atras) ------------------------
+  // Tres e dois meses atras: o historico de aulas comeca no meio do mes mais
+  // antigo. O mes passado fica sem fechamento, a espera do "Fechar repasse".
   const repasses: Repasse[] = [];
-  [2, 1].forEach((mesesAtras) => {
-    const competencia = somarMeses(HOJE, -mesesAtras).slice(0, 7);
-    const mesSeguinte = somarMeses(`${competencia}-01`, 1).slice(0, 7);
+  [3, 2].forEach((mesesAtras) => {
+    const competencia = somarMesesNaCompetencia(competenciaAtual, -mesesAtras);
+    const mesSeguinte = somarMesesNaCompetencia(competencia, 1);
 
     dados.professores.forEach((professor) => {
       const aulas = dados.ocupacoes.filter(
@@ -270,6 +280,7 @@ export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
           o.situacao === "realizada" &&
           o.data.startsWith(competencia),
       );
+      if (aulas.length === 0) return;
       const minutos = aulas.reduce((soma, o) => soma + duracaoEmMinutos(o), 0);
       const valorPrevisto =
         professor.repasse.modo === "por_hora"
@@ -295,7 +306,7 @@ export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
         pessoaId: professor.id,
         pessoaTipo: "professor",
         nomePagante: professor.nome,
-        item: `Repasse ${rotuloDoMes(competencia)} · ${aulas.length} aulas`,
+        item: `Repasse ${mesCurto(competencia)} · ${aulas.length} aulas`,
         valor: valorPrevisto,
         vencimento,
         pagoEm: vencimento < HOJE ? vencimento : undefined,
