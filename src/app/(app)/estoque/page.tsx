@@ -1,65 +1,83 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CardProduto } from "@/components/estoque/CardProduto";
-import { ModalMovimento } from "@/components/estoque/ModalMovimento";
-import { Badge } from "@/components/ui/Badge";
+import { ModalConsumo } from "@/components/consumo/ModalConsumo";
+import { CardProduto, type AcaoRapida } from "@/components/estoque/CardProduto";
+import {
+  CartaoListaDeCompras,
+  CartaoMaisVendidos,
+  CartaoMovimentacoes,
+} from "@/components/estoque/CartoesLaterais";
+import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/ModaisDoEstoque";
+import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import {
   IconeAlerta,
   IconeBusca,
+  IconeCopo,
   IconeEstoque,
   IconeFinanceiro,
+  IconeMais,
   IconeSubiu,
 } from "@/components/ui/Icons";
-import { CATEGORIAS_PRODUTO } from "@/lib/mock-data";
+import { HOJE } from "@/lib/banco/constantes";
+import { reativarProduto } from "@/lib/banco/operacoes/estoque";
+import { podeAcessar } from "@/lib/consultas/base";
 import {
+  CATEGORIAS_PRODUTO,
   filtrarProdutos,
+  listaDeCompras,
   maisVendidos,
-  nivelDoEstoque,
-  resumoEstoque,
-} from "@/lib/selectors";
-import {
-  ESTILO_MOVIMENTO,
-  ESTILO_NIVEL_ESTOQUE,
-  formatarMoeda,
-} from "@/lib/theme";
-import type { CategoriaProduto, Produto } from "@/lib/types";
+  movimentacoesRecentes,
+  produtosComSaldo,
+  resumoDoEstoque,
+  type FiltroEstoque,
+  type ProdutoComSaldo,
+} from "@/lib/consultas/estoque";
+import { formatarMoeda } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
+import { useGravar } from "@/store/useGravar";
+
+const FILTRO_INICIAL: FiltroEstoque = {
+  categoria: "todas",
+  busca: "",
+  apenasRepor: false,
+  incluirInativos: false,
+};
 
 export default function PaginaEstoque() {
-  const {
-    produtos,
-    consumos,
-    movimentos,
-    registrarEntrada,
-    registrarPerda,
-  } = useApp();
+  const { banco, colaborador } = useApp();
+  const gravar = useGravar();
+  const [filtro, setFiltro] = useState<FiltroEstoque>(FILTRO_INICIAL);
+  const [acao, setAcao] = useState<AcaoDoEstoque | null>(null);
+  const [lancandoConsumo, setLancandoConsumo] = useState(false);
 
-  const [categoria, setCategoria] = useState<CategoriaProduto | "todas">("todas");
-  const [busca, setBusca] = useState("");
-  const [apenasAlerta, setApenasAlerta] = useState(false);
-  const [movimento, setMovimento] = useState<{
-    produto: Produto;
-    tipo: "entrada" | "perda";
-  } | null>(null);
+  // O saldo de cada produto e a soma dos movimentos: calculado uma vez por gravacao.
+  const produtos = useMemo(() => produtosComSaldo(banco), [banco]);
+  const resumo = useMemo(() => resumoDoEstoque(banco, produtos, HOJE), [banco, produtos]);
+  const lista = useMemo(() => filtrarProdutos(produtos, filtro), [produtos, filtro]);
+  const compras = useMemo(() => listaDeCompras(produtos), [produtos]);
+  const campeoes = useMemo(() => maisVendidos(banco, HOJE), [banco]);
+  const recentes = useMemo(() => movimentacoesRecentes(banco), [banco]);
 
-  const resumo = resumoEstoque(produtos, consumos);
-  const lista = useMemo(
-    () => filtrarProdutos({ categoria, busca, apenasAlerta }, produtos),
-    [categoria, busca, apenasAlerta, produtos],
-  );
+  if (!podeAcessar(banco, colaborador, "estoque")) return <SemAcessoAoEstoque />;
 
-  const precisamRepor = produtos
-    .filter((p) => {
-      const nivel = nivelDoEstoque(p);
-      return nivel === "esgotado" || nivel === "critico";
-    })
-    .sort((a, b) => a.quantidade - b.quantidade);
+  function mudarFiltro(parcial: Partial<FiltroEstoque>) {
+    setFiltro((atual) => ({ ...atual, ...parcial }));
+  }
 
-  const campeoes = maisVendidos(5, consumos);
-  const recentes = movimentos.slice(0, 10);
+  function agir(tipo: AcaoRapida, item: ProdutoComSaldo) {
+    if (tipo === "reativar") {
+      gravar(
+        reativarProduto,
+        { id: item.produto.id },
+        `${item.produto.nome} voltou para o catálogo e para as listas de venda.`,
+      );
+      return;
+    }
+    setAcao({ tipo, produtoId: item.produto.id });
+  }
 
   return (
     <div className="space-y-6">
@@ -70,6 +88,29 @@ export default function PaginaEstoque() {
             Bebidas, cervejas, lanches e acessórios vendidos no balcão da arena.
           </p>
         </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <button
+            type="button"
+            onClick={() =>
+              setAcao({
+                tipo: "novo",
+                categoria: filtro.categoria === "todas" ? undefined : filtro.categoria,
+              })
+            }
+            className="btn-secundario flex-1 sm:flex-none"
+          >
+            <IconeMais className="h-4 w-4" />
+            Novo produto
+          </button>
+          <button
+            type="button"
+            onClick={() => setLancandoConsumo(true)}
+            className="btn-primario flex-1 sm:flex-none"
+          >
+            <IconeCopo className="h-4 w-4" />
+            Lançar consumo
+          </button>
+        </div>
       </div>
 
       {/* Indicadores */}
@@ -77,8 +118,10 @@ export default function PaginaEstoque() {
         <StatCard
           rotulo="Unidades em estoque"
           rotuloCurto="Unidades"
-          valor={String(resumo.unidadesEmEstoque)}
-          detalhe={`${resumo.itensCadastrados} itens cadastrados`}
+          valor={String(resumo.unidades)}
+          detalhe={`${resumo.produtosAtivos} itens ativos${
+            resumo.produtosInativos > 0 ? ` · ${resumo.produtosInativos} inativo(s)` : ""
+          }`}
           icone={<IconeEstoque className="h-5 w-5" />}
           tom="saibro"
         />
@@ -98,7 +141,7 @@ export default function PaginaEstoque() {
           rotulo="Vendas no mês"
           rotuloCurto="Vendas"
           valor={formatarMoeda(resumo.vendasNoMes)}
-          detalhe="Consumo lançado nas fichas"
+          detalhe={`${formatarMoeda(resumo.consumoEmAberto)} em aberto nas contas`}
           icone={<IconeSubiu className="h-5 w-5" />}
           tom="positivo"
         />
@@ -106,7 +149,9 @@ export default function PaginaEstoque() {
           rotulo="Valor do estoque"
           rotuloCurto="Valor"
           valor={formatarMoeda(resumo.valorDeVenda)}
-          detalhe={`Custo ${formatarMoeda(resumo.valorDeCusto)} · margem ${formatarMoeda(resumo.margemPotencial)}`}
+          detalhe={`Custo ${formatarMoeda(resumo.valorDeCusto)} · margem ${formatarMoeda(
+            resumo.valorDeVenda - resumo.valorDeCusto,
+          )}`}
           icone={<IconeFinanceiro className="h-5 w-5" />}
         />
       </div>
@@ -116,7 +161,7 @@ export default function PaginaEstoque() {
         <Card className="xl:col-span-3">
           <CardHeader
             titulo="Itens em estoque"
-            descricao="A barra mostra o saldo; o traço indica o estoque mínimo."
+            descricao="A barra mostra o saldo; o traço indica o estoque mínimo. Clique no nome para ver o detalhe."
             icone={<IconeEstoque className="h-5 w-5" />}
           />
 
@@ -124,60 +169,58 @@ export default function PaginaEstoque() {
             <div className="relative min-w-[220px] flex-1">
               <IconeBusca className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
               <input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                value={filtro.busca}
+                onChange={(e) => mudarFiltro({ busca: e.target.value })}
                 placeholder="Buscar produto…"
+                aria-label="Buscar produto"
                 className="campo py-2 pl-9 text-sm"
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setCategoria("todas")}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  categoria === "todas"
-                    ? "bg-saibro-600 text-white"
-                    : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-                }`}
-              >
-                Todas
-              </button>
-              {CATEGORIAS_PRODUTO.map((c) => (
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Categoria">
+              {(["todas", ...CATEGORIAS_PRODUTO] as const).map((c) => (
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setCategoria(c)}
+                  onClick={() => mudarFiltro({ categoria: c })}
+                  aria-pressed={filtro.categoria === c}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    categoria === c
+                    filtro.categoria === c
                       ? "bg-saibro-600 text-white"
                       : "bg-areia-100 text-areia-700 hover:bg-areia-200"
                   }`}
                 >
-                  {c}
+                  {c === "todas" ? "Todas" : c}
                 </button>
               ))}
             </div>
 
-            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
-              <input
-                type="checkbox"
-                checked={apenasAlerta}
-                onChange={(e) => setApenasAlerta(e.target.checked)}
-                className="h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
-              />
-              Só o que precisa repor
-            </label>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <input
+                  type="checkbox"
+                  checked={filtro.apenasRepor}
+                  onChange={(e) => mudarFiltro({ apenasRepor: e.target.checked })}
+                  className="h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
+                />
+                Só o que precisa repor
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <input
+                  type="checkbox"
+                  checked={filtro.incluirInativos}
+                  onChange={(e) => mudarFiltro({ incluirInativos: e.target.checked })}
+                  className="h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
+                />
+                Mostrar inativos
+                {resumo.produtosInativos > 0 && ` (${resumo.produtosInativos})`}
+              </label>
+            </div>
           </div>
 
           <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {lista.map((produto) => (
-              <CardProduto
-                key={produto.id}
-                produto={produto}
-                aoRegistrarEntrada={(p) => setMovimento({ produto: p, tipo: "entrada" })}
-                aoRegistrarBaixa={(p) => setMovimento({ produto: p, tipo: "perda" })}
-              />
+            {lista.map((item) => (
+              <CardProduto key={item.produto.id} item={item} aoAgir={agir} />
             ))}
 
             {lista.length === 0 && (
@@ -188,138 +231,25 @@ export default function PaginaEstoque() {
           </div>
         </Card>
 
-        {/* Coluna lateral */}
-        <div className="min-w-0 space-y-6">
-          <Card>
-            <CardHeader
-              titulo="Lista de compras"
-              descricao="Itens abaixo do mínimo."
-              icone={<IconeAlerta className="h-5 w-5" />}
-            />
-            <ul className="divide-y divide-areia-100">
-              {precisamRepor.map((produto) => {
-                const estilo = ESTILO_NIVEL_ESTOQUE[nivelDoEstoque(produto)];
-                const sugerido = Math.max(
-                  produto.estoqueMinimo * 2 - produto.quantidade,
-                  produto.estoqueMinimo,
-                );
-                return (
-                  <li
-                    key={produto.id}
-                    className="flex items-center gap-3 px-4 py-2.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-areia-900">
-                        {produto.nome}
-                      </p>
-                      <p className="text-xs text-areia-500">
-                        Tem {produto.quantidade} · mín. {produto.estoqueMinimo}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <Badge
-                        cor={estilo.cor}
-                        fundo={estilo.fundo}
-                        borda={estilo.borda}
-                        className="text-[10px]"
-                      >
-                        {estilo.label}
-                      </Badge>
-                      <p className="mt-1 text-[11px] text-areia-500">
-                        comprar ~{sugerido}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-
-              {precisamRepor.length === 0 && (
-                <li className="px-4 py-6 text-center text-sm text-areia-500">
-                  Todo o estoque está acima do mínimo.
-                </li>
-              )}
-            </ul>
-          </Card>
-
-          <Card>
-            <CardHeader
-              titulo="Mais vendidos"
-              descricao="Últimos 30 dias."
-              icone={<IconeSubiu className="h-5 w-5" />}
-            />
-            <ul className="divide-y divide-areia-100">
-              {campeoes.map((item, i) => (
-                <li
-                  key={item.produtoId}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                >
-                  <span className="w-5 shrink-0 text-right text-sm font-bold text-areia-400">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-areia-900">{item.nome}</p>
-                    <p className="text-xs text-areia-500">
-                      {item.unidades} unidades
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-areia-800">
-                    {formatarMoeda(item.total)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card>
-            <CardHeader
-              titulo="Movimentações recentes"
-              descricao="Entradas, vendas e perdas."
-              icone={<IconeEstoque className="h-5 w-5" />}
-            />
-            <ul className="divide-y divide-areia-100">
-              {recentes.map((mov) => {
-                const estilo = ESTILO_MOVIMENTO[mov.tipo];
-                const produto = produtos.find((p) => p.id === mov.produtoId);
-                return (
-                  <li key={mov.id} className="px-4 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm text-areia-900">
-                        {produto?.nome ?? "Produto removido"}
-                      </span>
-                      <span
-                        className="shrink-0 text-sm font-semibold tabular-nums"
-                        style={{ color: estilo.cor }}
-                      >
-                        {estilo.sinal}
-                        {mov.quantidade}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-areia-500">
-                      {estilo.label} · {mov.data.replace("T", " às ")} ·{" "}
-                      {mov.responsavel}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
+        {/* Coluna lateral (no tablet, vira uma faixa abaixo do catálogo) */}
+        <div className="grid min-w-0 items-start gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
+          <CartaoListaDeCompras
+            itens={compras}
+            aoDarEntrada={(item) =>
+              setAcao({
+                tipo: "entrada",
+                produtoId: item.produto.id,
+                quantidadeSugerida: item.sugerido,
+              })
+            }
+          />
+          <CartaoMaisVendidos itens={campeoes} />
+          <CartaoMovimentacoes itens={recentes} />
         </div>
       </div>
 
-      {movimento && (
-        <ModalMovimento
-          produto={movimento.produto}
-          tipo={movimento.tipo}
-          aoFechar={() => setMovimento(null)}
-          aoConfirmar={(quantidade, observacao) => {
-            if (movimento.tipo === "entrada") {
-              registrarEntrada(movimento.produto.id, quantidade, observacao);
-            } else {
-              registrarPerda(movimento.produto.id, quantidade, observacao);
-            }
-          }}
-        />
-      )}
+      <ModaisDoEstoque acao={acao} aoFechar={() => setAcao(null)} />
+      {lancandoConsumo && <ModalConsumo aoFechar={() => setLancandoConsumo(false)} />}
     </div>
   );
 }
