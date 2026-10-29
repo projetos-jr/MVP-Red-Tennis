@@ -81,8 +81,8 @@ const PICOLE: DadosDoProduto = {
   estoqueMinimo: 10,
 };
 
-describe("lançar consumo", () => {
-  it("grava o consumo, a venda no estoque e o lançamento a receber juntos", () => {
+describe("lancar consumo", () => {
+  it("grava o consumo, a venda no estoque e o lancamento a receber juntos", () => {
     const banco = gravar(BANCO, lancarConsumo, consumoDeAgua);
 
     expect(banco.consumos).toHaveLength(BANCO.consumos.length + 1);
@@ -120,7 +120,7 @@ describe("lançar consumo", () => {
     expect(saldo(banco, "p01")).toBe(94);
   });
 
-  it("registra a auditoria das tres tabelas com o nome da operação", () => {
+  it("registra a auditoria das tres tabelas com o nome da operacao", () => {
     const banco = gravar(BANCO, lancarConsumo, consumoDeAgua);
     const tabelas = banco.auditoria.map((r) => r.tabela).sort();
     expect(tabelas).toEqual(["consumos", "lancamentos", "movimentosEstoque"]);
@@ -129,7 +129,7 @@ describe("lançar consumo", () => {
     );
   });
 
-  it("se o saldo não basta, nada é gravado", () => {
+  it("se o saldo nao basta, nada e gravado", () => {
     const resultado = executarOperacao(
       BANCO,
       lancarConsumo,
@@ -156,7 +156,7 @@ describe("lançar consumo", () => {
     );
   });
 
-  it("quantidade zero, negativa ou quebrada é recusada", () => {
+  it("quantidade zero, negativa ou quebrada e recusada", () => {
     [0, -1, 1.5].forEach((quantidade) =>
       expect(recusa(BANCO, lancarConsumo, { ...consumoDeAgua, quantidade })).toBe(
         "A quantidade precisa ser um número inteiro maior que zero.",
@@ -164,13 +164,13 @@ describe("lançar consumo", () => {
     );
   });
 
-  it("pessoa que não está no cadastro é recusada", () => {
+  it("pessoa que nao esta no cadastro e recusada", () => {
     expect(recusa(BANCO, lancarConsumo, { ...consumoDeAgua, pessoaId: "ninguem" })).toBe(
       "Pessoa não encontrada no cadastro.",
     );
   });
 
-  it("professor também tem conta de consumo", () => {
+  it("professor tambem tem conta de consumo", () => {
     const banco = gravar(BANCO, lancarConsumo, {
       ...consumoDeAgua,
       pessoaId: "prof-1",
@@ -183,7 +183,7 @@ describe("lançar consumo", () => {
     });
   });
 
-  it("o vencimento segue o prazo das Configurações (H13)", () => {
+  it("o vencimento segue o prazo das Configuracoes (H13)", () => {
     const comPrazoDe10Dias: Banco = {
       ...BANCO,
       configuracoes: { ...BANCO.configuracoes, prazoPagamentoConsumoDias: 10 },
@@ -192,7 +192,7 @@ describe("lançar consumo", () => {
     expect(banco.lancamentos.at(-1)?.vencimento).toBe(somarDias(HOJE, 10));
   });
 
-  it("o perfil de professor não grava no estoque (H9)", () => {
+  it("o perfil de professor nao grava no estoque (H9)", () => {
     expect(recusa(BANCO, lancarConsumo, consumoDeAgua, PROFESSORA)).toBe(
       "Seu perfil não tem permissão para mexer no estoque.",
     );
@@ -205,7 +205,7 @@ describe("lançar consumo", () => {
 describe("entrada de mercadoria", () => {
   const vencimento = somarDias(HOJE, 15);
 
-  it("com conta a pagar, cria o movimento e o lançamento, ligados", () => {
+  it("com conta a pagar, cria o movimento e o lancamento, ligados", () => {
     const banco = gravar(BANCO, registrarEntrada, {
       produtoId: "p22",
       quantidade: 10,
@@ -236,7 +236,7 @@ describe("entrada de mercadoria", () => {
     expect(saldo(banco, "p22")).toBe(14);
   });
 
-  it("sem conta a pagar, grava só o movimento", () => {
+  it("sem conta a pagar, grava so o movimento", () => {
     const banco = gravar(BANCO, registrarEntrada, { produtoId: "p12", quantidade: 24 });
     expect(banco.lancamentos).toBe(BANCO.lancamentos);
     expect(saldo(banco, "p12")).toBe(24);
@@ -256,7 +256,7 @@ describe("entrada de mercadoria", () => {
     ).toBe("Informe o vencimento da conta a pagar.");
   });
 
-  it("produto inativo não recebe entrada", () => {
+  it("produto inativo nao recebe entrada", () => {
     const banco = gravar(BANCO, inativarProduto, { id: "p22" });
     expect(recusa(banco, registrarEntrada, { produtoId: "p22", quantidade: 1 })).toBe(
       "Munhequeira está inativo. Reative o produto antes de registrar a entrada.",
@@ -264,7 +264,7 @@ describe("entrada de mercadoria", () => {
   });
 });
 
-describe("perda e ajuste de inventário", () => {
+describe("perda e ajuste de inventario", () => {
   it("perda grava o motivo e baixa o saldo", () => {
     const banco = gravar(BANCO, registrarPerda, { produtoId: "p22", quantidade: 1, motivo: "Rasgou" });
     expect(banco.movimentosEstoque.at(-1)).toMatchObject({
@@ -275,7 +275,7 @@ describe("perda e ajuste de inventário", () => {
     expect(saldo(banco, "p22")).toBe(3);
   });
 
-  it("perda maior que o saldo ou sem motivo é recusada", () => {
+  it("perda maior que o saldo ou sem motivo e recusada", () => {
     expect(recusa(BANCO, registrarPerda, { produtoId: "p22", quantidade: 5, motivo: "Rasgou" })).toBe(
       "Só há 4 unidade(s) de Munhequeira em estoque.",
     );
@@ -308,7 +308,7 @@ describe("perda e ajuste de inventário", () => {
     expect(saldo(doZero, "p12")).toBe(5);
   });
 
-  it("contagem igual ao sistema ou negativa é recusada", () => {
+  it("contagem igual ao sistema ou negativa e recusada", () => {
     expect(recusa(BANCO, ajustarInventario, { produtoId: "p01", saldoContado: 96 })).toBe(
       "O saldo contado é igual ao do sistema (96): não há o que ajustar.",
     );
@@ -327,7 +327,7 @@ describe("cadastro de produto", () => {
     expect(banco.auditoria[0]).toMatchObject({ tabela: "produtos", acao: "criar" });
   });
 
-  it("preço negativo é recusado", () => {
+  it("preco negativo e recusado", () => {
     expect(recusa(BANCO, cadastrarProduto, { ...PICOLE, precoCusto: -1 })).toBe(
       "O preço de custo não pode ser negativo.",
     );
@@ -339,27 +339,27 @@ describe("cadastro de produto", () => {
     );
   });
 
-  it("venda abaixo do custo só gera aviso: o cadastro é aceito", () => {
+  it("venda abaixo do custo so gera aviso: o cadastro e aceito", () => {
     expect(vendaAbaixoDoCusto(10, 8)).toBe(true);
     expect(vendaAbaixoDoCusto(4, 8)).toBe(false);
     const banco = gravar(BANCO, cadastrarProduto, { ...PICOLE, precoCusto: 10, precoVenda: 8 });
     expect(banco.produtos.at(-1)?.precoVenda).toBe(8);
   });
 
-  it("nome duplicado é recusado, sem diferença de acentos e maiúsculas", () => {
+  it("nome duplicado e recusado, sem diferenca de acentos e maiusculas", () => {
     expect(recusa(BANCO, cadastrarProduto, { ...PICOLE, nome: "  agua mineral  SEM GAS " })).toBe(
       'Já existe um produto chamado "Água mineral sem gás".',
     );
   });
 
-  it("o nome de um produto inativo também conta", () => {
+  it("o nome de um produto inativo tambem conta", () => {
     const banco = gravar(BANCO, inativarProduto, { id: "p12" });
     expect(recusa(banco, cadastrarProduto, { ...PICOLE, nome: "Cerveja sem álcool" })).toBe(
       'Já existe um produto inativo chamado "Cerveja sem álcool". Reative-o em vez de cadastrar outro.',
     );
   });
 
-  it("na edição, o próprio nome pode ficar e o de outro produto não", () => {
+  it("na edicao, o proprio nome pode ficar e o de outro produto nao", () => {
     const p01 = BANCO.produtos.find((p) => p.id === "p01")!;
     const banco = gravar(BANCO, editarProduto, { ...p01, precoVenda: 5.5 });
     expect(banco.produtos.find((p) => p.id === "p01")?.precoVenda).toBe(5.5);
@@ -368,13 +368,13 @@ describe("cadastro de produto", () => {
     );
   });
 
-  it("editar sem mudar nada não grava nem audita", () => {
+  it("editar sem mudar nada nao grava nem audita", () => {
     const p01 = BANCO.produtos.find((p) => p.id === "p01")!;
     const resultado = executarOperacao(BANCO, editarProduto, { ...p01 }, contexto());
     expect(resultado.ok && resultado.banco).toBe(BANCO);
   });
 
-  it("estoque mínimo precisa ser inteiro, zero ou maior", () => {
+  it("estoque minimo precisa ser inteiro, zero ou maior", () => {
     [-1, 2.5].forEach((estoqueMinimo) =>
       expect(recusa(BANCO, cadastrarProduto, { ...PICOLE, estoqueMinimo })).toBe(
         "O estoque mínimo precisa ser um número inteiro, zero ou maior.",
@@ -382,7 +382,7 @@ describe("cadastro de produto", () => {
     );
   });
 
-  it("mudar nome e preço não reescreve o consumo já lançado", () => {
+  it("mudar nome e preco nao reescreve o consumo ja lancado", () => {
     const comConsumo = gravar(BANCO, lancarConsumo, consumoDeAgua);
     const p01 = comConsumo.produtos.find((p) => p.id === "p01")!;
     const editado = gravar(comConsumo, editarProduto, { ...p01, nome: "Água 500ml", precoVenda: 6 });
@@ -393,7 +393,7 @@ describe("cadastro de produto", () => {
     expect(editado.lancamentos.at(-1)?.valor).toBe(10);
   });
 
-  it("inativar tira o produto da venda, mas mantém o histórico; reativar devolve", () => {
+  it("inativar tira o produto da venda, mas mantem o historico; reativar devolve", () => {
     const inativo = gravar(BANCO, inativarProduto, { id: "p01" });
     expect(inativo.produtos.find((p) => p.id === "p01")?.ativo).toBe(false);
     expect(inativo.movimentosEstoque).toBe(BANCO.movimentosEstoque);
@@ -423,7 +423,7 @@ describe("fechar conta de consumo", () => {
     };
   }
 
-  it("paga só os consumos em aberto daquela pessoa", () => {
+  it("paga so os consumos em aberto daquela pessoa", () => {
     const antes = cenario();
     const abertosDeA01 = antes.lancamentos.filter(
       (l) => l.categoria === "Consumo" && l.pessoaId === "a01" && !l.pagoEm && !l.canceladoEm,
@@ -465,7 +465,7 @@ describe("fechar conta de consumo", () => {
     ).toBe("Não há consumo em aberto nesta conta.");
   });
 
-  it("data no futuro, antes do último consumo ou forma desconhecida são recusadas", () => {
+  it("data no futuro, antes do ultimo consumo ou forma desconhecida sao recusadas", () => {
     const banco = cenario();
     const dados = { pessoaId: "a01", pagoEm: HOJE, formaPagamento: "Stone" };
     expect(recusa(banco, fecharContaDeConsumo, { ...dados, pagoEm: somarDias(HOJE, 1) })).toBe(
@@ -481,7 +481,7 @@ describe("fechar conta de consumo", () => {
 });
 
 describe("dados de exemplo do estoque", () => {
-  it("respeitam as mesmas regras das operações", () => {
+  it("respeitam as mesmas regras das operacoes", () => {
     BANCO.movimentosEstoque.forEach((m) => {
       expect(m.quantidade, `movimento ${m.id}`).not.toBe(0);
       if (m.tipo !== "ajuste") expect(m.quantidade, `movimento ${m.id}`).toBeGreaterThan(0);
@@ -496,7 +496,7 @@ describe("dados de exemplo do estoque", () => {
       .forEach((l) => expect(entradas.has(l.movimentoEstoqueId ?? ""), l.id).toBe(true));
   });
 
-  it("o saldo de nenhum produto fica negativo em momento nenhum do histórico", () => {
+  it("o saldo de nenhum produto fica negativo em momento nenhum do historico", () => {
     BANCO.produtos.forEach((p) =>
       extratoDoProduto(BANCO, p.id).forEach((linha) =>
         expect(linha.saldoApos, `${p.nome} em ${linha.movimento.data}`).toBeGreaterThanOrEqual(0),
@@ -504,7 +504,7 @@ describe("dados de exemplo do estoque", () => {
     );
   });
 
-  it("as vendas de exemplo de hoje são de manhã (nenhuma fica no futuro)", () => {
+  it("as vendas de exemplo de hoje sao de manha (nenhuma fica no futuro)", () => {
     BANCO.consumos
       .filter((c) => c.data.startsWith(HOJE))
       .forEach((c) => expect(c.data.slice(11, 13) < "12", c.data).toBe(true));
@@ -512,14 +512,14 @@ describe("dados de exemplo do estoque", () => {
 });
 
 describe("consultas do estoque e da conta", () => {
-  it("nível: esgotado, repor já (abaixo do mínimo), atenção e em dia", () => {
+  it("nivel: esgotado, repor ja (abaixo do minimo), atencao e em dia", () => {
     expect(nivelDoEstoque(0, 10)).toBe("esgotado");
     expect(nivelDoEstoque(5, 10)).toBe("critico");
     expect(nivelDoEstoque(12, 10)).toBe("atencao");
     expect(nivelDoEstoque(14, 10)).toBe("saudavel");
   });
 
-  it("situação do consumo vem do lançamento: em aberto, em atraso, pago e anulado", () => {
+  it("situacao do consumo vem do lancamento: em aberto, em atraso, pago e anulado", () => {
     const banco = gravar(BANCO, lancarConsumo, consumoDeAgua);
     const idDoConsumo = banco.consumos.at(-1)!.id;
     const situacao = (b: Banco, hoje: string) =>
@@ -542,7 +542,7 @@ describe("consultas do estoque e da conta", () => {
     expect(situacao(anulada, HOJE)).toBe("anulado");
   });
 
-  it("lista de compras começa pelo esgotado e ignora inativos; busca ignora acentos", () => {
+  it("lista de compras comeca pelo esgotado e ignora inativos; busca ignora acentos", () => {
     const produtos = produtosComSaldo(BANCO);
     expect(listaDeCompras(produtos)[0].produto.id).toBe("p12");
 
