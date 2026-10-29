@@ -150,8 +150,11 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
     em **Configurações** está travada (cadeado).
 16. Abra o menu do usuário e vá em **Histórico de alterações**. Devem aparecer
     as mudanças feitas acima, da mais recente para a mais antiga, com
-    "por Francisco Menezes". Clique em **Ver detalhes** numa delas: aparecem os
-    campos com o valor de antes e o de depois.
+    "por Francisco Menezes". Na linha "Prazo para pagar a reserva (horas) e
+    Liberar reserva vencida sozinho", clique em **Ver detalhes**: aparecem os
+    campos com o valor de antes e o de depois (24 → 48; não → sim). Nas
+    alterações de permissões e de siglas, o detalhe vem em frases ("Recepção:
+    passou a ver Histórico de alterações").
 17. No filtro **Tipo de registro**, escolha **Planos**: sobram só as
     alterações de planos.
 18. Recarregue a página do Histórico: ele volta vazio, com a explicação de que
