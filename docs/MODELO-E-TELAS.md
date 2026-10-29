@@ -1,9 +1,14 @@
-# Modelo de dados e plano das telas (rascunho v1)
+# Modelo de dados e plano das telas (v1.1)
 
-Rascunho de 29/10/2026, para revisão da equipe. Parte do MVP que já está no ar
-e diz, tela por tela, o que fica, o que muda e o que é novo, e quais dados cada
-tela vai usar. Serve de base para o trabalho no front agora e para o banco
-depois.
+Versão de 29/10/2026. O rascunho foi aprovado pela equipe e virou a base do
+trabalho no front; os pontos da seção 7 continuam abertos para ajuste. A v1.1
+acrescenta as melhorias combinadas depois do rascunho (gerar mensalidades,
+modo quadra, busca rápida, impressão da agenda) e as hipóteses H12 a H14.
+
+Parte do MVP que já está no ar e diz, tela por tela, o que fica, o que muda e
+o que é novo, e quais dados cada tela vai usar. Serve de base para o trabalho
+no front agora e para o banco depois. A seção 5 explica como isso já está
+montado no código.
 
 Como ler as marcações:
 
@@ -105,6 +110,9 @@ Torneio ── inscritos ── partidas encadeadas (o vencedor avança)
     pagamento" até ser paga (ver Hipótese H5) **[cliente]**.
   - **Panorama por professor**: a agenda filtrada por professor ganha atalho a
     partir da ficha dele **[cliente]**.
+  - **Modo quadra (tablet)**: lista das aulas do dia de uma quadra, com botões
+    grandes de presença e falta, para usar na beira da quadra **[sugestão]**.
+  - **Imprimir a agenda do dia**, para a transição do papel **[sugestão]**.
 
 ### Alunos (tela nova: lista)
 
@@ -153,6 +161,9 @@ ranking.
   - **Novo lançamento** (formulário): pessoa, quem pagou, item, valor, forma de
     pagamento, vencimento e comprovante **[cliente]**.
   - **Relatório de professores**: previsto x pago, por mês **[base] [cliente]**.
+  - **Gerar mensalidades do mês**: cria a cobrança de cada matrícula ativa
+    (botão, e depois rotina automática no banco). Sem isso não existem
+    mensalidades pendentes ou em atraso **[base]**.
 - **Sai da v1:**
   - a aba "Planejamento", com fluxo de caixa e projeções **[fora da v1]**;
   - conciliação com banco e maquininha e integração com convênio
@@ -212,6 +223,8 @@ data e tipo de registro **[cliente]**. Cada ficha também ganha uma aba
 ### Em todas as telas
 
 - Campo de comentários onde fizer sentido **[cliente]**.
+- **Busca rápida de aluno** na barra do topo, para achar a ficha durante uma
+  ligação **[sugestão]**.
 - Layout pensado para o **tablet** na quadra e para o **computador** na
   recepção, além do celular que o MVP já tem **[base]**.
 - Mensagens de erro claras e confirmação antes de ações que apagam ou cancelam
@@ -313,6 +326,9 @@ valor, sem programar.
 | H9 | Perfis | **Dono**: tudo. **Recepção**: agenda, alunos, financeiro a receber, estoque e ranking. **Professor**: a própria agenda e os próprios alunos, só leitura. |
 | H10 | Professor em duas aulas ao mesmo tempo | O sistema avisa, mas deixa salvar. Opção para bloquear. |
 | H11 | Tablet | Tablet comum de 10 polegadas, na horizontal, até saber o modelo. |
+| H12 | Até quando a agenda é criada | Horários fixos viram aulas até 12 semanas à frente, estendidas automaticamente. |
+| H13 | Prazo para pagar o consumo do balcão | 7 dias (valor de teste). |
+| H14 | Pontuação atual do ranking | Na importação, cada jogador recebe um lançamento de "pontos iniciais" com a pontuação do sistema atual. A confirmar com a arena. |
 
 **Divergência registrada (H5):** o plano de ação manda cancelar sozinho a
 reserva não paga no prazo. O pedido da arena fala em alertar e permitir que
@@ -323,24 +339,30 @@ alertar), com a opção de liberar automaticamente.
 
 ## 5. Como o front muda sem esperar o banco
 
-As telas continuam funcionando com **dados de exemplo**, mas esses dados passam
-a ter o formato novo descrito acima. É o mesmo caminho que o MVP já previa:
+As telas continuam funcionando com **dados de exemplo**, mas esses dados já
+estão no formato novo descrito acima, num "banco de exemplo" em memória com
+as mesmas tabelas do Supabase:
 
-- `src/lib/types.ts`: o formato dos dados, reescrito para o modelo novo;
-- `src/lib/mock-data.ts`: os dados de exemplo, gerados no formato novo;
-- `src/lib/selectors.ts`: única porta de leitura das telas;
-- `src/store/AppStore.tsx`: única porta de gravação.
+- `src/lib/banco/`: as tabelas (`tipos.ts`), os dados de exemplo (`semente/`),
+  as regras (`regras/`) e as gravações (`operacoes/`);
+- `src/lib/consultas/`: única porta de leitura das telas;
+- `useApp().executar` (ou `useGravar()`): única porta de gravação. Toda
+  gravação é "tudo ou nada" e registra o histórico de alterações sozinha.
 
-Quando o banco estiver pronto, só essas portas mudam: as telas não precisam
-ser refeitas. O PR #2 (ligação com o Supabase) será adaptado ao modelo novo
-nessa hora.
+As telas do MVP ainda não migradas leem uma tradução desse banco para o
+formato antigo (`src/lib/legado.ts`), que sai quando todas forem migradas.
+Detalhes técnicos em `docs/ARQUITETURA.md`.
+
+Quando o banco estiver pronto, só as consultas e as operações mudam: as telas
+não precisam ser refeitas. O PR #2 (ligação com o Supabase) será adaptado ao
+modelo novo nessa hora.
 
 ## 6. Ordem sugerida de trabalho no front
 
 A ordem segue a prioridade do plano (agenda, ficha e financeiro primeiro):
 
-1. Dados de exemplo no formato novo. A pessoa não vê diferença na tela, mas é a
-   base de tudo o que vem depois.
+1. Dados de exemplo no formato novo **(feito)**. A pessoa não vê diferença na
+   tela, mas é a base de tudo o que vem depois.
 2. **Agenda**:
    1. visão de dia no computador;
    2. painel do horário;

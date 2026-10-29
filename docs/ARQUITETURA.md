@@ -1,6 +1,52 @@
 # Arquitetura e handoff para o backend
 
-Documento para a equipe que for construir o backend em cima deste front-end.
+## Arquitetura atual (modelo novo, desde 29/10/2026)
+
+O front continua sem banco real, mas os dados de exemplo já seguem o modelo
+de `docs/MODELO-E-TELAS.md`, com as mesmas tabelas que o Supabase terá. São
+quatro peças:
+
+| Peça | Onde | Para que serve |
+| --- | --- | --- |
+| Banco de exemplo | `src/lib/banco/tipos.ts`, `src/lib/banco/semente/` | Todas as tabelas, com dados gerados (sempre os mesmos) a partir do MVP. |
+| Regras | `src/lib/banco/regras/` | O que o banco real vai impor: conflito de quadra, extrato de reposição, situação do lançamento, saldo de estoque, ranking. |
+| Operações (gravação) | `src/lib/banco/operacoes/` | Cada gravação é uma função "tudo ou nada". Se uma regra é violada, nada é gravado e a tela recebe a mensagem pronta. A auditoria é gravada sozinha. |
+| Consultas (leitura) | `src/lib/consultas/` | As telas leem o banco só por aqui, um arquivo por módulo. |
+
+Na tela:
+
+```tsx
+const { banco } = useApp();                // ler
+const gravar = useGravar();                // gravar com aviso de sucesso/erro
+const aulas = ocupacoesDoDia(banco, data); // função de src/lib/consultas/agenda.ts
+gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.");
+```
+
+Peças de tela prontas para todos os módulos: `Campo`, `MensagemDeErro` e
+`RodapeDoFormulario` (`components/ui/Formulario.tsx`), `Confirmacao`,
+`useAvisos` (`components/ui/Avisos.tsx`), `ComentariosDoRegistro` e
+`HistoricoDoRegistro` (`components/registro/`).
+
+**Transição.** As telas do MVP ainda usam o formato antigo
+(`types.ts`, `mock-data.ts`, `selectors.ts`), que agora é só uma tradução do
+banco novo feita por `src/lib/legado.ts`. Cada módulo, ao migrar as suas
+telas, deixa de usar essas peças; quando nenhuma tela usar mais, as quatro
+são apagadas. O que for gravado pelas operações novas não aparece nas telas
+ainda não migradas.
+
+**Testes.** `npm test` roda os testes das regras e confere que os dados de
+exemplo respeitam todas elas. O CI (`.github/workflows/ci.yml`) roda lint,
+testes e build em todo pull request.
+
+**Quando o Supabase entrar:** cada tabela de `tipos.ts` vira uma tabela (em
+snake_case), cada regra vira constraint, trigger ou função do Postgres, cada
+operação vira uma chamada (`insert`, `update` ou `rpc`) e as consultas passam
+a buscar do banco. As telas não mudam.
+
+---
+
+O restante deste documento descreve o MVP original e vale para as telas que
+ainda não foram migradas.
 
 ## Princípio
 

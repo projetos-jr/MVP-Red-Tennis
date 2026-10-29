@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AvisosProvider } from "@/components/ui/Avisos";
 import { AppProvider } from "@/store/AppStore";
 import "./globals.css";
 
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          <AvisosProvider>{children}</AvisosProvider>
+        </AppProvider>
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import type {
   TipoAlocacao,
   TipoMovimento,
 } from "./types";
+import type { TipoOcupacao } from "./banco/tipos";
 
 /**
  * Tokens visuais compartilhados.
@@ -69,6 +70,34 @@ export const ESTILO_TIPO: Record<TipoAlocacao, EstiloTipo> = {
     borda: "#F5D97A",
   },
 };
+
+/**
+ * Cores dos tipos de ocupacao do modelo novo: as mesmas da legenda, mais o
+ * bloqueio de quadra (neutro, para nao competir com as aulas).
+ */
+export const ESTILO_OCUPACAO: Record<TipoOcupacao, EstiloTipo> = {
+  ...ESTILO_TIPO,
+  Bloqueio: {
+    cor: "#6B6255",
+    fundo: "#F4F1EC",
+    texto: "#4F483E",
+    borda: "#D6CEC2",
+  },
+};
+
+/** Cores das siglas de falta/cancelamento, pelo codigo (CH, 24h, FP, IAC, TIP). */
+const ESTILO_SIGLA: Record<string, { cor: string; fundo: string }> = {
+  CH: { cor: "#0369A1", fundo: "#F0FAFF" },
+  "24h": { cor: "#15803D", fundo: "#F0FDF4" },
+  FP: { cor: "#A16207", fundo: "#FEFBEB" },
+  IAC: { cor: "#6D28D9", fundo: "#F7F3FF" },
+  TIP: { cor: "#C2410C", fundo: "#FFF6ED" },
+};
+
+/** Siglas novas (cadastradas nas Configuracoes) caem num estilo neutro. */
+export function estiloDaSigla(codigo: string): { cor: string; fundo: string } {
+  return ESTILO_SIGLA[codigo] ?? { cor: "#4F483E", fundo: "#F4F1EC" };
+}
 
 export const ORDEM_TIPOS: TipoAlocacao[] = [
   "Individual",
