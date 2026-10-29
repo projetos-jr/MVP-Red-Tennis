@@ -5,9 +5,19 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { HOJE } from "@/lib/banco/constantes";
+import {
+  executarOperacao,
+  type Operacao,
+  type ResultadoOperacao,
+} from "@/lib/banco/executar";
+import { BANCO_INICIAL } from "@/lib/banco/semente";
+import type { Banco, Colaborador } from "@/lib/banco/tipos";
+import { agoraArena } from "@/lib/date";
 import {
   ALUNOS,
   CONSUMOS,
@@ -37,12 +47,30 @@ import type {
  *
  * Quando houver API, este provider e o ponto natural para substituir os
  * `useState` por chamadas reais.
+ *
+ * MODELO NOVO: `banco` e o banco de exemplo completo (`src/lib/banco/`) e
+ * `executar(operacao, dados)` e a unica forma de gravar nele — cada operacao
+ * e tudo ou nada e grava a auditoria sozinha. As demais funcoes deste store
+ * sao do formato antigo e saem quando as telas de cada modulo forem migradas.
  */
 
 /** Dados que o formulario de novo horario entrega. */
 export type NovoHorario = Omit<Horario, "id" | "temConflito">;
 
 interface AppStore {
+  // --- Modelo novo ---------------------------------------------------------
+  /** Banco de exemplo com tudo o que foi gravado na sessao. */
+  banco: Banco;
+  /** Colaborador logado (perfil, cargo, professor vinculado). */
+  colaborador: Colaborador;
+  /**
+   * Executa uma operacao de `src/lib/banco/operacoes/`. Devolve
+   * `{ ok: false, erro }` com a mensagem pronta para a tela quando uma regra
+   * recusa a gravacao.
+   */
+  executar: <Dados>(operacao: Operacao<Dados>, dados: Dados) => ResultadoOperacao;
+
+  // --- Formato antigo (sai quando as telas forem migradas) -----------------
   usuario: (typeof USUARIOS)[number];
   entrar: (usuarioId: string) => void;
   sair: () => void;
@@ -117,6 +145,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const entrar = useCallback((id: string) => setUsuarioId(id), []);
   const sair = useCallback(() => setUsuarioId(USUARIOS[0].id), []);
+
+  // --- Modelo novo ----------------------------------------------------------
+  const [banco, setBanco] = useState<Banco>(BANCO_INICIAL);
+  // Referencia sempre atualizada: duas operacoes seguidas no mesmo clique
+  // enxergam o resultado uma da outra, como num banco de verdade.
+  const bancoAtual = useRef(banco);
+
+  const colaborador = useMemo(
+    () =>
+      banco.colaboradores.find((c) => c.id === usuarioId) ?? banco.colaboradores[0],
+    [banco.colaboradores, usuarioId],
+  );
+
+  const executar = useCallback(
+    <Dados,>(operacao: Operacao<Dados>, dados: Dados): ResultadoOperacao => {
+      const resultado = executarOperacao(bancoAtual.current, operacao, dados, {
+        usuario: colaborador,
+        agora: agoraArena(),
+        hoje: HOJE,
+      });
+      if (resultado.ok) {
+        bancoAtual.current = resultado.banco;
+        setBanco(resultado.banco);
+      }
+      return resultado;
+    },
+    [colaborador],
+  );
 
   // --- Agenda ---------------------------------------------------------------
   const horarios = useMemo(() => {
@@ -322,6 +378,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const valor = useMemo<AppStore>(
     () => ({
+      banco,
+      colaborador,
+      executar,
       usuario,
       entrar,
       sair,
@@ -340,6 +399,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       registrarPerda,
     }),
     [
+      banco,
+      colaborador,
+      executar,
       usuario,
       entrar,
       sair,

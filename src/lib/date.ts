@@ -56,6 +56,22 @@ export function hojeISO(): string {
   }).format(new Date());
 }
 
+/** Data e hora atuais na arena, no formato YYYY-MM-DDTHH:mm:ss. */
+export function agoraArena(): string {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE_ARENA,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const valor = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "00";
+  return `${valor("year")}-${valor("month")}-${valor("day")}T${valor("hour")}:${valor("minute")}:${valor("second")}`;
+}
+
 /** Converte "YYYY-MM-DD" em Date ancorado ao meio-dia UTC (imune a DST). */
 export function paraData(iso: string): Date {
   const [ano, mes, dia] = iso.slice(0, 10).split("-").map(Number);
@@ -72,9 +88,19 @@ export function somarDias(iso: string, dias: number): string {
   return paraISO(d);
 }
 
+/**
+ * Soma meses mantendo o dia; quando o dia nao existe no mes de destino, cai
+ * no ultimo dia dele (31/01 + 1 mes = 28/02, e nao 03/03).
+ */
 export function somarMeses(iso: string, meses: number): string {
   const d = paraData(iso);
+  const dia = d.getUTCDate();
+  d.setUTCDate(1);
   d.setUTCMonth(d.getUTCMonth() + meses);
+  const ultimoDia = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 12),
+  ).getUTCDate();
+  d.setUTCDate(Math.min(dia, ultimoDia));
   return paraISO(d);
 }
 
@@ -108,6 +134,12 @@ export function formatarDiaMes(iso: string): string {
 export function formatarData(iso: string): string {
   const d = paraData(iso);
   return `${formatarDiaMes(iso)}/${d.getUTCFullYear()}`;
+}
+
+/** "2026-09-10T14:32:05" -> "10/09/2026 · 14:32" */
+export function formatarDataHora(carimbo: string): string {
+  const [data, hora] = carimbo.split("T");
+  return `${formatarData(data)}${hora ? ` · ${hora.slice(0, 5)}` : ""}`;
 }
 
 /** "12 de setembro de 2026" */
