@@ -8,6 +8,16 @@
  */
 
 import { describe, expect, it } from "vitest";
+import {
+  FILTRO_INICIAL,
+  checarHorario,
+  montarAgenda,
+  previaDaChuva,
+  previaDoBloqueio,
+  professorPelaUrl,
+  reservasAguardandoPagamento,
+  resumirAgenda,
+} from "../../consultas/agenda";
 import { HOJE } from "../constantes";
 import { executarOperacao, type ContextoOperacao, type Operacao } from "../executar";
 import {
@@ -923,5 +933,166 @@ describe("reservas sem pagamento (H5)", () => {
     expect(buscar(liberado, reserva.id).situacao).toBe("cancelada");
     const deNovo = executarOperacao(liberado, liberarReservasVencidas, {}, depoisDoPrazo);
     expect(deNovo.ok && deNovo.banco).toBe(liberado);
+  });
+});
+
+describe("consultas da agenda (leitura das telas)", () => {
+  // Quinta 12/11: uma Dupla na Quadra 2 as 10:00, uma Individual na Quadra 1 as 10:00
+  // (cancelada por FP), uma locacao avulsa as 15:00 e um bloqueio na Quadra 4.
+  let banco = VAZIO;
+  const criar = (parcial: Partial<DadosHorarioAvulso>) => {
+    const resultado = comAula(banco, parcial);
+    banco = resultado.banco;
+    return resultado.ocupacao;
+  };
+  const dupla = criar({
+    quadraId: "2",
+    tipo: "Dupla",
+    professorId: "prof-3",
+    alunosIds: ["a03", "a13"],
+  });
+  const individual = criar({ quadraId: "1" });
+  const locacao = criar({
+    quadraId: "3",
+    horaInicio: "15:00",
+    horaFim: "16:00",
+    tipo: "Locação Avulsa",
+    alunosIds: ["a20"],
+  });
+  banco = rodar(banco, cancelarOcupacao, { id: individual.id, motivo: "FP" });
+  banco = rodar(banco, bloquearQuadra, {
+    quadrasIds: ["4"],
+    data: "2026-11-12",
+    horaInicio: "07:00",
+    horaFim: "09:00",
+    descricao: "Manutenção",
+  });
+  const datas = ["2026-11-11", "2026-11-12"];
+  const agora = "2026-11-10T09:00:00";
+
+  it("agrupa por data (todas as datas pedidas aparecem) e ordena por horario e quadra", () => {
+    const porData = montarAgenda(banco, datas, FILTRO_INICIAL, agora);
+    expect(porData.get("2026-11-11")).toEqual([]);
+    expect(
+      porData.get("2026-11-12")?.map((i) => [i.ocupacao.horaInicio, i.ocupacao.quadraId]),
+    ).toEqual([
+      ["07:00", "4"],
+      ["10:00", "1"],
+      ["10:00", "2"],
+      ["15:00", "3"],
+    ]);
+    const item = porData.get("2026-11-12")?.find((i) => i.ocupacao.id === dupla.id);
+    expect(item?.participantes.map((p) => p.nome)).toEqual(["Larissa Preto", "Samuel"]);
+    expect(item?.professor?.nome).toBe("Márcio Bueno");
+  });
+
+  it("filtra por quadra, professor e tipo, e esconde as canceladas quando pedido", () => {
+    const porQuadra = montarAgenda(banco, datas, { ...FILTRO_INICIAL, quadraId: "2" }, agora);
+    expect(porQuadra.get("2026-11-12")?.map((i) => i.ocupacao.id)).toEqual([dupla.id]);
+    const porProfessor = montarAgenda(
+      banco,
+      datas,
+      { ...FILTRO_INICIAL, professorId: "prof-1" },
+      agora,
+    );
+    expect(porProfessor.get("2026-11-12")?.map((i) => i.ocupacao.id)).toEqual([individual.id]);
+    const semCanceladas = montarAgenda(
+      banco,
+      datas,
+      { ...FILTRO_INICIAL, mostrarCanceladas: false },
+      agora,
+    );
+    expect(semCanceladas.get("2026-11-12")).toHaveLength(3);
+    const porTipo = montarAgenda(banco, datas, { ...FILTRO_INICIAL, tipo: "Bloqueio" }, agora);
+    expect(porTipo.get("2026-11-12")?.[0].ocupacao.descricao).toBe("Manutenção");
+  });
+
+  it("o resumo conta ativas, alunos, canceladas, bloqueios e reservas aguardando pagamento", () => {
+    const porData = montarAgenda(banco, datas, FILTRO_INICIAL, agora);
+    expect(resumirAgenda(porData, datas, 5)).toEqual({
+      ativas: 2,
+      alunos: 3,
+      canceladas: 1,
+      bloqueios: 1,
+      aguardandoPagamento: 1,
+      vencidas: 0,
+      minutosOcupados: 60 + 60 + 120,
+      minutosDisponiveis: 2 * 5 * 15 * 60,
+    });
+  });
+
+  it("estado da reserva: aguardando, vencida pelo relogio e paga quando o financeiro registra", () => {
+    const estado = (b: Banco, quando: string) =>
+      montarAgenda(b, ["2026-11-12"], FILTRO_INICIAL, quando)
+        .get("2026-11-12")
+        ?.find((i) => i.ocupacao.id === locacao.id)?.estadoReserva;
+    expect(estado(banco, agora)).toBe("aguardando");
+    expect(estado(banco, "2026-11-11T10:00:00")).toBe("vencida");
+    expect(reservasAguardandoPagamento(banco, "2026-11-11T10:00:00")[0]).toMatchObject({
+      vencida: true,
+      titular: "Lucas Freitas",
+    });
+    // O que o modulo financeiro faz ao registrar o pagamento (convencao entre modulos).
+    const pago = congelar({
+      ...banco,
+      ocupacoes: banco.ocupacoes.map((o) =>
+        o.id === locacao.id ? { ...o, situacao: "agendada" as const } : o,
+      ),
+      lancamentos: banco.lancamentos.map((l) =>
+        l.ocupacaoId === locacao.id ? { ...l, pagoEm: "2026-11-10" } : l,
+      ),
+    });
+    expect(estado(pago, "2026-11-11T10:00:00")).toBe("paga");
+  });
+
+  it("as previas de bloqueio e chuva listam as aulas e os minutos de cada aluno", () => {
+    const bloqueio = previaDoBloqueio(
+      banco,
+      { quadrasIds: ["2", "3"], data: "2026-11-12", horaInicio: "09:00", horaFim: "16:00" },
+      agora,
+    );
+    expect(bloqueio.aulas.map((a) => a.item.ocupacao.id)).toEqual([dupla.id, locacao.id]);
+    expect(bloqueio.minutos).toBe(120);
+    expect(bloqueio.alunos).toBe(3);
+    const chuva = previaDaChuva(banco, { data: "2026-11-12", quadrasIds: ["4"] }, agora);
+    expect(chuva.aulas).toEqual([]);
+    expect(chuva.bloqueiosExistentes).toHaveLength(1);
+  });
+
+  it("a checagem do formulario usa a mesma mensagem da regra", () => {
+    const checagem = checarHorario(banco, {
+      quadraId: "2",
+      data: "2026-11-12",
+      horaInicio: "10:30",
+      horaFim: "11:30",
+      professorId: "prof-3",
+    });
+    expect(checagem.conflitoNaQuadra).toBe(
+      "Quadra 2 já está ocupada em 12/11 das 10:00 às 11:00 (Dupla · Larissa Preto e Samuel).",
+    );
+    expect(checagem.professorOcupado).toMatch(/^Márcio Bueno já tem aula das 10:00 às 11:00/);
+  });
+
+  it("professor pela URL aceita o id e, por compatibilidade com o MVP, o nome", () => {
+    expect(professorPelaUrl(banco, "prof-2")).toBe("prof-2");
+    expect(professorPelaUrl(banco, "Renata Coelho")).toBe("prof-2");
+    expect(professorPelaUrl(banco, "marcio bueno")).toBe("prof-3");
+    expect(professorPelaUrl(banco, "Ninguém")).toBeUndefined();
+  });
+});
+
+describe("dados de exemplo da agenda", () => {
+  it("toda reserva aguardando pagamento tem prazo antes do inicio e cobranca a receber", () => {
+    const aguardando = SEMENTE.ocupacoes.filter((o) => o.situacao === "aguardando_pagamento");
+    expect(aguardando.length).toBeGreaterThan(0);
+    aguardando.forEach((o) => {
+      expect(o.prazoPagamento! <= `${o.data}T${o.horaInicio}:00`).toBe(true);
+      expect(o.criadoEm < o.prazoPagamento!).toBe(true);
+      expect(
+        SEMENTE.lancamentos.some(
+          (l) => l.ocupacaoId === o.id && !l.pagoEm && l.categoria === "Locação",
+        ),
+      ).toBe(true);
+    });
   });
 });
