@@ -1,14 +1,12 @@
 import type {
   CategoriaProduto,
   CategoriaRanking,
-  FormaPagamento,
-  MotivoFalta,
-  Quadra,
-  StatusAula,
-  TipoAlocacao,
   TipoMovimento,
-} from "./types";
-import type { TipoOcupacao } from "./banco/tipos";
+  TipoOcupacao,
+} from "./banco/tipos";
+
+/** Formas de pagamento com cor propria; formas novas (Configuracoes) ficam neutras. */
+type FormaPagamentoConhecida = "Stone" | "Bradesco" | "Total Pass" | "Dinheiro";
 
 /**
  * Tokens visuais compartilhados.
@@ -26,7 +24,7 @@ export interface EstiloTipo {
   borda: string;
 }
 
-export const ESTILO_TIPO: Record<TipoAlocacao, EstiloTipo> = {
+export const ESTILO_TIPO: Record<Exclude<TipoOcupacao, "Bloqueio">, EstiloTipo> = {
   Individual: {
     cor: "#DC2626",
     fundo: "#FEF2F2",
@@ -99,70 +97,6 @@ export function estiloDaSigla(codigo: string): { cor: string; fundo: string } {
   return ESTILO_SIGLA[codigo] ?? { cor: "#4F483E", fundo: "#F4F1EC" };
 }
 
-export const ORDEM_TIPOS: TipoAlocacao[] = [
-  "Individual",
-  "Locação Mensal",
-  "Dupla",
-  "LAP",
-  "Locação Avulsa",
-  "Ranking",
-  "Plano de locação",
-];
-
-/** Rotulos e descricoes das siglas de falta usadas pela arena. */
-export const MOTIVO_FALTA: Record<
-  MotivoFalta,
-  { sigla: string; label: string; descricao: string; cor: string; fundo: string }
-> = {
-  CH: {
-    sigla: "CH",
-    label: "Chuva",
-    descricao: "Aula cancelada por chuva — gera crédito de reposição.",
-    cor: "#0369A1",
-    fundo: "#F0FAFF",
-  },
-  aviso_24h: {
-    sigla: "24h",
-    label: "Aviso prévio 24h",
-    descricao:
-      "Aluno avisou com no mínimo 24h de antecedência — gera crédito de reposição.",
-    cor: "#15803D",
-    fundo: "#F0FDF4",
-  },
-  falta_professor: {
-    sigla: "FP",
-    label: "Falta do professor",
-    descricao: "Ausência do professor — gera crédito integral de reposição.",
-    cor: "#A16207",
-    fundo: "#FEFBEB",
-  },
-  IAC: {
-    sigla: "IAC",
-    label: "Interesse Academia",
-    descricao:
-      "Remanejamento por interesse da academia (evento, manutenção, torneio).",
-    cor: "#6D28D9",
-    fundo: "#F7F3FF",
-  },
-  TIP: {
-    sigla: "TIP",
-    label: "Transferência / Interesse Professor",
-    descricao:
-      "Troca de horário solicitada pelo professor — gera crédito de reposição.",
-    cor: "#C2410C",
-    fundo: "#FFF6ED",
-  },
-};
-
-export const ESTILO_STATUS_AULA: Record<
-  StatusAula,
-  { label: string; cor: string; fundo: string }
-> = {
-  realizada: { label: "Realizada", cor: "#15803D", fundo: "#F0FDF4" },
-  falta: { label: "Falta", cor: "#991B1B", fundo: "#FEF2F2" },
-  reagendada: { label: "Reagendada", cor: "#A16207", fundo: "#FEFBEB" },
-};
-
 /**
  * Formas de pagamento.
  *
@@ -173,7 +107,7 @@ export const ESTILO_STATUS_AULA: Record<
  * (separacao CVD ≥ 8 em todos os pares) sobre fundo claro.
  */
 export const ESTILO_FORMA_PAGAMENTO: Record<
-  FormaPagamento,
+  FormaPagamentoConhecida,
   {
     label: string;
     detalhe: string;
@@ -211,10 +145,6 @@ export const ESTILO_FORMA_PAGAMENTO: Record<
     corGrafico: "#4A3AA7",
   },
 };
-
-/** Cores do fluxo de caixa: um mesmo matiz em dois passos (recebido x previsto). */
-export const COR_RECEBIDO = "#B95A28";
-export const COR_PREVISTO = "#EAAD82";
 
 export const ESTILO_CATEGORIA: Record<
   CategoriaRanking,
@@ -263,14 +193,6 @@ export const CORES_AVATAR = [
   "#C43F2F",
   "#6B6255",
 ];
-
-export function rotuloQuadra(quadra: Quadra): string {
-  return quadra === "paredao" ? "Paredão" : `Quadra ${quadra}`;
-}
-
-export function rotuloQuadraCurto(quadra: Quadra): string {
-  return quadra === "paredao" ? "PAR" : `Q${quadra}`;
-}
 
 export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", {
