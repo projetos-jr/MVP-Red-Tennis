@@ -22,8 +22,7 @@ export interface LinhaRanking {
   partidas: number;
 }
 
-/** A partida entra na conta do ranking? (Com resultado, simples, e torneio so se a configuracao mandar.) */
-export function contaParaRanking(banco: Banco, partida: Partida, ate?: string): boolean {
+function contaParaRanking(banco: Banco, partida: Partida, ate?: string): boolean {
   if (!partida.vencedor) return false;
   if (partida.ladoA.length !== 1 || partida.ladoB.length !== 1) return false;
   if (partida.torneioId && !banco.configuracoes.torneioContaParaRanking) return false;
