@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   consumosDaPessoa,
+  extratoDoProduto,
   filtrarProdutos,
   listaDeCompras,
   nivelDoEstoque,
@@ -18,7 +19,7 @@ import {
 import { somarDias } from "../../date";
 import { HOJE } from "../constantes";
 import { executarOperacao, type ContextoOperacao, type Operacao } from "../executar";
-import { saldoDoProduto, vendaAbaixoDoCusto } from "../regras/estoque";
+import { nomeNormalizado, saldoDoProduto, vendaAbaixoDoCusto } from "../regras/estoque";
 import { gerarBancoInicial } from "../semente";
 import type { Banco, Colaborador } from "../tipos";
 import {
@@ -476,6 +477,37 @@ describe("fechar conta de consumo", () => {
     expect(recusa(banco, fecharContaDeConsumo, { ...dados, formaPagamento: "Cheque" })).toBe(
       "Escolha a forma de pagamento.",
     );
+  });
+});
+
+describe("dados de exemplo do estoque", () => {
+  it("respeitam as mesmas regras das operações", () => {
+    BANCO.movimentosEstoque.forEach((m) => {
+      expect(m.quantidade, `movimento ${m.id}`).not.toBe(0);
+      if (m.tipo !== "ajuste") expect(m.quantidade, `movimento ${m.id}`).toBeGreaterThan(0);
+    });
+    const nomes = BANCO.produtos.map((p) => nomeNormalizado(p.nome));
+    expect(new Set(nomes).size).toBe(nomes.length);
+    const entradas = new Set(
+      BANCO.movimentosEstoque.filter((m) => m.tipo === "entrada").map((m) => m.id),
+    );
+    BANCO.lancamentos
+      .filter((l) => l.categoria === "Fornecedor")
+      .forEach((l) => expect(entradas.has(l.movimentoEstoqueId ?? ""), l.id).toBe(true));
+  });
+
+  it("o saldo de nenhum produto fica negativo em momento nenhum do histórico", () => {
+    BANCO.produtos.forEach((p) =>
+      extratoDoProduto(BANCO, p.id).forEach((linha) =>
+        expect(linha.saldoApos, `${p.nome} em ${linha.movimento.data}`).toBeGreaterThanOrEqual(0),
+      ),
+    );
+  });
+
+  it("as vendas de exemplo de hoje são de manhã (nenhuma fica no futuro)", () => {
+    BANCO.consumos
+      .filter((c) => c.data.startsWith(HOJE))
+      .forEach((c) => expect(c.data.slice(11, 13) < "12", c.data).toBe(true));
   });
 });
 

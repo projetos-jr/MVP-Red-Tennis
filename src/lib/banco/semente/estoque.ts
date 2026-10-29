@@ -185,33 +185,38 @@ export function gerarEstoque(): EstoqueGerado {
   const inicioDoInventario = somarDias(HOJE, -31);
   PRODUTOS_DO_MVP.forEach((produto, indice) => {
     const rngProduto = criarRng(8800 + indice * 13);
-    const saidas = movimentos
-      .filter((m) => m.produtoId === produto.id)
-      .reduce((soma, m) => soma + m.quantidade, 0);
+    const saidasDoProduto = movimentos.filter((m) => m.produtoId === produto.id);
+    const somar = (lista: MovimentoEstoque[]) => lista.reduce((soma, m) => soma + m.quantidade, 0);
 
-    let entrada = rngProduto() < 0.45 ? inteiro(rngProduto, 12, 60) : 0;
-    let inventario = produto.saldoHoje + saidas - entrada;
-    if (inventario < 0) {
-      entrada += inventario;
-      inventario = 0;
+    const sorteada = rngProduto() < 0.45 ? inteiro(rngProduto, 12, 60) : 0;
+    const dia = somarDias(HOJE, -inteiro(rngProduto, 1, 26));
+    const dataDaEntrada = `${dia}T${doisDigitos(inteiro(rngProduto, 8, 17))}:${escolher(rngProduto, ["10", "25", "40"])}:00`;
+
+    // O estoque nunca fica negativo, nem no meio do historico: antes da entrada,
+    // o inventario precisa cobrir tudo o que saiu. Por isso a entrada nao passa
+    // do saldo de hoje mais o que saiu depois dela.
+    const saidasDepois = somar(saidasDoProduto.filter((m) => m.data > dataDaEntrada));
+    const entrada = Math.min(sorteada, produto.saldoHoje + saidasDepois);
+    const inventario = produto.saldoHoje + somar(saidasDoProduto) - entrada;
+
+    // Contagem zerada nao vira movimento (a regra do ajuste tambem a recusaria).
+    if (inventario > 0) {
+      movimentos.push({
+        id: `mv-inv-${produto.id}`,
+        produtoId: produto.id,
+        data: `${inicioDoInventario}T08:00:00`,
+        tipo: "ajuste",
+        quantidade: inventario,
+        responsavel: "Francisco Menezes",
+        observacao: "Inventário inicial (contagem)",
+      });
     }
 
-    movimentos.push({
-      id: `mv-inv-${produto.id}`,
-      produtoId: produto.id,
-      data: `${inicioDoInventario}T08:00:00`,
-      tipo: "ajuste",
-      quantidade: inventario,
-      responsavel: "Francisco Menezes",
-      observacao: "Inventário inicial (contagem)",
-    });
-
     if (entrada > 0) {
-      const dia = somarDias(HOJE, -inteiro(rngProduto, 1, 26));
       const movimento: MovimentoEstoque = {
         id: `mv-ent-${produto.id}`,
         produtoId: produto.id,
-        data: `${dia}T${doisDigitos(inteiro(rngProduto, 8, 17))}:${escolher(rngProduto, ["10", "25", "40"])}:00`,
+        data: dataDaEntrada,
         tipo: "entrada",
         quantidade: entrada,
         responsavel: RESPONSAVEIS[indice % 2],
