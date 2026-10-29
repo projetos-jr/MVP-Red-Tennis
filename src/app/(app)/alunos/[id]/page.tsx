@@ -2,231 +2,150 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { CabecalhoAluno } from "@/components/aluno/CabecalhoAluno";
-import { Comentarios } from "@/components/aluno/Comentarios";
+import { CartaoCongelamento } from "@/components/aluno/CartaoCongelamento";
+import { CartaoMatricula } from "@/components/aluno/CartaoMatricula";
+import { ExtratoReposicao } from "@/components/aluno/ExtratoReposicao";
+import { FormularioAluno } from "@/components/aluno/FormularioAluno";
+import { HistoricoAlteracoes } from "@/components/aluno/HistoricoAlteracoes";
 import { HistoricoAulas } from "@/components/aluno/HistoricoAulas";
 import { HistoricoPagamentos } from "@/components/aluno/HistoricoPagamentos";
+import { HorariosFixos } from "@/components/aluno/HorariosFixos";
+import { IndicadoresAluno } from "@/components/aluno/IndicadoresAluno";
+import { ConfirmarReativacaoDoCadastro, ModalInativar } from "@/components/aluno/ModaisCadastro";
+import { ModalCongelar, ModalReativar } from "@/components/aluno/ModaisCongelamento";
 import { FichaConsumo } from "@/components/consumo/FichaConsumo";
-import { Card, CardHeader } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { StatCard } from "@/components/ui/StatCard";
+import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
+import { Card } from "@/components/ui/Card";
+import { HOJE } from "@/lib/banco/constantes";
 import {
-  IconeAgenda,
-  IconeAlerta,
-  IconeCheck,
-  IconeRelogio,
-  IconeTrofeu,
-} from "@/components/ui/Icons";
-import { DIAS_SEMANA_CURTO, formatarData } from "@/lib/date";
-import { horariosDoAluno, resumoAluno } from "@/lib/selectors";
-import {
-  ESTILO_TIPO,
-  formatarMinutos,
-  formatarMoeda,
-  rotuloQuadra,
-} from "@/lib/theme";
+  aulasDoAluno,
+  congelamentosDoAluno,
+  extratoDoAluno,
+  historicoDeAulas,
+  horariosFixosDoAluno,
+  indicadoresDoAluno,
+  matriculasDoAluno,
+  pagamentosDoAluno,
+  podeAlterarCadastros,
+  proximasAulas,
+  resumoDoAluno,
+} from "@/lib/consultas/alunos";
 import { useApp } from "@/store/AppStore";
 
+type ModalDaFicha = "editar" | "congelar" | "reativar" | "inativar" | "reativar-cadastro";
+
+/**
+ * Ficha do aluno: cadastro, matricula, extrato de reposicao, congelamento,
+ * historico de aulas e pagamentos, consumo, comentarios e historico de
+ * alteracoes. Le tudo por `consultas/alunos.ts` e grava pelas operacoes de
+ * `operacoes/alunos.ts`.
+ */
 export default function PaginaFichaAluno() {
-  const parametros = useParams<{ id: string }>();
-  const {
-    horarios,
-    obterAluno,
-    adicionarComentario,
-    alternarCongelamento,
-  } = useApp();
+  const { id } = useParams<{ id: string }>();
+  const { banco, colaborador } = useApp();
+  const [modal, setModal] = useState<ModalDaFicha | null>(null);
+  const fechar = () => setModal(null);
 
-  const aluno = obterAluno(parametros.id);
+  const ficha = useMemo(() => {
+    const resumo = resumoDoAluno(banco, id, HOJE);
+    if (!resumo) return undefined;
+    const aulas = aulasDoAluno(banco, id);
+    const historico = historicoDeAulas(aulas, HOJE);
+    const pagamentos = pagamentosDoAluno(banco, id, HOJE);
+    return {
+      resumo,
+      historico,
+      proximas: proximasAulas(aulas, HOJE),
+      pagamentos,
+      indicadores: indicadoresDoAluno(banco, id, historico, pagamentos),
+      extrato: extratoDoAluno(banco, id, HOJE),
+      matriculas: matriculasDoAluno(banco, id, HOJE),
+      congelamentos: congelamentosDoAluno(banco, id, HOJE),
+      horarios: horariosFixosDoAluno(banco, id, HOJE),
+    };
+  }, [banco, id]);
 
-  if (!aluno) {
+  if (!ficha) {
     return (
       <Card className="p-10 text-center">
         <p className="text-sm text-areia-600">Aluno não encontrado.</p>
-        <Link href="/agenda" className="btn-secundario mt-4">
-          Voltar para a agenda
+        <Link href="/alunos" className="btn-secundario mt-4">
+          Voltar para a lista de alunos
         </Link>
       </Card>
     );
   }
 
-  const resumo = resumoAluno(aluno, horarios);
-  const fixos = horariosDoAluno(aluno.id, horarios);
+  const { resumo } = ficha;
+  const { aluno } = resumo;
+  // Hipotese H9: o perfil de professor so consulta.
+  const podeEditar = podeAlterarCadastros(colaborador);
+  const congelamentoAberto = resumo.congelamento ?? resumo.congelamentoAgendado;
 
   return (
     <div className="space-y-6">
       <CabecalhoAluno
-        aluno={aluno}
-        aoAlternarCongelamento={() => alternarCongelamento(aluno.id)}
+        resumo={resumo}
+        hoje={HOJE}
+        podeEditar={podeEditar}
+        aoEditar={() => setModal("editar")}
+        aoCongelar={() => setModal("congelar")}
+        aoReativarPlano={() => setModal("reativar")}
+        aoInativar={() => setModal("inativar")}
+        aoReativarCadastro={() => setModal("reativar-cadastro")}
       />
+      {!podeEditar && (
+        <p className="rounded-xl bg-areia-200/60 px-4 py-2.5 text-sm text-areia-700">
+          Perfil de professor: a ficha é só para consulta (Hipótese H9).
+        </p>
+      )}
 
-      {/* Indicadores do aluno */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard
-          rotulo="Aulas realizadas"
-          rotuloCurto="Aulas"
-          valor={String(resumo.aulasRealizadas)}
-          detalhe={`${Math.round(resumo.frequencia * 100)}% de frequência no período`}
-          icone={<IconeCheck className="h-5 w-5" />}
-          tom="positivo"
-        />
-        <StatCard
-          rotulo="Faltas e reagendamentos"
-          rotuloCurto="Faltas"
-          valor={`${resumo.faltas} / ${resumo.reagendadas}`}
-          detalhe="Faltas / aulas reagendadas"
-          icone={<IconeAlerta className="h-5 w-5" />}
-        />
-        <StatCard
-          rotulo="Total pago"
-          rotuloCurto="Pago"
-          valor={formatarMoeda(resumo.totalPago)}
-          detalhe={
-            resumo.emAberto > 0
-              ? `${formatarMoeda(resumo.emAberto)} em aberto`
-              : "Nenhuma pendência"
-          }
-          icone={<IconeCheck className="h-5 w-5" />}
-          tom={resumo.emAberto > 0 ? "alerta" : "neutro"}
-        />
-        <StatCard
-          rotulo="Pontuação no ranking"
-          rotuloCurto="Pontos"
-          valor={String(aluno.rankingPontuacao)}
-          detalhe={`Categoria ${aluno.categoriaRanking} · ${
-            aluno.variacaoRanking > 0
-              ? `subiu ${aluno.variacaoRanking}`
-              : aluno.variacaoRanking < 0
-                ? `caiu ${Math.abs(aluno.variacaoRanking)}`
-                : "estável"
-          }`}
-          icone={<IconeTrofeu className="h-5 w-5" />}
-          tom="saibro"
-        />
-      </div>
+      <IndicadoresAluno indicadores={ficha.indicadores} />
 
       <div className="grid items-start gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <HistoricoAulas aulas={aluno.historicoAulas} />
-          <HistoricoPagamentos pagamentos={aluno.historicoPagamentos} />
+          <CartaoMatricula resumo={resumo} matriculas={ficha.matriculas} podeEditar={podeEditar} />
+          <HistoricoAulas aulas={ficha.historico} siglas={banco.configuracoes.siglas} />
+          <HistoricoPagamentos pagamentos={ficha.pagamentos} />
+          <HistoricoAlteracoes alunoId={aluno.id} />
         </div>
 
         <div className="min-w-0 space-y-6">
-          {/* Saldo de reposicao */}
-          <Card>
-            <CardHeader
-              titulo="Reposição"
-              descricao="Crédito contabilizado em minutos, com validade de 3 meses."
-              icone={<IconeRelogio className="h-5 w-5" />}
-            />
-            <div className="space-y-3 p-5">
-              <div className="rounded-xl border border-saibro-200 bg-saibro-50/70 p-4 text-center">
-                <p className="text-xs font-medium uppercase tracking-wide text-saibro-700">
-                  Saldo disponível
-                </p>
-                <p className="mt-1 text-3xl font-bold text-saibro-800">
-                  {formatarMinutos(aluno.saldoMinutosReposicao)}
-                </p>
-                <p className="mt-1 text-xs text-saibro-700/80">
-                  {aluno.saldoMinutosReposicao} minutos acumulados
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 text-sm">
-                <span className="text-areia-600">Direito a reagendamento</span>
-                {resumo.temDireitoReagendamento ? (
-                  <Badge cor="#15803D" fundo="#F0FDF4">
-                    <IconeCheck className="h-3.5 w-3.5" />
-                    Liberado
-                  </Badge>
-                ) : (
-                  <Badge cor="#6B6255" fundo="#F4F1EC">
-                    Sem saldo
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-2 text-sm">
-                <span className="text-areia-600">Validade do saldo</span>
-                <span className="font-medium text-areia-800">
-                  {formatarData(aluno.validadeReposicao)}
-                </span>
-              </div>
-
-              {resumo.temDireitoReagendamento && (
-                <p
-                  className={`rounded-lg px-3 py-2 text-xs ${
-                    resumo.diasParaVencerSaldo <= 30
-                      ? "bg-tijolo-50 text-tijolo-700"
-                      : "bg-areia-100 text-areia-600"
-                  }`}
-                >
-                  {resumo.diasParaVencerSaldo <= 30
-                    ? `Atenção: o saldo vence em ${resumo.diasParaVencerSaldo} dias.`
-                    : `Vence em ${resumo.diasParaVencerSaldo} dias.`}
-                </p>
-              )}
-            </div>
-          </Card>
-
-          {/* Horarios fixos na grade */}
-          <Card>
-            <CardHeader
-              titulo="Horários fixos"
-              descricao="Presença do aluno na grade semanal."
-              icone={<IconeAgenda className="h-5 w-5" />}
-            />
-            <ul className="divide-y divide-areia-100">
-              {fixos.map((horario) => {
-                const estilo = ESTILO_TIPO[horario.tipo];
-                return (
-                  <li key={horario.id} className="flex items-center gap-3 px-5 py-3">
-                    <span
-                      className="h-8 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: estilo.cor }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-areia-900">
-                        {DIAS_SEMANA_CURTO[horario.diaSemana]} ·{" "}
-                        {horario.horaInicio}–{horario.horaFim}
-                      </p>
-                      <p className="truncate text-xs text-areia-500">
-                        {rotuloQuadra(horario.quadra)} · {horario.professor}
-                      </p>
-                    </div>
-                    <Badge
-                      cor={estilo.texto}
-                      fundo={estilo.fundo}
-                      borda={estilo.borda}
-                      className="shrink-0 text-[11px]"
-                    >
-                      {horario.tipo}
-                    </Badge>
-                  </li>
-                );
-              })}
-
-              {fixos.length === 0 && (
-                <li className="px-5 py-6 text-center text-sm text-areia-500">
-                  {aluno.planoCongelado
-                    ? "Plano congelado — sem horários na grade atual."
-                    : "Nenhum horário fixo na grade."}
-                </li>
-              )}
-            </ul>
-          </Card>
-
-          <FichaConsumo
-            pessoaId={aluno.id}
-            tipoPessoa="aluno"
-            nomePessoa={aluno.nome}
+          <ExtratoReposicao
+            extrato={ficha.extrato}
+            siglas={banco.configuracoes.siglas}
+            validadeMeses={banco.configuracoes.validadeReposicaoMeses}
+            hoje={HOJE}
           />
-
-          <Comentarios
-            comentarios={aluno.comentarios}
-            aoAdicionar={(texto) => adicionarComentario(aluno.id, texto)}
+          <CartaoCongelamento
+            resumo={resumo}
+            congelamentos={ficha.congelamentos}
+            hoje={HOJE}
+            podeEditar={podeEditar}
+            aoCongelar={() => setModal("congelar")}
+            aoReativar={() => setModal("reativar")}
+          />
+          <HorariosFixos horarios={ficha.horarios} proximas={ficha.proximas} />
+          <FichaConsumo pessoaId={aluno.id} tipoPessoa="aluno" nomePessoa={aluno.nome} />
+          <ComentariosDoRegistro
+            entidade="aluno"
+            entidadeId={aluno.id}
+            descricao="Notas internas sobre o aluno, com autor e data."
           />
         </div>
       </div>
+
+      {modal === "editar" && <FormularioAluno aberto aoFechar={fechar} aluno={aluno} />}
+      {modal === "congelar" && <ModalCongelar aberto aoFechar={fechar} aluno={aluno} />}
+      {modal === "reativar" && congelamentoAberto && (
+        <ModalReativar aberto aoFechar={fechar} congelamento={congelamentoAberto} />
+      )}
+      {modal === "inativar" && <ModalInativar aberto aoFechar={fechar} aluno={aluno} />}
+      {modal === "reativar-cadastro" && (
+        <ConfirmarReativacaoDoCadastro aberto aoFechar={fechar} aluno={aluno} />
+      )}
     </div>
   );
 }
