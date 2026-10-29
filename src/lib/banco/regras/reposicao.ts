@@ -165,3 +165,85 @@ export function garantirSaldoSuficiente(
     );
   }
 }
+
+/**
+ * Minutos ja usados que nenhum credito cobre. Deve ser sempre 0: e o que
+ * garante que o saldo nunca fica negativo quando um credito e retirado
+ * (ex.: falta avisada desfeita depois de o credito ter sido usado).
+ */
+export function minutosSemCobertura(reposicoes: LancamentoReposicao[], alunoId: string): number {
+  // A data de "hoje" so marca vencidos; o consumo dos creditos nao depende dela.
+  const extrato = extratoReposicao(reposicoes, alunoId, "0000-01-01");
+  const usado = extrato.lancamentos
+    .filter((r) => r.minutos < 0)
+    .reduce((soma, r) => soma - r.minutos, 0);
+  const consumido = extrato.creditos.reduce(
+    (soma, c) => soma + (c.credito.minutos - c.restante),
+    0,
+  );
+  return usado - consumido;
+}
+
+/** Recusa a operacao se algum uso dos alunos ficar sem credito que o cubra. */
+export function garantirExtratoCoerente(
+  reposicoes: LancamentoReposicao[],
+  alunosIds: string[],
+  mensagem: string,
+): void {
+  if (alunosIds.some((alunoId) => minutosSemCobertura(reposicoes, alunoId) > 0)) {
+    throw new ErroDeRegra(mensagem);
+  }
+}
+
+export interface EfeitoNoAluno {
+  alunoId: string;
+  /** Minutos de credito que o aluno ganha com o cancelamento (0 = nenhum). */
+  minutos: number;
+  /** O aluno ja tinha recebido credito desta aula (falta avisada) e nao ganha de novo. */
+  jaTinhaCredito: boolean;
+}
+
+export interface EfeitoDoCancelamento {
+  creditos: LancamentoReposicao[];
+  porAluno: EfeitoNoAluno[];
+  minutosTotais: number;
+}
+
+/**
+ * O que cancelar uma aula com `motivo` gera para cada aluno: credito igual a
+ * duracao da aula quando a sigla e o tipo de aula dao direito (Hipotese H1).
+ * Quem ja recebeu credito desta mesma aula (falta avisada) nao ganha de novo.
+ *
+ * A tela usa esta funcao para mostrar os minutos ANTES de confirmar, e a
+ * operacao usa a mesma funcao para gravar: o que se ve e o que se grava.
+ */
+export function efeitoDoCancelamento(
+  banco: Banco,
+  ocupacao: Ocupacao,
+  motivo: string,
+  criadoEm: string,
+): EfeitoDoCancelamento {
+  const participantes = banco.ocupacaoAlunos.filter((p) => p.ocupacaoId === ocupacao.id);
+  const jaCreditados = new Set(
+    banco.reposicoes
+      .filter((r) => r.minutos > 0 && r.ocupacaoOrigemId === ocupacao.id)
+      .map((r) => r.alunoId),
+  );
+  const creditos = creditosPorAulaPerdida(
+    banco.configuracoes,
+    ocupacao,
+    motivo,
+    participantes.map((p) => p.alunoId).filter((id) => !jaCreditados.has(id)),
+    criadoEm,
+  );
+  const creditoDoAluno = new Map(creditos.map((c) => [c.alunoId, c.minutos]));
+  return {
+    creditos,
+    porAluno: participantes.map((p) => ({
+      alunoId: p.alunoId,
+      minutos: creditoDoAluno.get(p.alunoId) ?? 0,
+      jaTinhaCredito: jaCreditados.has(p.alunoId),
+    })),
+    minutosTotais: creditos.reduce((soma, c) => soma + c.minutos, 0),
+  };
+}

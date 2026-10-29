@@ -501,11 +501,15 @@ export function gerarAgenda(
           alunosIds = [jogadorA.alunoId, escolher(rngReservas, candidatos).alunoId];
         } else if (!passada && data <= somarDias(HOJE, 3) && rngReservas() < 0.6) {
           // Reserva ainda sem pagamento: algumas ja passaram do prazo (Hipotese H5).
+          // Como na operacao, o prazo nunca passa do inicio da propria reserva.
           const prazoVencido = rngReservas() < 0.4;
           const diaDoPrazo = prazoVencido ? somarDias(HOJE, -1) : somarDias(HOJE, 1);
           situacao = "aguardando_pagamento";
-          prazoPagamento = `${diaDoPrazo}T18:00:00`;
-          criadoEm = `${somarDias(diaDoPrazo, -1)}T18:00:00`;
+          prazoPagamento = [`${diaDoPrazo}T18:00:00`, `${data}T${alvo.horaInicio}:00`].sort()[0];
+          criadoEm = [
+            `${somarDias(diaDoPrazo, -1)}T18:00:00`,
+            `${somarDias(data, -1)}T18:00:00`,
+          ].sort()[0];
         }
 
         const ocupacao: Ocupacao = {
