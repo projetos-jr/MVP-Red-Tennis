@@ -156,8 +156,9 @@ function ConteudoDoPainel({
               className="text-xs font-semibold uppercase tracking-wide"
               style={{ color: estilo.texto }}
             >
-              {ocupacao.tipo}
-              {horarioFixo ? " · horário fixo" : " · avulso"}
+              {bloqueio
+                ? "Bloqueio de quadra"
+                : `${ocupacao.tipo} · ${horarioFixo ? "horário fixo" : "avulso"}`}
             </p>
             <h2 className="text-lg font-semibold text-areia-900">
               {rotuloDaQuadra(ocupacao.quadraId)} · {intervalo(ocupacao)}
@@ -221,18 +222,20 @@ function ConteudoDoPainel({
         )}
 
         <dl className="grid grid-cols-1 gap-x-4 gap-y-3 rounded-2xl border border-areia-200 p-4 text-sm sm:grid-cols-2">
-          <Info rotulo="Professor">
-            {item.professor ? (
-              <Link
-                href={`/professores/${item.professor.id}`}
-                className="font-medium text-saibro-800 hover:underline"
-              >
-                {item.professor.nome}
-              </Link>
-            ) : (
-              <span className="text-areia-500">{bloqueio ? "—" : "Sem professor"}</span>
-            )}
-          </Info>
+          {!bloqueio && (
+            <Info rotulo="Professor">
+              {item.professor ? (
+                <Link
+                  href={`/professores/${item.professor.id}`}
+                  className="font-medium text-saibro-800 hover:underline"
+                >
+                  {item.professor.nome}
+                </Link>
+              ) : (
+                <span className="text-areia-500">Sem professor</span>
+              )}
+            </Info>
+          )}
           <Info rotulo="Quadra">
             {quadra?.nome ?? rotuloDaQuadra(ocupacao.quadraId)}
             {quadra && <span className="text-areia-500"> · {quadra.piso}</span>}
