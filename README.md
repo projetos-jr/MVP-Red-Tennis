@@ -1,16 +1,15 @@
-# MVP Red Tennis — Sistema de Gestão
+# Red Tennis — Sistema de Gestão
 
-Protótipo navegável (front-end) do sistema de gestão da arena **Red Tennis**,
-desenvolvido pela **UFABC Júnior** como peça visual da proposta comercial.
+Sistema de gestão da arena **Red Tennis**, desenvolvido pela **UFABC Júnior**:
+agenda, alunos e professores, financeiro, estoque, ranking e torneios.
 
 A arena tem 3 quadras de saibro, 1 de cimento e 1 paredão, e funciona das 7h às
-22h. Hoje a operação depende de planilhas, papel e um sistema antigo. Este MVP
-mostra como seria a operação em um sistema moderno.
+22h.
 
-> **Este projeto não tem backend.** Todos os dados são fictícios e vivem em
-> memória. É um artefato de demonstração — não um produto em produção.
-
-**Demonstração online:** <https://mvp-red-tennis.vercel.app>
+> **Estado atual: front-end completo com dados de exemplo.** Todos os dados
+> são fictícios e vivem num "banco de exemplo" em memória, com as mesmas
+> tabelas e regras que o banco real (Supabase) terá. O que for gravado vale
+> até a página ser recarregada. A ligação com o Supabase é o próximo passo.
 
 ---
 
@@ -23,17 +22,47 @@ npm install
 npm run dev
 ```
 
-Acesse <http://localhost:3000>. Não há nenhuma configuração adicional, variável
-de ambiente, banco de dados ou serviço externo.
+Acesse <http://localhost:3000>. Não há configuração adicional, variável de
+ambiente nem serviço externo.
 
 | Comando | O que faz |
 | --- | --- |
 | `npm run dev` | Sobe o ambiente de desenvolvimento |
+| `npm test` | Roda os testes das regras, das operações e dos fluxos entre módulos |
+| `npm run lint` | Confere o estilo do código (ESLint) |
 | `npm run build` | Gera o build de produção |
 | `npm run start` | Sobe o build de produção |
-| `npm run lint` | Roda o ESLint |
 | `npm run preview` | Gera o build para a Cloudflare e roda localmente, como em produção |
 | `npm run deploy` | Gera o build para a Cloudflare e publica |
+
+Todo pull request passa pelo CI (`.github/workflows/ci.yml`): lint, testes e
+build.
+
+---
+
+## Os módulos
+
+Cada módulo tem a sua documentação em `docs/modulos/`, com as regras, as
+hipóteses usadas e um **roteiro de teste para quem não é programador**.
+
+| Módulo | Telas | Documentação |
+| --- | --- | --- |
+| Base | Login por perfil, Painel (`/dashboard`), busca rápida de aluno, Configurações, Histórico de alterações | [`base.md`](docs/modulos/base.md) |
+| Agenda | `/agenda` (dia por quadra, semana, mês), modo quadra no tablet, impressão do dia | [`agenda.md`](docs/modulos/agenda.md) |
+| Alunos e professores | `/alunos`, ficha do aluno, `/professores`, ficha do professor | [`alunos.md`](docs/modulos/alunos.md) |
+| Financeiro | `/financeiro`: a receber, a pagar, mensalidades, repasse dos professores | [`financeiro.md`](docs/modulos/financeiro.md) |
+| Estoque | `/estoque`, detalhe do produto, consumo no balcão | [`estoque.md`](docs/modulos/estoque.md) |
+| Ranking e torneios | `/ranking`, chaves dos torneios nos três formatos | [`ranking.md`](docs/modulos/ranking.md) |
+
+O plano das telas e o modelo de dados estão em
+[`docs/MODELO-E-TELAS.md`](docs/MODELO-E-TELAS.md), incluindo as **hipóteses
+H1 a H14**: regras que a arena ainda não confirmou e que, por isso, ficam
+ajustáveis na tela de Configurações.
+
+**Perfis de acesso (hipótese H9):** o dono vê tudo; a recepção não vê
+Configurações, Histórico nem contas a pagar; o professor vê a agenda e os
+próprios alunos. Na demonstração, o login escolhe a pessoa e aceita qualquer
+senha; o login real (e-mail e senha) chega com o Supabase.
 
 ---
 
@@ -41,7 +70,9 @@ de ambiente, banco de dados ou serviço externo.
 
 O projeto roda na Cloudflare (Workers) por meio do adaptador
 [OpenNext](https://opennext.js.org/cloudflare). A configuração fica em
-`wrangler.jsonc` e `open-next.config.ts`.
+`wrangler.jsonc` e `open-next.config.ts`. As telas internas são montadas no
+navegador, então quase todas são publicadas como arquivos prontos, sem gastar
+processamento do servidor a cada acesso.
 
 **Pelo painel (recomendado):** em *Workers & Pages → Create → Import a
 repository*, escolha este repositório e preencha:
@@ -58,61 +89,11 @@ A partir daí, cada push na `main` publica uma nova versão.
 
 ---
 
-## As telas
-
-| Tela | Rota | O que mostra |
-| --- | --- | --- |
-| **Login** | `/` | Tela branca e centralizada, com acesso individual por colaborador. Sem validação — qualquer entrada abre o sistema. |
-| **Dashboard** | `/dashboard` | As 4 quadras + paredão em perspectiva 3D. O piso escurece conforme a ocupação do dia. Clicar em uma quadra abre a agenda dela. |
-| **Agenda** | `/agenda` | Grade semanal (7h–22h) e panorama mensal, com filtro por quadra, professor e tipo, legenda de cores, alerta de conflito e **criação de novos horários**. |
-| **Ficha do Aluno** | `/alunos/[id]` | Matrícula, histórico de aulas com motivos de falta, saldo de reposição em minutos, pagamentos, congelamento de plano, consumo no balcão e observações do gestor. |
-| **Ficha do Professor** | `/professores/[id]` | Agenda da semana, alunos no plano, comissão estimada e consumo no balcão. |
-| **Financeiro** | `/financeiro` | Aba **Operacional** (lançamentos, pendências, formas de pagamento) e aba **Planejamento** (fluxo de caixa, divisão por meio, comissão de professores). |
-| **Estoque** | `/estoque` | Bebidas, cervejas, lanches e acessórios com saldo, estoque mínimo, lista de compras, mais vendidos e movimentações. |
-| **Ranking / Torneio** | `/ranking` | Ranking geral e a chave da etapa em formato pirâmide, dividida em 4 categorias. |
-
-A navegação principal fica na topbar. As fichas de Aluno e de Professor **não**
-são abas: abrem ao clicar no nome da pessoa na Agenda, no Financeiro, no
-Dashboard ou no Ranking.
-
-### No celular
-
-O sistema é usável de verdade no telefone — algo que nem o sistema antigo nem o
-atual da arena oferecem. Abaixo de **768px** a interface se reorganiza:
-
-| No computador | No celular |
-| --- | --- |
-| Abas na topbar | Barra fixa no rodapé, com alvos de toque de 56px |
-| Agenda em grade semanal (7 colunas) | Agenda **dia a dia**, com régua de datas no topo |
-| Tabelas de lançamentos, aulas e pagamentos | Os mesmos dados em cartões empilhados |
-| Filtros e legenda sempre abertos | Recolhidos atrás de "Filtros e legenda" |
-| Pirâmide do torneio em faixas fixas | Faixas largas quebram em várias linhas |
-
-Nada disso altera a versão de computador: as mudanças vivem todas em
-breakpoints `md:` para baixo, e as telas em 1024px, 1440px e 1920px continuam
-pixel a pixel idênticas ao que eram antes.
-
-### O que dá para fazer ao vivo na demonstração
-
-O MVP não tem backend, mas as ações abaixo funcionam de verdade durante a
-sessão (o estado volta ao inicial a cada recarregamento da página):
-
-- **Marcar um horário** — botão "Novo horário" na Agenda, ou clicar direto num
-  espaço livre da grade. O formulário avisa se a quadra já está ocupada naquele
-  horário, e o evento criado entra na grade e no Dashboard.
-- **Lançar consumo** — na ficha do aluno ou do professor. O item sai do estoque
-  na mesma ação e aparece na conta da pessoa.
-- **Movimentar estoque** — registrar entrada de reposição ou baixa por perda.
-- **Congelar/reativar plano** e **adicionar observações** na ficha do aluno.
-
----
-
 ## Legenda de cores da agenda
 
-Definida com o cliente na Reunião Diagnóstica e aplicada exatamente assim em
-`src/lib/theme.ts`:
+Definida com o cliente e aplicada em `src/lib/theme.ts`:
 
-| Cor | Tipo de alocação |
+| Cor | Tipo |
 | --- | --- |
 | 🔴 Vermelho | Individual |
 | 🔵 Azul escuro | Locação Mensal |
@@ -120,11 +101,12 @@ Definida com o cliente na Reunião Diagnóstica e aplicada exatamente assim em
 | 🟠 Laranja | LAP |
 | 🩵 Azul claro | Locação Avulsa |
 | 🟣 Roxo | Ranking (reserva de quadra) |
-| 🟡 Amarelo | Plano de locação |
+| 🟡 Amarelo | Plano de locação (significado a confirmar, H2) |
+| ⚪ Cinza | Bloqueio de quadra |
 
-Siglas de falta usadas na Ficha do Aluno: **CH** (chuva), **24h** (aviso prévio),
-**FP** (falta do professor), **IAC** (Interesse Academia) e **TIP**
-(Transferência / Interesse Professor).
+Siglas de falta e cancelamento (editáveis em Configurações, H1): **CH**
+(chuva), **24h** (aviso prévio), **FP** (falta do professor), **IAC**
+(interesse da academia) e **TIP** (transferência por interesse do professor).
 
 ---
 
@@ -133,41 +115,29 @@ Siglas de falta usadas na Ficha do Aluno: **CH** (chuva), **24h** (aviso prévio
 ```
 src/
 ├── app/
-│   ├── page.tsx              # Login (única tela sem topbar)
+│   ├── page.tsx              # Login
 │   ├── layout.tsx            # Providers e estilos globais
-│   ├── globals.css           # Base do design system
-│   └── (app)/                # Telas internas, com topbar
-│       ├── layout.tsx
-│       ├── dashboard/
-│       ├── agenda/
-│       ├── alunos/[id]/
-│       ├── professores/[id]/
-│       ├── financeiro/
-│       ├── estoque/
-│       └── ranking/
+│   └── (app)/                # Telas internas, com topbar e proteção por perfil
 ├── components/
-│   ├── layout/               # Topbar e logo
-│   ├── ui/                   # Card, Badge, Avatar, StatCard, ícones…
-│   ├── dashboard/            # Quadra em perspectiva 3D
-│   ├── agenda/               # Grade semanal, mensal, chip de evento, legenda
-│   ├── aluno/                # Blocos da ficha
-│   ├── consumo/              # Consumo no balcão (aluno e professor)
-│   ├── estoque/              # Cartão de produto e movimentações
-│   ├── financeiro/           # Gráficos e tabelas
-│   └── ranking/              # Pirâmide e lista
+│   ├── ui/                   # Peças comuns: Card, Modal, Formulário, Confirmação, Avisos…
+│   ├── registro/             # Comentários e histórico de qualquer registro
+│   ├── layout/               # Topbar, navegação, busca rápida, casca das telas
+│   └── <módulo>/             # Componentes de cada módulo
 ├── lib/
-│   ├── types.ts              # Contrato de dados (base para o backend)
-│   ├── mock-data.ts          # Todos os dados fictícios
-│   ├── selectors.ts          # Camada de leitura (equivale aos endpoints)
-│   ├── theme.ts              # Cores, siglas e formatadores
-│   ├── date.ts               # Datas no fuso da arena
-│   └── branding.ts           # Troca do logo
+│   ├── banco/
+│   │   ├── tipos.ts          # As tabelas (mesmas do banco real)
+│   │   ├── semente/          # Dados de exemplo, um arquivo por módulo
+│   │   ├── regras/           # Regras do banco: conflito, reposição, situação do pagamento…
+│   │   └── operacoes/        # Gravações "tudo ou nada", uma por ação da tela
+│   ├── consultas/            # Leitura das telas, um arquivo por módulo
+│   ├── theme.ts              # Cores e formatadores
+│   └── date.ts               # Datas no fuso da arena
 └── store/
-    └── AppStore.tsx          # Estado em memória (horários, estoque, consumo, comentários)
+    ├── AppStore.tsx          # Banco da sessão, usuário logado e `executar`
+    └── useGravar.ts          # Gravar a partir de uma tela, com aviso de sucesso/erro
 ```
 
-Quem for construir o backend deve começar por
-**[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**.
+Detalhes técnicos em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**.
 
 ---
 
@@ -179,56 +149,45 @@ Paleta derivada do logo da Red Tennis, definida em `tailwind.config.ts`:
 - **`tijolo`** — vermelho escuro do letreiro (ações e alertas)
 - **`areia`** — neutros quentes (fundos e textos)
 
-### Logo
+O logo oficial está em `public/` em duas versões: `logo-red-tennis.webp`
+(login) e `logo-red-tennis-marca.webp` (topbar). Para trocar, substitua os
+arquivos mantendo os nomes, ou aponte as constantes de `src/lib/branding.ts`.
 
-O logo oficial da arena está em `public/`, recortado com fundo transparente,
-em duas versões: `logo-red-tennis.webp` (quadra + letreiro, usado no login) e
-`logo-red-tennis-marca.webp` (só a quadra, usado na topbar, onde o letreiro
-ficaria ilegível). Para trocar, substitua os arquivos mantendo os nomes — ou
-aponte as constantes em `src/lib/branding.ts` para os novos caminhos.
-
-### Fotos dos alunos
-
-As fotos dos 23 membros já estão em `public/avatars/`, nomeadas com o id de cada
-pessoa. Para incluir mais alguém: salve `public/avatars/<id>.jpg` e adicione o id
-em `IDS_COM_FOTO`, em `src/lib/mock-data.ts`. Quem não está nessa lista aparece
-com as iniciais sobre uma cor estável derivada do id — veja
-`public/avatars/README.md`.
+A interface funciona no computador (recepção), no tablet de 10" na horizontal
+(quadra) e no celular (abaixo de 768px a navegação vai para o rodapé e as
+tabelas viram cartões).
 
 ---
 
-## Dados fictícios
+## Dados de exemplo
 
-Gerados de forma **determinística** em `src/lib/mock-data.ts` — a demonstração
-mostra sempre os mesmos dados, e as datas são ancoradas em "hoje" para que o
-sistema pareça em uso em qualquer dia de apresentação.
+Gerados de forma **determinística** em `src/lib/banco/semente/` — sempre os
+mesmos dados, com as datas ancoradas em "hoje" para o sistema parecer em uso
+em qualquer dia de apresentação. Respeitam as mesmas regras do banco (há
+teste para isso):
 
-- **23 membros reais** cadastrados pelo cliente, com foto em `public/avatars/`
-  — são os inscritos na etapa atual do ranking, na ordem definida pela arena
-  (`a01` é o primeiro colocado).
-- **70 demais matriculados**, gerados a partir de listas de nomes, para que a
-  grade semanal (≈ 200 horários) tenha um número plausível de pessoas.
-  Todos têm ficha completa e navegável, com placeholder de iniciais no lugar
-  da foto.
-- **3 professores fixos**, conflitos de horário plantados de propósito e dias
-  cancelados por chuva no calendário.
-- **24 produtos** no estoque do balcão, com itens propositalmente abaixo do
-  mínimo e um esgotado, além de ~30 dias de consumo lançado nas fichas.
+- 23 membros do ranking, com foto em `public/avatars/` (nomes reais cedidos
+  pelo cliente; telefones e e-mails inventados) e 70 alunos gerados;
+- 3 professores, ~170 horários fixos e as aulas de 14 semanas atrás até 12
+  semanas à frente, com chuva, faltas, bloqueios, reservas aguardando
+  pagamento e reposições;
+- mensalidades, locações, consumo, contas a pagar e repasses;
+- 24 produtos com o estoque calculado pelos movimentos;
+- partidas de ranking e três torneios (um em cada formato).
 
----
-
-## O que está fora do escopo
-
-Itens levantados na Reunião Diagnóstica que **não** fazem parte deste MVP:
-
-- Integração real com Stone, Bradesco ou Total Pass (aqui são apenas representadas)
-- Backend, banco de dados ou persistência de qualquer tipo
-- Autenticação real (senha, sessão, permissão por cargo)
-- Chaveamento automático do ranking e atualização da pirâmide por resultados
-- Área do Cliente, site público e matrícula online
-- Comandas (consumo no local)
-- Geração real de relatórios em PDF/Excel — o botão "Exportar" é apenas visual
+Nenhum dado real de aluno deve entrar aqui (LGPD): os dados reais vão só para
+o banco, com acesso restrito.
 
 ---
 
-MVP desenvolvido pela **UFABC Júnior**. Dados fictícios, para demonstração.
+## Fora do escopo desta versão
+
+- Pirâmide de ranking (os três formatos de torneio contratados estão prontos)
+- Planejamento financeiro, fluxo de caixa e projeções
+- Integração com banco, maquininha ou convênio (as formas de pagamento são
+  só registradas)
+- Matrícula online, área do cliente, site público, comandas
+
+---
+
+Desenvolvido pela **UFABC Júnior**.

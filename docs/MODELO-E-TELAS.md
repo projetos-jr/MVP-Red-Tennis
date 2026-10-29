@@ -339,9 +339,8 @@ alertar), com a opção de liberar automaticamente.
 
 ## 5. Como o front muda sem esperar o banco
 
-As telas continuam funcionando com **dados de exemplo**, mas esses dados já
-estão no formato novo descrito acima, num "banco de exemplo" em memória com
-as mesmas tabelas do Supabase:
+As telas funcionam com **dados de exemplo** já no formato descrito acima, num
+"banco de exemplo" em memória com as mesmas tabelas do Supabase:
 
 - `src/lib/banco/`: as tabelas (`tipos.ts`), os dados de exemplo (`semente/`),
   as regras (`regras/`) e as gravações (`operacoes/`);
@@ -349,36 +348,32 @@ as mesmas tabelas do Supabase:
 - `useApp().executar` (ou `useGravar()`): única porta de gravação. Toda
   gravação é "tudo ou nada" e registra o histórico de alterações sozinha.
 
-As telas do MVP ainda não migradas leem uma tradução desse banco para o
-formato antigo (`src/lib/legado.ts`), que sai quando todas forem migradas.
-Detalhes técnicos em `docs/ARQUITETURA.md`.
+Detalhes técnicos em `docs/ARQUITETURA.md`. Quando o banco estiver pronto, só
+as consultas e as operações mudam: as telas não precisam ser refeitas. O PR #2
+(primeira ligação com o Supabase) será refeito sobre este modelo.
 
-Quando o banco estiver pronto, só as consultas e as operações mudam: as telas
-não precisam ser refeitas. O PR #2 (ligação com o Supabase) será adaptado ao
-modelo novo nessa hora.
+## 6. Situação do trabalho no front
 
-## 6. Ordem sugerida de trabalho no front
+Todas as etapas abaixo foram feitas; cada módulo tem a documentação e o
+roteiro de teste em `docs/modulos/`.
 
-A ordem segue a prioridade do plano (agenda, ficha e financeiro primeiro):
+1. Dados de exemplo no formato novo.
+2. **Agenda**: visão de dia por quadra, painel do horário, novo horário fixo
+   ou avulso, bloqueio, cancelamento, chuva, reservas sem pagamento, modo
+   quadra e impressão do dia (`agenda.md`).
+3. **Alunos e professores**: lista, cadastro, edição, matrícula, extrato de
+   reposição, congelamento e ficha do professor com repasse (`alunos.md`).
+4. **Financeiro**: a receber e a pagar, novo lançamento, pagamento, anulação,
+   mensalidades do mês e relatório de professores (`financeiro.md`).
+5. **Estoque**: cadastro de produto, entrada, perda, contagem e consumo ligado
+   ao financeiro (`estoque.md`).
+6. **Ranking e torneios**: resultado de partida, ranking calculado, torneios
+   nos três formatos com chave e avanço automático (`ranking.md`).
+7. **Base**: login por perfil, painel, busca rápida, Configurações e Histórico
+   de alterações (`base.md`).
 
-1. Dados de exemplo no formato novo **(feito)**. A pessoa não vê diferença na
-   tela, mas é a base de tudo o que vem depois.
-2. **Agenda**:
-   1. visão de dia no computador;
-   2. painel do horário;
-   3. novo horário fixo ou avulso;
-   4. bloqueio e cancelamento;
-   5. cancelamento por chuva.
-3. **Alunos**: lista, cadastro, edição, matrícula, extrato de reposição e
-   congelamento.
-4. **Financeiro**: a receber e a pagar, novo lançamento, relatório de
-   professores.
-5. **Estoque**: cadastro de produto e ligação do consumo com o financeiro.
-6. **Ranking e torneios**: resultado de partida, criar torneio e a chave nos
-   três formatos.
-7. **Configurações** e **Histórico de alterações**.
-
-Cada etapa termina com um roteiro curto de como testar na tela.
+Cada agente registrou no documento do seu módulo as decisões que tomou e que
+precisam ser confirmadas com a arena.
 
 ## 7. Pontos para a equipe revisar
 

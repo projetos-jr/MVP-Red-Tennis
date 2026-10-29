@@ -1,255 +1,151 @@
-# Arquitetura e handoff para o backend
+# Arquitetura
 
-## Arquitetura atual (modelo novo, desde 29/10/2026)
+Como o código está organizado, por quê, e como ele vai para o banco real.
+O plano das telas e o modelo de dados estão em `docs/MODELO-E-TELAS.md`;
+cada módulo tem a sua documentação em `docs/modulos/`.
 
-O front continua sem banco real, mas os dados de exemplo já seguem o modelo
-de `docs/MODELO-E-TELAS.md`, com as mesmas tabelas que o Supabase terá. São
-quatro peças:
+## As quatro peças
+
+O front ainda não tem banco real: usa um **banco de exemplo em memória** com
+as mesmas tabelas que o Supabase terá. Tudo gira em torno de quatro peças:
 
 | Peça | Onde | Para que serve |
 | --- | --- | --- |
-| Banco de exemplo | `src/lib/banco/tipos.ts`, `src/lib/banco/semente/` | Todas as tabelas, com dados gerados (sempre os mesmos) a partir do MVP. |
-| Regras | `src/lib/banco/regras/` | O que o banco real vai impor: conflito de quadra, extrato de reposição, situação do lançamento, saldo de estoque, ranking. |
-| Operações (gravação) | `src/lib/banco/operacoes/` | Cada gravação é uma função "tudo ou nada". Se uma regra é violada, nada é gravado e a tela recebe a mensagem pronta. A auditoria é gravada sozinha. |
+| Banco de exemplo | `src/lib/banco/tipos.ts`, `src/lib/banco/semente/` | As tabelas e os dados de exemplo (sempre os mesmos, ancorados em "hoje"). Um arquivo de semente por módulo. |
+| Regras | `src/lib/banco/regras/` | O que o banco real vai impor: conflito de quadra, extrato de reposição, situação do lançamento, saldo de estoque, ranking, chaves de torneio, validações. |
+| Operações (gravação) | `src/lib/banco/operacoes/` | Cada ação da tela é uma operação "tudo ou nada": se uma regra é violada, nada é gravado e a tela recebe a mensagem pronta. A auditoria (quem, quando, antes e depois) é gravada sozinha. |
 | Consultas (leitura) | `src/lib/consultas/` | As telas leem o banco só por aqui, um arquivo por módulo. |
 
 Na tela:
 
 ```tsx
-const { banco } = useApp();                // ler
-const gravar = useGravar();                // gravar com aviso de sucesso/erro
-const aulas = ocupacoesDoDia(banco, data); // função de src/lib/consultas/agenda.ts
+const { banco, colaborador } = useApp();      // ler
+const gravar = useGravar();                    // gravar, com aviso de sucesso ou erro
+const detalhe = detalheDaOcupacao(banco, id, agora, HOJE); // de consultas/agenda.ts
 gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.");
 ```
 
-Peças de tela prontas para todos os módulos: `Campo`, `MensagemDeErro` e
-`RodapeDoFormulario` (`components/ui/Formulario.tsx`), `Confirmacao`,
-`useAvisos` (`components/ui/Avisos.tsx`), `ComentariosDoRegistro` e
-`HistoricoDoRegistro` (`components/registro/`).
+### Como uma operação funciona
 
-**Transição.** As telas do MVP ainda usam o formato antigo
-(`types.ts`, `mock-data.ts`, `selectors.ts`), que agora é só uma tradução do
-banco novo feita por `src/lib/legado.ts`. Cada módulo, ao migrar as suas
-telas, deixa de usar essas peças; quando nenhuma tela usar mais, as quatro
-são apagadas. O que for gravado pelas operações novas não aparece nas telas
-ainda não migradas.
+`src/lib/banco/executar.ts` define o contrato: uma operação recebe o banco
+atual, os dados e o contexto (quem está fazendo, agora, hoje) e devolve o
+banco novo **sem alterar nada no lugar** (sempre cópias). Uma regra violada
+lança `ErroDeRegra` (`exigir(condição, "mensagem")`); `executarOperacao`
+transforma isso em `{ ok: false, erro }`. Depois de cada operação bem
+sucedida, `auditoria.ts` compara o banco de antes com o de depois e grava um
+registro para cada criação, alteração e exclusão — o mesmo papel do gatilho
+único de auditoria do banco real.
 
-**Testes.** `npm test` roda os testes das regras e confere que os dados de
-exemplo respeitam todas elas. O CI (`.github/workflows/ci.yml`) roda lint,
-testes e build em todo pull request.
+Operações que cruzam módulos seguem convenções combinadas:
 
-**Quando o Supabase entrar:** cada tabela de `tipos.ts` vira uma tabela (em
-snake_case), cada regra vira constraint, trigger ou função do Postgres, cada
-operação vira uma chamada (`insert`, `update` ou `rpc`) e as consultas passam
-a buscar do banco. As telas não mudam.
+- **Reserva avulsa:** a agenda cria a ocupação "aguardando pagamento" e a
+  cobrança; pagar a cobrança no financeiro confirma a reserva; liberar a
+  reserva vencida na agenda anula a cobrança.
+- **Consumo no balcão:** consumo + baixa no estoque + cobrança, numa
+  operação só.
+- **Aula perdida:** os créditos de reposição saem de
+  `creditosPorAulaPerdida`; o uso debita o extrato depois de
+  `garantirSaldoSuficiente`.
+- **Lançamentos nunca são apagados:** anula-se, com motivo.
 
----
+`src/lib/banco/integracao.test.ts` testa esses fluxos de ponta a ponta.
 
-O restante deste documento descreve o MVP original e vale para as telas que
-ainda não foram migradas.
+### Peças de tela comuns
 
-## Princípio
+`components/ui/`: `Card`, `Modal` (abre fora da página, prende o foco, Esc
+fecha só a janela de cima), `Campo`, `MensagemDeErro`, `RodapeDoFormulario`,
+`Confirmacao`, avisos (`useAvisos`), `Badge`, `StatCard`, `Segmentado`,
+`Avatar` e os ícones. `components/registro/`: comentários e histórico de
+qualquer registro.
 
-Nenhum componente lê dados diretamente do mock. Toda leitura passa por
-`src/lib/selectors.ts`. Essa camada existe justamente para ser trocada:
+### Estado da aplicação
 
-```
-Componentes  →  selectors.ts  →  mock-data.ts        (hoje)
-Componentes  →  selectors.ts  →  fetch/API           (depois)
-```
+`src/store/AppStore.tsx` guarda o banco da sessão, quem está logado e
+`executar`. Recarregar a página volta tudo ao início. A demonstração abre já
+logada como o dono (para links diretos funcionarem); "Sair" deixa ninguém
+logado e as telas internas mandam para o login.
 
-Trocar o mock por chamadas HTTP reais **não deve exigir mudança nos
-componentes** — apenas na implementação das funções de `selectors.ts` (e na
-transformação delas em funções assíncronas).
+### Telas montadas no navegador
 
-## Contrato de dados
+As telas internas (`src/app/(app)/`) passam por `CascaDoApp`, que só as monta
+no navegador. Elas dependem da data e da hora da arena: montando no
+navegador, "hoje" é sempre o dia em que a página foi aberta e não há
+divergência entre servidor e navegador. Com isso quase todas as rotas são
+publicadas como arquivos prontos, sem gastar processamento do servidor a cada
+acesso. Uma aba aberta de um dia para o outro continua com a data do dia em
+que foi aberta até ser recarregada.
 
-`src/lib/types.ts` é a referência das entidades. Resumo:
+## Perfis e permissões
 
-| Tipo | Descrição | Observações |
-| --- | --- | --- |
-| `Aluno` | Cadastro completo | Inclui histórico de aulas, pagamentos e comentários |
-| `Horario` | Alocação na grade semanal | Usa `diaSemana` (0 = domingo), não data absoluta |
-| `Pagamento` | Lançamento financeiro | Tem `data` (lançamento) e `dataCompensacao` (entrada no caixa) |
-| `HistoricoAula` | Ocorrência de aula | `status` + `motivoFalta` + `minutosRepostos` |
-| `Comentario` | Nota do gestor na ficha | Data e autor |
-| `Professor` | Professor da arena | Inclui `valorHoraAula` para o cálculo de comissão |
-| `Torneio` | Etapa do ranking | |
+`banco.configuracoes.permissoes` diz que módulos cada perfil vê (hipótese
+H9, editável em Configurações). A navegação esconde o que o perfil não vê,
+`ProtecaoDeRota` mostra "Sem acesso a esta área" para endereços digitados, e
+as operações recusam gravações de quem não pode. Toda rota nova de primeiro
+nível precisa entrar em `MODULO_DA_ROTA` (`components/layout/abas.ts`). No
+banco real, quem garante isso são as políticas de acesso (RLS) do Supabase.
 
-### Decisões do modelo que valem discutir antes de implementar
+## Testes
 
-1. **A grade é semanal e recorrente.** `Horario` guarda `diaSemana`, não uma
-   data. É como a arena opera (horários fixos), mas o backend vai precisar de
-   uma camada de **exceções por data** — cancelamento, reagendamento pontual,
-   feriado. O MVP já demonstra o conceito com os dias cancelados por chuva
-   (`DIAS_COM_CHUVA` + `horariosDaData`).
+`npm test` (vitest) roda os testes das regras e das operações de cada
+módulo, das consultas, dos dados de exemplo (que precisam respeitar todas as
+regras) e dos fluxos entre módulos. O CI (`.github/workflows/ci.yml`) roda
+lint, testes e build em todo pull request.
 
-2. **Saldo de reposição em minutos.** Não em aulas. Validade de 3 meses
-   (`validadeReposicao`). O crédito nasce de um `motivoFalta` que dá direito
-   (CH, aviso 24h, falta do professor, TIP).
+## Quando o Supabase entrar
 
-3. **Pagante pode ser diferente do aluno.** `Pagamento.nomePagante` é campo
-   próprio — no futuro provavelmente vira uma referência a um "responsável
-   financeiro".
-
-4. **Total Pass tem duas parcelas.** `valor` é o total e `valorTotalPass` é a
-   parte coberta pelo convênio; o complemento é a diferença.
-
-5. **Conflito é derivado, não armazenado.** `temConflito` é calculado por
-   sobreposição na mesma quadra (`marcarConflitos` em `mock-data.ts`). No
-   backend, a regra deveria impedir o conflito na escrita — e a UI continua
-   sinalizando os que existirem.
-
-## Seletores e os endpoints correspondentes
-
-| Seletor | Endpoint sugerido |
+| Hoje (banco de exemplo) | No banco real |
 | --- | --- |
-| `listarAlunos()` / `buscarAluno(id)` | `GET /alunos`, `GET /alunos/:id` |
-| `listarHorarios(filtro)` | `GET /horarios?quadra&professor&tipo` |
-| `horariosDaData(data, filtro)` | `GET /agenda?data=` |
-| `ocupacaoDasQuadras(data)` | `GET /quadras/ocupacao?data=` |
-| `resumoDoDia(data)` | `GET /dashboard/resumo?data=` |
-| `filtrarPagamentos(filtro)` | `GET /pagamentos?status&forma&busca` |
-| `resumoFinanceiro(data)` | `GET /financeiro/resumo?mes=` |
-| `fluxoDeCaixa(dias)` | `GET /financeiro/fluxo-caixa?dias=` |
-| `totaisPorForma(data)` | `GET /financeiro/formas-pagamento?mes=` |
-| `resumoProfessores()` | `GET /professores/comissoes` |
-| `rankingGeral()` / `piramideDaEtapa()` | `GET /ranking`, `GET /ranking/etapa-atual` |
-| `resumoAluno(aluno)` | `GET /alunos/:id/resumo` |
+| Cada interface de `tipos.ts` | Uma tabela, com o nome em snake_case, criada por migração em `supabase/migrations/` |
+| Regras de `regras/` | Constraints (ex.: conflito de quadra com `btree_gist`), CHECKs, gatilhos e funções do Postgres |
+| Operações de `operacoes/` | `insert`/`update` diretos ou funções chamadas por `rpc` (as que gravam em mais de uma tabela) |
+| Auditoria automática | Gatilho único de auditoria em todas as tabelas |
+| Permissões por perfil | Políticas de RLS testadas por perfil (pgTAP) |
+| Consultas de `consultas/` | Consultas ao banco; as telas não mudam |
+| Dados de exemplo | `supabase/seed.sql`, gerado a partir da semente |
 
-Escritas que o protótipo simula em memória (`src/store/AppStore.tsx`) e que
-viram endpoints:
-
-| Ação na UI | Endpoint sugerido |
-| --- | --- |
-| Adicionar observação na ficha | `POST /alunos/:id/comentarios` |
-| Congelar / reativar plano | `PATCH /alunos/:id/plano` |
-| Login do colaborador | `POST /auth/login` |
-
-## Estado da aplicação
-
-`src/store/AppStore.tsx` guarda o que o usuário altera durante a demonstração:
-usuário logado, novos comentários e o congelamento de planos. Tudo volta ao
-estado inicial a cada reload. É o ponto natural para trocar `useState` por
-chamadas reais (ou por um cliente de dados como React Query).
-
-## Datas
-
-`src/lib/date.ts` resolve todas as datas no fuso da arena
-(`America/Sao_Paulo`), independentemente do fuso da máquina. Isso mantém o valor
-de "hoje" idêntico no servidor e no cliente e evita divergência de hidratação.
-As telas internas rodam sob demanda (`export const dynamic = "force-dynamic"` em
-`src/app/(app)/layout.tsx`) para que um HTML gerado no build não congele a data.
+Cada documento de módulo tem uma seção "Notas para a migração ao Supabase"
+com o mapeamento detalhado. O PR #2 (primeira ligação com o Supabase, feita
+sobre o modelo antigo) precisa ser refeito sobre este modelo.
 
 ## Estilo e acessibilidade
 
-- Design tokens em `tailwind.config.ts` (`saibro`, `tijolo`, `areia`) e
-  `src/lib/theme.ts` (cores por tipo de alocação, siglas, formatadores).
-- As cores das séries dos gráficos do Financeiro foram validadas para daltonismo
-  (separação CVD ≥ 8 entre todos os pares, sobre fundo claro) e cada barra tem
-  rótulo direto, para que a leitura não dependa da cor.
-- O fluxo de caixa distingue "recebido" de "previsto" por **cor e hachura**, e
-  oferece os mesmos dados em tabela.
+- Tokens em `tailwind.config.ts` (`saibro`, `tijolo`, `areia`) e
+  `src/lib/theme.ts` (cores por tipo de ocupação, siglas, formatadores).
+- A cor nunca é o único indicador: todo estado tem rótulo ou ícone com texto.
+- Campos com rótulo, botões só com ícone com `aria-label`, ações destrutivas
+  com confirmação.
 - Nenhuma fonte externa é carregada: o projeto roda offline.
 
-## Estoque e consumo
+## Versão para celular e tablet
 
-Módulo acrescentado depois da primeira rodada de validação com o cliente.
-
-| Tipo | Descrição | Observações |
-| --- | --- | --- |
-| `Produto` | Item vendido no balcão | `quantidade` é o saldo; `estoqueMinimo` dispara o alerta de reposição |
-| `MovimentoEstoque` | Entrada, venda, perda ou ajuste | `quantidade` é sempre positiva — o `tipo` diz se soma ou subtrai |
-| `Consumo` | Item lançado na conta de uma pessoa | Serve para aluno **e** professor (`tipoPessoa`) |
-
-Pontos de atenção para a implementação real:
-
-1. **Lançar consumo é uma operação composta.** No MVP, `registrarConsumo`
-   (em `AppStore.tsx`) cria o consumo, gera o movimento de venda e abate o saldo
-   do produto na mesma ação. No backend isso precisa ser uma transação — não
-   pode existir consumo sem baixa, nem baixa sem consumo.
-
-2. **`Consumo` guarda `produtoNome` e `valorUnitario`.** É uma cópia proposital
-   do estado no momento da venda: mudar o preço ou o nome do produto no cadastro
-   não pode reescrever o histórico de quem já consumiu.
-
-3. **O saldo é derivado, mas guardado.** `Produto.quantidade` é o saldo materializado;
-   `MovimentoEstoque` é o razão. Vale decidir cedo qual dos dois é a fonte da
-   verdade — o ideal é o razão, com o saldo como cache recalculável.
-
-4. **O consumo em aberto ainda não entra no Financeiro.** Hoje ele aparece só na
-   ficha da pessoa. O caminho natural é virar um `Pagamento` no fechamento da conta.
-
-### Novos seletores
-
-| Seletor | Endpoint sugerido |
-| --- | --- |
-| `filtrarProdutos(filtro)` / `nivelDoEstoque(produto)` | `GET /produtos?categoria&busca&alerta` |
-| `resumoEstoque()` | `GET /estoque/resumo` |
-| `maisVendidos(n)` | `GET /estoque/mais-vendidos?dias=` |
-| `listarMovimentos()` | `GET /estoque/movimentos` |
-| `consumosDaPessoa(id)` / `resumoConsumo(id)` | `GET /pessoas/:id/consumos` |
-| `agendaDoProfessor(nome)` | `GET /professores/:id/agenda` |
-| `quadrasLivres(dia, inicio, fim)` | `GET /agenda/disponibilidade` |
-
-### Novas escritas
-
-| Ação na UI | Endpoint sugerido |
-| --- | --- |
-| Criar horário na agenda | `POST /horarios` |
-| Lançar consumo | `POST /pessoas/:id/consumos` |
-| Registrar entrada de estoque | `POST /estoque/movimentos` (tipo `entrada`) |
-| Registrar perda | `POST /estoque/movimentos` (tipo `perda`) |
-
-## Grade de horários com fonte injetável
-
-As funções de agenda em `selectors.ts` recebem um último parâmetro opcional
-`fonte: Horario[]`, que por padrão é a grade do mock. A UI passa a grade do
-store (`useApp().horarios`), que inclui os horários criados durante a sessão.
-Com API real, esse parâmetro deixa de ser necessário — a função passa a buscar
-do servidor — mas a separação entre "dados" e "regra de leitura" continua valendo.
-
-## Pisos das quadras
-
-`PISO_DAS_QUADRAS` em `mock-data.ts` define qual área é de saibro e qual é de
-cimento (hoje, a quadra 1). O componente `Quadra3D` usa esse dado para escolher
-a escala de cor. No backend isso vira um atributo da entidade quadra, junto com
-outras características que a arena já diferencia (cobertura, iluminação).
-
-## Versão para celular
-
-A adaptação para telefone vive inteiramente abaixo do breakpoint `md` (768px),
-para que a versão de computador — já validada com o cliente — não mude. Três
-padrões foram usados:
+A adaptação para telefone vive abaixo do breakpoint `md` (768px), para que a
+versão de computador não mude. Padrões usados:
 
 1. **Troca de componente por CSS.** Onde a diferença é estrutural (agenda
    semanal × diária, tabela × cartões), os dois componentes ficam no DOM e a
-   visibilidade é decidida por `md:hidden` / `hidden md:block`. É simples e não
-   corre risco de divergência de hidratação, ao custo de renderizar os dois.
-   Medido no build de produção com CPU 4× mais lenta, a agenda pinta em ~350ms
-   e fica interativa em ~1,4s — folga suficiente para não valer a complexidade
-   de renderização condicional por largura.
-
-2. **Densidade.** `StatCard` aceita `rotuloCurto`, usado só no celular para o
-   rótulo não quebrar em duas linhas; `CardHeader` esconde a descrição; textos
-   de apoio e controles redundantes com a barra inferior saem de cena.
-
+   visibilidade é decidida por `md:hidden` / `hidden md:block`.
+2. **Densidade.** `StatCard` aceita `rotuloCurto`; `CardHeader` esconde a
+   descrição; textos de apoio redundantes saem de cena.
 3. **Navegação.** `NavegacaoMobile` substitui as abas da topbar, com 56px de
-   altura por alvo. As seções são declaradas uma única vez em
-   `src/components/layout/abas.ts`, consumido pelos dois componentes.
+   altura por alvo. As seções são declaradas uma vez em
+   `src/components/layout/abas.ts`.
 
-### Armadilha registrada
+O tablet de 10" na horizontal (hipótese H11) usa a versão de computador; o
+**modo quadra** da agenda (`/agenda/quadra`) foi feito para ele.
 
-Ao adicionar uma variante de tamanho de fonte (`sm:text-2xl`), o `line-height`
-que vem junto dela passa a vencer um `leading-none` declarado sem variante —
-porque a regra dentro de media query aparece depois no CSS gerado. Isso mudou a
-altura dos cartões de indicador em 8px no desktop. A correção é declarar também
-`sm:leading-none`. Vale a mesma atenção para qualquer par
-`text-*` + `leading-*` quando só um dos dois ganha variante.
+### Armadilhas registradas
+
+- Ao adicionar uma variante de tamanho de fonte (`sm:text-2xl`), o
+  `line-height` que vem junto passa a vencer um `leading-none` sem variante.
+  Declare também `sm:leading-none`.
+- Elementos fixos (janelas, gavetas) renderizados dentro de um contêiner
+  `space-y-*` herdam a margem e saem do lugar; e dentro da topbar ficam presos
+  pelo `backdrop-blur`. Por isso `Modal` e a busca rápida abrem por portal no
+  `body`.
+- `next dev` cria um `AGENTS.md` na raiz; ele está no `.gitignore`.
 
 ### Como conferir que o desktop não mudou
 
-O procedimento usado aqui, que vale repetir a cada rodada de ajuste mobile:
-capturar as telas em 1024, 1440 e 1920px antes da mudança, repetir depois e
-comparar os arquivos pixel a pixel. Qualquer diferença aponta vazamento de uma
-regra mobile para cima do breakpoint.
+Capture as telas em 1024, 1440 e 1920px antes da mudança, repita depois e
+compare as imagens. Qualquer diferença aponta vazamento de uma regra de
+celular para cima do breakpoint.
