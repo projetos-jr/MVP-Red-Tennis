@@ -4,12 +4,13 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { detalheDoTorneio } from "../../consultas/ranking";
 import { somarDias } from "../../date";
 import { HOJE } from "../constantes";
 import { executarOperacao, type ContextoOperacao, type Operacao } from "../executar";
 import { conflitosNaQuadra } from "../regras/agenda";
 import { calcularRanking } from "../regras/ranking";
-import { campeaoDoTorneio, torneioTerminou } from "../regras/torneios";
+import { campeaoDoTorneio, DESEMPATE_FINAL, torneioTerminou } from "../regras/torneios";
 import { gerarBancoInicial } from "../semente";
 import type { Banco, Colaborador, QuadraId, Torneio } from "../tipos";
 import {
@@ -358,6 +359,21 @@ describe("torneios", () => {
     const eliminatoria = doTorneio(banco).filter((p) => !p.grupo);
     expect(eliminatoria).toHaveLength(3);
     expect(eliminatoria.filter((p) => p.fase === "Semifinal").every((p) => p.inscricaoAId && p.inscricaoBId)).toBe(true);
+
+    // A tabela que a tela mostra e a eliminatoria montada concordam sobre quem
+    // passou, mesmo quando o empate e decidido pela ordem de inscricao.
+    const detalhe = detalheDoTorneio(banco, novoTorneio(banco).id);
+    const naTabela = (detalhe?.grupos ?? [])
+      .flatMap((g) => g.classificacao.filter((l) => l.classifica).map((l) => l.inscricaoId))
+      .sort();
+    const naChave = eliminatoria
+      .filter((p) => p.fase === "Semifinal")
+      .flatMap((p) => [p.inscricaoAId, p.inscricaoBId])
+      .sort();
+    expect(naChave).toEqual(naTabela);
+    expect(
+      detalhe?.grupos.some((g) => g.classificacao.some((l) => l.desempate === DESEMPATE_FINAL)),
+    ).toBe(true);
 
     banco = jogarRodada(jogarRodada(banco)); // semifinais e final
     expect(novoTorneio(banco).situacao).toBe("encerrado");

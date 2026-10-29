@@ -287,11 +287,9 @@ function inscricoesDoTorneio(banco: Banco, torneioId: string): InscricaoNaTela[]
         .filter((a): a is Aluno => Boolean(a));
       return { inscricao, nome: nomeDoLado(alunos), alunos };
     })
-    .sort(
-      (a, b) =>
-        (a.inscricao.cabecaDeChave ?? 99) - (b.inscricao.cabecaDeChave ?? 99) ||
-        a.nome.localeCompare(b.nome),
-    );
+    // Cabecas de chave primeiro e, depois, a ordem de inscricao (a ordenacao e
+    // estavel): e a mesma ordem do ultimo criterio de desempate.
+    .sort((a, b) => (a.inscricao.cabecaDeChave ?? 99) - (b.inscricao.cabecaDeChave ?? 99));
 }
 
 export function buscarTorneio(banco: Banco, id: string): Torneio | undefined {
@@ -432,6 +430,10 @@ export function detalheDoTorneio(banco: Banco, id: string): DetalheDoTorneio | u
 
   const inscricoes = inscricoesDoTorneio(banco, torneio.id);
   const porId = new Map(inscricoes.map((i) => [i.inscricao.id, i]));
+  // A classificacao recebe as inscricoes na ordem do banco (a ordem de
+  // inscricao, ultimo criterio de desempate), a mesma usada pela operacao
+  // que monta a eliminatoria. A lista da tela e que vem por nome.
+  const naOrdemDeInscricao = banco.torneioInscritos.filter((i) => i.torneioId === torneio.id);
   const partidas = banco.partidas.filter((p) => p.torneioId === torneio.id).sort(ordemDosJogos);
   const numeroDe = new Map(partidas.map((p, i) => [p.id, i + 1]));
 
@@ -455,12 +457,8 @@ export function detalheDoTorneio(banco: Banco, id: string): DetalheDoTorneio | u
     a: lado(partida, "A"),
     b: lado(partida, "B"),
   });
-  const linhas = (membros: InscricaoNaTela[], jogos: Partida[], vagas: number): LinhaNaTela[] =>
-    classificar(
-      membros.map((m) => m.inscricao),
-      jogos,
-      criteriosDesempate,
-    ).map((linha) => ({
+  const linhas = (membros: TorneioInscrito[], jogos: Partida[], vagas: number): LinhaNaTela[] =>
+    classificar(membros, jogos, criteriosDesempate).map((linha) => ({
       ...linha,
       inscricao: porId.get(linha.inscricaoId) as InscricaoNaTela,
       classifica: linha.posicao <= vagas,
@@ -495,7 +493,7 @@ export function detalheDoTorneio(banco: Banco, id: string): DetalheDoTorneio | u
     return {
       letra,
       classificacao: linhas(
-        inscricoes.filter((i) => i.inscricao.grupo === letra),
+        naOrdemDeInscricao.filter((i) => i.grupo === letra),
         jogos,
         classificadosPorGrupo,
       ),
@@ -506,7 +504,7 @@ export function detalheDoTorneio(banco: Banco, id: string): DetalheDoTorneio | u
 
   // Todos contra todos: classificacao e matriz (linhas e colunas na ordem da tabela).
   const todosContraTodos = torneio.formato === "todos_contra_todos" && partidas.length > 0;
-  const classificacao = todosContraTodos ? linhas(inscricoes, partidas, 1) : [];
+  const classificacao = todosContraTodos ? linhas(naOrdemDeInscricao, partidas, 1) : [];
   const matriz: LinhaDaMatriz[] = classificacao.map((linha) => ({
     inscricao: linha.inscricao,
     celulas: classificacao.map((coluna) => {
