@@ -45,3 +45,6 @@ yarn-error.log*
 !/docs/privado/LEIA-ME.md
 CLAUDE.local.md
 .claude/settings.local.json
+
+# criado pelo next dev para agentes de IA
+/AGENTS.md

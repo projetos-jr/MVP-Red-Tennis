@@ -4,7 +4,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { IconeRelogio } from "@/components/ui/Icons";
 import type { RegistroAuditoria, TabelaDoBanco } from "@/lib/banco/tipos";
 import { historicoDoRegistro } from "@/lib/consultas/base";
-import { formatarData, formatarDataHora } from "@/lib/date";
+import { formatarValorDoCampo, rotuloDoCampo } from "@/lib/consultas/configuracoes";
+import { formatarDataHora } from "@/lib/date";
 import { useApp } from "@/store/AppStore";
 
 const ACAO: Record<RegistroAuditoria["acao"], string> = {
@@ -12,17 +13,6 @@ const ACAO: Record<RegistroAuditoria["acao"], string> = {
   alterar: "Alterou",
   apagar: "Apagou",
 };
-
-function formatarValor(valor: unknown): string {
-  if (valor === undefined || valor === null || valor === "") return "vazio";
-  if (typeof valor === "boolean") return valor ? "sim" : "não";
-  // Datas e carimbos ("2026-10-29", "2026-10-29T15:01:56") no formato brasileiro.
-  if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(valor)) {
-    return valor.length === 10 ? formatarData(valor) : formatarDataHora(valor);
-  }
-  if (typeof valor === "object") return JSON.stringify(valor);
-  return String(valor);
-}
 
 /** Campos que mudaram numa alteracao. */
 export function camposAlterados(
@@ -39,7 +29,8 @@ export function camposAlterados(
 
 /**
  * Quem fez o que num registro, e quando — lido da auditoria automatica.
- * `rotulos` traduz o nome tecnico dos campos ({ situacao: "Situação" }).
+ * Nomes de campos e valores saem em linguagem simples (os mesmos da tela de
+ * Historico); `rotulos` troca o nome de um campo quando a tela pede outro.
  */
 export function HistoricoDoRegistro({
   tabela,
@@ -72,8 +63,9 @@ export function HistoricoDoRegistro({
             <ul className="mt-1.5 space-y-0.5 text-xs text-areia-700">
               {camposAlterados(registro).map(({ campo, antes, depois }) => (
                 <li key={campo}>
-                  <span className="font-medium">{rotulos[campo] ?? campo}:</span>{" "}
-                  {formatarValor(antes)} → {formatarValor(depois)}
+                  <span className="font-medium">{rotulos[campo] ?? rotuloDoCampo(campo)}:</span>{" "}
+                  {formatarValorDoCampo(banco, campo, antes)} →{" "}
+                  {formatarValorDoCampo(banco, campo, depois)}
                 </li>
               ))}
             </ul>

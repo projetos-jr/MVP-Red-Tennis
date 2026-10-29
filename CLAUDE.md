@@ -29,13 +29,16 @@ Papéis: Consultor 1 = front e telas; Consultor 2 = banco, migrações, auth, RL
 ## Stack atual
 
 - Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 3.
-- Publicação na Cloudflare Workers via OpenNext (`wrangler.jsonc`, `open-next.config.ts`). Ainda não publicado: falta ligar o repositório no painel da Cloudflare.
-- Supabase (Postgres 17, Auth, RLS), projeto "Red Tennis" (`xfludepkrcnwovnckpfc`), região sa-east-1 (São Paulo), plano Free. A ligação com o site está no PR #2 (branch `supabase`), ainda aberto.
-- MVP de demonstração continua na Vercel: https://mvp-red-tennis.vercel.app
+- Publicação na Cloudflare Workers via OpenNext (`wrangler.jsonc`, `open-next.config.ts`). As telas internas são montadas só no navegador (`CascaDoApp`), então quase todas as rotas são arquivos estáticos.
+- Supabase (Postgres 17, Auth, RLS), projeto "Red Tennis" (`xfludepkrcnwovnckpfc`), região sa-east-1 (São Paulo), plano Free. O front AINDA NÃO usa o Supabase: usa um banco de exemplo em memória com as mesmas tabelas. O PR #2 (branch `supabase`) foi feito sobre o modelo antigo e precisa ser refeito.
 
-Comandos: `npm run dev`, `npm run build`, `npm run lint`, `npm run preview` (build Cloudflare local), `npm run deploy`.
+Comandos: `npm run dev`, `npm test` (vitest), `npm run lint`, `npm run build`, `npm run preview` (build Cloudflare local), `npm run deploy`.
 
-Arquivos-chave: `src/lib/types.ts` (contrato de dados), `src/lib/selectors.ts` (toda leitura passa por aqui), `src/store/AppStore.tsx` (escritas), `src/lib/theme.ts` (cores e siglas), `docs/ARQUITETURA.md`. Na branch `supabase`: `src/lib/supabase.ts`, `src/lib/carregar.ts`, `supabase/migrations/`, `supabase/seed.sql`.
+Arquitetura (detalhes em `docs/ARQUITETURA.md`; plano e hipóteses H1–H14 em `docs/MODELO-E-TELAS.md`; um documento por módulo em `docs/modulos/`):
+- `src/lib/banco/tipos.ts`: as tabelas. `semente/`: dados de exemplo por módulo. `regras/`: regras que viram constraints/funções no Postgres. `operacoes/`: gravações "tudo ou nada" (`definirOperacao`, funções puras sem alterar objetos no lugar; `exigir(...)` recusa com mensagem). A auditoria é automática.
+- `src/lib/consultas/`: toda leitura das telas, uma por módulo, com `banco` como 1º parâmetro.
+- Na tela: `useApp()` (banco, colaborador, executar) e `useGravar()` (grava e mostra aviso). Peças comuns em `components/ui/` e `components/registro/`.
+- Hoje é `HOJE` de `src/lib/banco/constantes.ts`; nunca `new Date()` na renderização.
 
 ## Regras técnicas (do Plano de Ação)
 
@@ -66,7 +69,7 @@ Arquivos-chave: `src/lib/types.ts` (contrato de dados), `src/lib/selectors.ts` (
 
 ## Divergências em aberto (não decida sozinho)
 
-1. O plano previa SPA estática (React + Vite no Cloudflare Pages, sem SSR); o código está em Next.js com OpenNext em Workers. Avaliar `output: 'export'`.
-2. O schema atual espelha o MVP (horários semanais, saldo de reposição guardado, sem auditoria, sem bloqueios, sem contas a pagar, sem chaves). Precisa evoluir para o modelo do plano.
-3. Perfis: plano usa `dono`/`recepcao`/`professor`; o banco usa `diretor`/`operacao`/`professor`.
+1. Next.js em Workers x SPA estática: as telas já são montadas no navegador e quase todas as rotas saem estáticas; falta a equipe confirmar se fica assim.
+2. O schema aplicado no Supabase ainda espelha o MVP antigo; o front já segue o modelo novo (`src/lib/banco/tipos.ts`). As migrações novas devem seguir esse modelo.
+3. Perfis: o modelo novo usa `dono`/`recepcao`/`professor`; o banco aplicado ainda usa `diretor`/`operacao`/`professor`.
 4. Ainda há um só projeto Supabase; o plano pede teste e produção separados.
