@@ -4,7 +4,8 @@
  * ============================================================================
  *  - Painel: ocupacao das quadras no dia, indicadores, proximos horarios e o
  *    quadro "Precisa de atencao".
- *  - Barra do topo: busca rapida de aluno e descricao da arena.
+ *  - Barra do topo e login: busca rapida de aluno, equipe que pode entrar e
+ *    descricao da arena.
  *
  *  Tudo sai do banco e das regras de cada modulo (situacao do lancamento,
  *  saldo de estoque, extrato de reposicao). O numero de cada cartao e o
@@ -451,7 +452,7 @@ export function precisaDeAtencao(
 }
 
 // ---------------------------------------------------------------------------
-// Barra do topo: busca rapida de aluno e descricao da arena
+// Barra do topo e login: busca rapida de aluno, equipe e descricao da arena
 // ---------------------------------------------------------------------------
 
 function normalizar(texto: string): string {
@@ -534,6 +535,11 @@ export function buscarAlunosRapido(
     }));
 
   return { itens, total: encontrados.length };
+}
+
+/** Quem pode entrar no sistema (tela de login): a equipe ativa. */
+export function equipeAtiva(banco: Banco): Colaborador[] {
+  return banco.colaboradores.filter((c) => c.ativo);
 }
 
 /** "3 quadras de saibro · 1 de cimento · paredão" */

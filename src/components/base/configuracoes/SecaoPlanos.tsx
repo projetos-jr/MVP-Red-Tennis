@@ -12,7 +12,7 @@ import {
   reativarPlano,
 } from "@/lib/banco/operacoes/configuracoes";
 import type { Plano } from "@/lib/banco/tipos";
-import { usoDosPlanos } from "@/lib/consultas/configuracoes";
+import { catalogoDePlanos } from "@/lib/consultas/configuracoes";
 import { ESTILO_OCUPACAO, formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
 import { useGravar } from "@/store/useGravar";
@@ -47,11 +47,10 @@ export function SecaoPlanos() {
   const { banco } = useApp();
   const gravar = useGravar();
   const [acao, setAcao] = useState<Acao | null>(null);
-  const uso = useMemo(() => usoDosPlanos(banco, HOJE), [banco]);
-  const { planos } = banco;
-  const ativos = planos.filter((p) => p.ativo).length;
+  const catalogo = useMemo(() => catalogoDePlanos(banco, HOJE), [banco]);
+  const usoPorPlano = new Map(catalogo.itens.map((item) => [item.plano.id, item]));
 
-  const usoDe = (plano: Plano) => uso.get(plano.id) ?? { vigentes: 0, total: 0 };
+  const usoDe = (plano: Plano) => usoPorPlano.get(plano.id) ?? { vigentes: 0, total: 0 };
 
   function reativar(plano: Plano) {
     gravar(reativarPlano, { id: plano.id }, `Plano "${plano.nome}" reativado.`);
@@ -117,7 +116,7 @@ export function SecaoPlanos() {
     <SecaoDeConfiguracao
       id="planos"
       titulo="Planos"
-      descricao={`Catálogo oferecido na matrícula: ${planos.length} planos, ${ativos} ativos.`}
+      descricao={`Catálogo oferecido na matrícula: ${catalogo.itens.length} planos, ${catalogo.ativos} ativos.`}
       icone={<IconeNota className="h-5 w-5" />}
       acao={
         <button type="button" onClick={() => setAcao({ tipo: "editar" })} className="btn-primario">
@@ -153,8 +152,7 @@ export function SecaoPlanos() {
             </tr>
           </thead>
           <tbody className="divide-y divide-areia-100">
-            {planos.map((plano) => {
-              const { vigentes } = usoDe(plano);
+            {catalogo.itens.map(({ plano, vigentes }) => {
               return (
                 <tr key={plano.id} className={plano.ativo ? "" : "bg-areia-50/70 text-areia-500"}>
                   <td className="px-5 py-3">
@@ -187,8 +185,7 @@ export function SecaoPlanos() {
 
       {/* Celular: cartoes */}
       <ul className="divide-y divide-areia-100 md:hidden">
-        {planos.map((plano) => {
-          const { vigentes } = usoDe(plano);
+        {catalogo.itens.map(({ plano, vigentes }) => {
           return (
             <li key={plano.id} className={`px-4 py-3.5 ${plano.ativo ? "" : "bg-areia-50/70"}`}>
               <div className="flex items-start justify-between gap-3">

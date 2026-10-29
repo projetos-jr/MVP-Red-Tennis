@@ -5,12 +5,20 @@
 
 import { describe, expect, it } from "vitest";
 import { podeAcessar } from "../../consultas/base";
-import { siglasAtivas } from "../../consultas/configuracoes";
+import {
+  catalogoDePlanos,
+  descreverRegistro,
+  filtrarHistorico,
+  mudancasNasPermissoes,
+  siglasAtivas,
+} from "../../consultas/configuracoes";
+import { somarDias } from "../../date";
+import { adicionarComentario } from "./base";
 import { HOJE } from "../constantes";
 import { executarOperacao, type ContextoOperacao, type Operacao } from "../executar";
 import type { Permissoes } from "../regras/configuracoes";
 import { gerarBancoInicial } from "../semente";
-import type { Banco, Colaborador, Perfil, Plano } from "../tipos";
+import type { Banco, Colaborador, Configuracoes, Perfil, Plano } from "../tipos";
 import {
   alterarPermissoes,
   apagarPlano,
@@ -284,6 +292,17 @@ describe("planos (H2, H3)", () => {
       .forEach((m) => expect(m.valorMensal).toBe(720));
   });
 
+  it("o catálogo mostra quantas matrículas cada plano tem", () => {
+    const { itens, ativos } = catalogoDePlanos(banco, HOJE);
+    const vigentesDoIndividual = banco.matriculas.filter(
+      (m) => m.planoId === "pl-ind" && (!m.fim || m.fim >= HOJE),
+    ).length;
+    expect(itens.find((i) => i.plano.id === "pl-ind")?.vigentes).toBe(vigentesDoIndividual);
+    expect(itens.find((i) => i.plano.id === "pl-pdl")).toMatchObject({ vigentes: 0, total: 0 });
+    expect(ativos).toBe(banco.planos.length);
+    expect(catalogoDePlanos(gravar(desativarPlano, { id: "pl-pdl" }), HOJE).ativos).toBe(banco.planos.length - 1);
+  });
+
   it("o tipo só muda em plano sem matrícula", () => {
     expect(recusa(editarPlano, { ...plano("pl-ind"), tipo: "Dupla" })).toMatch(/o tipo não pode mudar/);
     const novo = gravar(editarPlano, { ...plano("pl-pdl"), tipo: "Locação Mensal" });
@@ -318,6 +337,16 @@ describe("permissoes (H9)", () => {
     ).toBe("Para ver as contas a pagar, o perfil Professor precisa ter acesso ao Financeiro.");
   });
 
+  it("o histórico descreve a mudança perfil a perfil", () => {
+    const novo = gravar(alterarPermissoes, {
+      permissoes: { ...atuais, recepcao: [...atuais.recepcao.filter((m) => m !== "estoque"), "historico"] },
+    });
+    const antes = novo.auditoria[0].antes as Configuracoes;
+    expect(mudancasNasPermissoes(antes.permissoes, novo.configuracoes.permissoes)).toEqual([
+      "Recepção: passou a ver Histórico de alterações; deixou de ver Estoque",
+    ]);
+  });
+
   it("dar o Histórico à recepção passa a valer na hora", () => {
     expect(podeAcessar(banco, recepcao, "historico")).toBe(false);
     const novo = gravar(alterarPermissoes, {
@@ -326,5 +355,44 @@ describe("permissoes (H9)", () => {
     expect(podeAcessar(novo, recepcao, "historico")).toBe(true);
     // Sem repeticao e na ordem padrao dos modulos.
     expect(novo.configuracoes.permissoes.recepcao).toEqual([...atuais.recepcao, "historico"]);
+  });
+});
+
+describe("historico de alteracoes (consultas)", () => {
+  // Tres gravacoes, de duas pessoas, em tabelas e acoes diferentes.
+  const comConfiguracao = gravar(salvarParametros, { pontosVitoria: 12 });
+  const comPlano = gravar(incluirPlano, novoPlano, comConfiguracao);
+  const final = gravar(
+    adicionarComentario,
+    { entidade: "aluno", entidadeId: "a01", texto: "Ligar para confirmar o horário." },
+    comPlano,
+    recepcao,
+  );
+
+  it("lista do mais recente para o mais antigo", () => {
+    expect(filtrarHistorico(final, {}).map((r) => r.tabela)).toEqual([
+      "comentarios",
+      "planos",
+      "configuracoes",
+    ]);
+  });
+
+  it("filtra por pessoa, tipo de registro, ação e período", () => {
+    expect(filtrarHistorico(final, { usuarioId: recepcao.id }).map((r) => r.tabela)).toEqual([
+      "comentarios",
+    ]);
+    expect(filtrarHistorico(final, { tabela: "planos" })).toHaveLength(1);
+    expect(filtrarHistorico(final, { acao: "alterar" }).map((r) => r.tabela)).toEqual([
+      "configuracoes",
+    ]);
+    expect(filtrarHistorico(final, { de: HOJE, ate: HOJE })).toHaveLength(3);
+    expect(filtrarHistorico(final, { de: somarDias(HOJE, 1) })).toHaveLength(0);
+  });
+
+  it("descreve cada registro em linguagem simples", () => {
+    const [comentario, planoCriado, configuracao] = filtrarHistorico(final, {});
+    expect(descreverRegistro(final, configuracao)).toBe("Pontos por vitória");
+    expect(descreverRegistro(final, planoCriado)).toBe(novoPlano.nome);
+    expect(descreverRegistro(final, comentario)).toBe('"Ligar para confirmar o horário."');
   });
 });

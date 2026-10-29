@@ -15,6 +15,8 @@ import type {
   Configuracoes,
   ModuloSistema,
   Perfil,
+  Plano,
+  Professor,
   QuadraId,
   RegistroAuditoria,
   SiglaReposicao,
@@ -108,11 +110,19 @@ export function usoDasSiglas(banco: Banco): Map<string, number> {
   return uso;
 }
 
-/** Matriculas de cada plano: vigentes (hoje ou futuras) e no total. */
-export function usoDosPlanos(
+export interface PlanoNoCatalogo {
+  plano: Plano;
+  /** Matriculas que valem hoje ou comecam depois. */
+  vigentes: number;
+  /** Todas as matriculas, inclusive as encerradas. */
+  total: number;
+}
+
+/** Catalogo de planos com o uso de cada um (o que trava apagar e mudar o tipo). */
+export function catalogoDePlanos(
   banco: Banco,
   hoje: string,
-): Map<string, { vigentes: number; total: number }> {
+): { itens: PlanoNoCatalogo[]; ativos: number } {
   const uso = new Map<string, { vigentes: number; total: number }>();
   banco.matriculas.forEach((m) => {
     const atual = uso.get(m.planoId) ?? { vigentes: 0, total: 0 };
@@ -121,7 +131,17 @@ export function usoDosPlanos(
       total: atual.total + 1,
     });
   });
-  return uso;
+  return {
+    itens: banco.planos.map((plano) => ({ plano, ...(uso.get(plano.id) ?? { vigentes: 0, total: 0 }) })),
+    ativos: banco.planos.filter((p) => p.ativo).length,
+  };
+}
+
+/** Professores com a regra de repasse de cada um (Hipotese H6), os ativos primeiro. */
+export function regrasDeRepasse(banco: Banco): Professor[] {
+  return [...banco.professores].sort(
+    (a, b) => Number(b.ativo) - Number(a.ativo) || a.nome.localeCompare(b.nome, "pt-BR"),
+  );
 }
 
 // ---------------------------------------------------------------------------

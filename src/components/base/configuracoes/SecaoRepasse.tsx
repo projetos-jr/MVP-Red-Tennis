@@ -5,6 +5,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { IconeSeta, IconeUsuarios } from "@/components/ui/Icons";
 import type { RegraRepasse } from "@/lib/banco/tipos";
 import { podeAcessar } from "@/lib/consultas/base";
+import { regrasDeRepasse } from "@/lib/consultas/configuracoes";
 import { formatarMoeda } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
 import { SecaoDeConfiguracao, SeloHipotese } from "./Pecas";
@@ -38,7 +39,7 @@ export function SecaoRepasse() {
         </span>
       </p>
       <ul className="divide-y divide-areia-100">
-        {banco.professores.map((professor) => (
+        {regrasDeRepasse(banco).map((professor) => (
           <li key={professor.id} className="flex items-center gap-3 px-5 py-3">
             <span aria-hidden="true">
               <Avatar id={professor.id} nome={professor.nome} tamanho="sm" />

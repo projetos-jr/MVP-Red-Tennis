@@ -9,7 +9,11 @@ import { Logo } from "@/components/layout/Logo";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeCadeado, IconeSeta } from "@/components/ui/Icons";
 import { NOMES_DOS_PERFIS, resumoDoAcesso } from "@/lib/consultas/configuracoes";
-import { HORARIO_DE_FUNCIONAMENTO, descricaoDaArena } from "@/lib/consultas/painel";
+import {
+  HORARIO_DE_FUNCIONAMENTO,
+  descricaoDaArena,
+  equipeAtiva,
+} from "@/lib/consultas/painel";
 import { useApp } from "@/store/AppStore";
 
 /**
@@ -26,7 +30,7 @@ import { useApp } from "@/store/AppStore";
 export default function PaginaLogin() {
   const router = useRouter();
   const { banco, entrar } = useApp();
-  const equipe = banco.colaboradores.filter((c) => c.ativo);
+  const equipe = equipeAtiva(banco);
   const [escolhidoId, setEscolhidoId] = useState(equipe[0]?.id ?? "");
   const [senha, setSenha] = useState("");
   const escolhido = equipe.find((c) => c.id === escolhidoId) ?? equipe[0];
