@@ -1,4 +1,4 @@
-import type { PisoQuadra } from "@/lib/types";
+import type { PisoQuadra } from "@/lib/banco/tipos";
 
 interface Quadra3DProps {
   /** Numero da quadra ou "P" para o paredão. */
