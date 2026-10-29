@@ -8,6 +8,8 @@ Instruções para o Claude Code neste repositório. Responda sempre em portuguê
 
 O arquivo acima é confidencial (contrato, cliente, LGPD) e fica fora do Git. Se ele não foi carregado nesta sessão, avise a pessoa logo no início: peça para salvar `CONTEXTO-COMPLETO-RED-TENNIS.md` em `docs/privado/`. Sem ele, você não tem o escopo contratado, as regras de negócio, o plano de ação nem as pendências do cliente.
 
+Em sessões na nuvem (claude.ai/code), o repositório é clonado do zero a cada sessão: o arquivo precisa ser anexado de novo e salvo em `docs/privado/`. Nessas sessões, Supabase, Cloudflare e GitHub chegam pelos conectores do claude.ai, sem `/mcp` nem `gh auth login`.
+
 ## O projeto em poucas linhas
 
 Sistema de gestão para uma arena de tênis (4 quadras + 1 paredão, 07h–22h), feito pela UFABC Jr. a partir de um MVP só de front-end. Módulos contratados: agenda (fixos, avulsos, reposições, cancelamentos, bloqueios), ficha do aluno, financeiro (pagar, receber, status, repasse aos professores), estoque, ranking e chaveamento (eliminatória simples, grupos + eliminatória, todos contra todos). Requisitos centrais do cliente: centralização, rastreabilidade de todas as ações, e **autonomia**: o cliente não pode depender de quem fez o sistema, então documentação e portabilidade importam mais que sofisticação.
@@ -28,7 +30,7 @@ Papéis: Consultor 1 = front e telas; Consultor 2 = banco, migrações, auth, RL
 
 - Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 3.
 - Publicação na Cloudflare Workers via OpenNext (`wrangler.jsonc`, `open-next.config.ts`). Ainda não publicado: falta ligar o repositório no painel da Cloudflare.
-- Supabase (Postgres 17, Auth, RLS), projeto "Red Tennis", região sa-east-1 (São Paulo), plano Free. A ligação com o site está no PR #2 (branch `supabase`), ainda aberto.
+- Supabase (Postgres 17, Auth, RLS), projeto "Red Tennis" (`xfludepkrcnwovnckpfc`), região sa-east-1 (São Paulo), plano Free. A ligação com o site está no PR #2 (branch `supabase`), ainda aberto.
 - MVP de demonstração continua na Vercel: https://mvp-red-tennis.vercel.app
 
 Comandos: `npm run dev`, `npm run build`, `npm run lint`, `npm run preview` (build Cloudflare local), `npm run deploy`.
