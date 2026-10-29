@@ -39,3 +39,9 @@ yarn-error.log*
 /.wrangler/
 .dev.vars*
 !.dev.vars.example
+
+# contexto confidencial do projeto (contrato, cliente) e config local do Claude Code
+/docs/privado/*
+!/docs/privado/LEIA-ME.md
+CLAUDE.local.md
+.claude/settings.local.json
