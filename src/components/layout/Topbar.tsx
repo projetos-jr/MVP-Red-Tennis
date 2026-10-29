@@ -1,73 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Logo } from "./Logo";
-import { ABAS } from "./abas";
-import { IconeSair } from "@/components/ui/Icons";
-import { ARENA } from "@/lib/mock-data";
+import { usePathname } from "next/navigation";
+import { podeAcessar } from "@/lib/consultas/base";
+import { HORARIO_DE_FUNCIONAMENTO, descricaoDaArena } from "@/lib/consultas/painel";
 import { useApp } from "@/store/AppStore";
+import { BuscaRapida } from "./BuscaRapida";
+import { Logo } from "./Logo";
+import { MenuDoUsuario } from "./MenuDoUsuario";
+import { abasPermitidas, areaInicial, estaNaArea } from "./abas";
 
-
+/**
+ * Barra do topo: marca, busca rapida de aluno, usuario logado e as abas que
+ * o perfil pode abrir (Hipotese H9). No celular as abas vao para a barra
+ * inferior (`NavegacaoMobile`).
+ */
 export function Topbar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { usuario, sair } = useApp();
-
-  function sairDoSistema() {
-    sair();
-    router.push("/");
-  }
+  const caminho = usePathname();
+  const { banco, colaborador } = useApp();
+  const abas = abasPermitidas(banco, colaborador);
+  const inicio = areaInicial(banco, colaborador)?.href ?? "/";
 
   return (
     <header className="sticky top-0 z-30 border-b border-areia-200 bg-white/95 backdrop-blur">
-      {/* Faixa superior: marca, identificacao da arena e usuario logado */}
-      <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 2xl:px-10">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <Logo variante="marca" className="h-7 w-auto sm:h-8" />
-          <span>
+      {/* Faixa superior: marca, busca e usuario logado */}
+      <div className="flex w-full items-center justify-between gap-3 px-4 py-2.5 sm:px-6 2xl:px-10">
+        <Link href={inicio} className="flex min-w-0 items-center gap-3">
+          <Logo variante="marca" className="h-7 w-auto shrink-0 sm:h-8" />
+          <span className="min-w-0">
             <span className="block text-sm font-bold uppercase tracking-[0.18em] text-tijolo-700">
               Red Tennis
             </span>
-            <span className="hidden text-[11px] text-areia-500 sm:block">
-              {ARENA.endereco} · {ARENA.horarioFuncionamento}
+            <span className="hidden truncate text-[11px] text-areia-500 lg:block">
+              {descricaoDaArena(banco)} · {HORARIO_DE_FUNCIONAMENTO}
             </span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold leading-tight text-areia-900">
-              {usuario.nome}
-            </p>
-            <p className="text-[11px] leading-tight text-areia-500">
-              {usuario.cargo}
-            </p>
-          </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-saibro-600 text-sm font-semibold text-white">
-            {usuario.nome
-              .split(" ")
-              .map((p) => p[0])
-              .slice(0, 2)
-              .join("")}
-          </span>
-          <button
-            type="button"
-            onClick={sairDoSistema}
-            className="btn-fantasma px-2.5 py-2"
-            title="Sair do sistema"
-          >
-            <IconeSair className="h-5 w-5" />
-            <span className="sr-only">Sair</span>
-          </button>
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          {podeAcessar(banco, colaborador, "alunos") && <BuscaRapida />}
+          <MenuDoUsuario />
         </div>
       </div>
 
       {/* Abas de navegacao — no celular a navegacao fica na barra inferior */}
-      <nav className="hidden w-full px-2 sm:px-4 md:block 2xl:px-8">
+      <nav aria-label="Seções do sistema" className="hidden w-full px-2 sm:px-4 md:block 2xl:px-8">
         <ul className="flex items-center gap-1 overflow-x-auto rolagem-suave">
-          {ABAS.map(({ href, rotulo, Icone }) => {
-            const ativo = pathname.startsWith(href);
+          {abas.map(({ href, rotulo, Icone }) => {
+            const ativo = estaNaArea(caminho, href);
             return (
               <li key={href}>
                 <Link

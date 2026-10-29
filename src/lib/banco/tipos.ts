@@ -89,6 +89,12 @@ export interface SiglaReposicao {
    *  - "ambos": pode ser usada nos dois casos.
    */
   aplicaA: "ocupacao" | "aluno" | "ambos";
+  /**
+   * true = desativada nas Configuracoes: sai dos formularios novos, mas
+   * continua valendo para as aulas e creditos que ja usam o codigo.
+   * Vazio = ativa.
+   */
+  desativada?: boolean;
 }
 
 /**
