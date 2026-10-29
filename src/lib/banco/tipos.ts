@@ -394,6 +394,8 @@ export interface Lancamento {
   consumoId?: string;
   torneioId?: string;
   repasseId?: string;
+  /** Entrada de mercadoria que gerou a conta a pagar ao fornecedor. */
+  movimentoEstoqueId?: string;
   /** Lancamento anulado (nunca se apaga: anula-se, com motivo). */
   canceladoEm?: string;
   motivoCancelamento?: string;
