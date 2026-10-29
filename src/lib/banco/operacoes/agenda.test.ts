@@ -114,7 +114,13 @@ describe("novo horário avulso e conflito de quadra", () => {
     const erro = recusa(
       banco,
       criarHorarioAvulso,
-      aula({ horaInicio: "10:30", horaFim: "11:30", tipo: "Dupla", professorId: "prof-2", alunosIds: ["a03", "a08"] }),
+      aula({
+        horaInicio: "10:30",
+        horaFim: "11:30",
+        tipo: "Dupla",
+        professorId: "prof-2",
+        alunosIds: ["a03", "a08"],
+      }),
     );
     expect(erro).toBe(
       "Quadra 1 já está ocupada em 12/11 das 10:00 às 11:00 (Individual · Guilherme Lima).",
@@ -122,17 +128,30 @@ describe("novo horário avulso e conflito de quadra", () => {
   });
 
   it("aceita a aula que começa quando a outra termina (11:00-12:00)", () => {
-    const depois = rodar(banco, criarHorarioAvulso, aula({ horaInicio: "11:00", horaFim: "12:00", alunosIds: ["a04"] }));
+    const depois = rodar(
+      banco,
+      criarHorarioAvulso,
+      aula({ horaInicio: "11:00", horaFim: "12:00", alunosIds: ["a04"] }),
+    );
     expect(depois.ocupacoes.filter(ocupacaoAtiva)).toHaveLength(2);
   });
 
   it("grava a ocupação com data, alunos a marcar e a auditoria", () => {
-    expect(ocupacao).toMatchObject({ quadraId: "1", data: "2026-11-12", situacao: "agendada", tipo: "Individual" });
+    expect(ocupacao).toMatchObject({
+      quadraId: "1",
+      data: "2026-11-12",
+      situacao: "agendada",
+      tipo: "Individual",
+    });
     expect(banco.ocupacaoAlunos).toEqual([
       expect.objectContaining({ ocupacaoId: ocupacao.id, alunoId: "a01", presenca: "a_marcar" }),
     ]);
     expect(banco.auditoria).toContainEqual(
-      expect.objectContaining({ tabela: "ocupacoes", acao: "criar", operacao: "Criar horário avulso" }),
+      expect.objectContaining({
+        tabela: "ocupacoes",
+        acao: "criar",
+        operacao: "Criar horário avulso",
+      }),
     );
   });
 
@@ -229,7 +248,11 @@ describe("horário fixo (recorrência)", () => {
   it("mostra antes as datas que batem com outra ocupação, e quem ocupa", () => {
     const ate = horizonteDaAgenda(comAvulsa.configuracoes, "2026-11-10");
     expect(ate).toBe("2027-01-31");
-    const datas = datasDaRecorrencia(comAvulsa, { ...fixo, diaSemana: 4, inicio: fixo.dataInicio }, ate);
+    const datas = datasDaRecorrencia(
+      comAvulsa,
+      { ...fixo, diaSemana: 4, inicio: fixo.dataInicio },
+      ate,
+    );
     expect(datas).toHaveLength(12);
     const emConflito = datas.filter((d) => d.conflito);
     expect(emConflito.map((d) => d.data)).toEqual(["2026-11-19"]);
@@ -245,8 +268,15 @@ describe("horário fixo (recorrência)", () => {
   it("pulando a data em conflito, cria o molde, os alunos e uma aula por semana até o horizonte (H12)", () => {
     const banco = rodar(comAvulsa, criarHorarioFixo, { ...fixo, datasPuladas: ["2026-11-19"] });
     const [molde] = banco.horariosFixos;
-    expect(molde).toMatchObject({ diaSemana: 4, inicio: "2026-11-12", horaInicio: "18:00", tipo: "Individual" });
-    expect(banco.horarioAlunos).toEqual([expect.objectContaining({ horarioFixoId: molde.id, alunoId: "a06" })]);
+    expect(molde).toMatchObject({
+      diaSemana: 4,
+      inicio: "2026-11-12",
+      horaInicio: "18:00",
+      tipo: "Individual",
+    });
+    expect(banco.horarioAlunos).toEqual([
+      expect.objectContaining({ horarioFixoId: molde.id, alunoId: "a06" }),
+    ]);
     const aulas = banco.ocupacoes.filter((o) => o.horarioFixoId === molde.id);
     expect(aulas).toHaveLength(11);
     expect(aulas.map((o) => o.data)).not.toContain("2026-11-19");
@@ -264,31 +294,56 @@ describe("horário fixo (recorrência)", () => {
   describe("encerrar horário fixo", () => {
     const banco = rodar(comAvulsa, criarHorarioFixo, { ...fixo, datasPuladas: ["2026-11-19"] });
     const molde = banco.horariosFixos[0];
-    const aulasDoFixo = (b: Banco) => b.ocupacoes.filter((o) => o.horarioFixoId === molde.id).map((o) => o.data);
+    const aulasDoFixo = (b: Banco) =>
+      b.ocupacoes.filter((o) => o.horarioFixoId === molde.id).map((o) => o.data);
 
     it("define o fim e tira só as aulas futuras depois da data (auditado)", () => {
-      const encerrado = rodar(banco, encerrarHorarioFixo, { horarioFixoId: molde.id, fim: "2026-12-10" });
+      const encerrado = rodar(banco, encerrarHorarioFixo, {
+        horarioFixoId: molde.id,
+        fim: "2026-12-10",
+      });
       expect(encerrado.horariosFixos[0].fim).toBe("2026-12-10");
-      expect(aulasDoFixo(encerrado)).toEqual(["2026-11-12", "2026-11-26", "2026-12-03", "2026-12-10"]);
+      expect(aulasDoFixo(encerrado)).toEqual([
+        "2026-11-12",
+        "2026-11-26",
+        "2026-12-03",
+        "2026-12-10",
+      ]);
       expect(encerrado.ocupacaoAlunos.filter((p) => p.alunoId === "a06")).toHaveLength(4);
       const apagadas = encerrado.auditoria.filter(
-        (r) => r.tabela === "ocupacoes" && r.acao === "apagar" && r.operacao === "Encerrar horário fixo",
+        (r) =>
+          r.tabela === "ocupacoes" && r.acao === "apagar" && r.operacao === "Encerrar horário fixo",
       );
       expect(apagadas).toHaveLength(7);
     });
 
     it("aulas que já passaram ficam como histórico", () => {
       const mais_tarde = ctx({ hoje: "2026-12-01", agora: "2026-12-01T08:00:00" });
-      const encerrado = rodar(banco, encerrarHorarioFixo, { horarioFixoId: molde.id, fim: "2026-11-20" }, mais_tarde);
+      const encerrado = rodar(
+        banco,
+        encerrarHorarioFixo,
+        { horarioFixoId: molde.id, fim: "2026-11-20" },
+        mais_tarde,
+      );
       expect(aulasDoFixo(encerrado)).toEqual(["2026-11-12", "2026-11-26"]);
     });
 
     it("aula cancelada fica como histórico, com o crédito dela", () => {
-      const aulaDe17 = banco.ocupacoes.find((o) => o.horarioFixoId === molde.id && o.data === "2026-12-17")!;
+      const aulaDe17 = banco.ocupacoes.find(
+        (o) => o.horarioFixoId === molde.id && o.data === "2026-12-17",
+      )!;
       // Individual: a falta avisada cancela a aula.
-      const avisou = rodar(banco, marcarPresenca, { ocupacaoId: aulaDe17.id, alunoId: "a06", presenca: "falta_avisada", sigla: "24h" });
+      const avisou = rodar(banco, marcarPresenca, {
+        ocupacaoId: aulaDe17.id,
+        alunoId: "a06",
+        presenca: "falta_avisada",
+        sigla: "24h",
+      });
       expect(buscar(avisou, aulaDe17.id).situacao).toBe("cancelada");
-      const encerrado = rodar(avisou, encerrarHorarioFixo, { horarioFixoId: molde.id, fim: "2026-12-10" });
+      const encerrado = rodar(avisou, encerrarHorarioFixo, {
+        horarioFixoId: molde.id,
+        fim: "2026-12-10",
+      });
       expect(buscar(encerrado, aulaDe17.id)).toBeDefined();
       expect(saldo(encerrado, "a06")).toBe(60);
     });
@@ -305,24 +360,41 @@ describe("horário fixo (recorrência)", () => {
       });
       const moldeDupla = comDupla.horariosFixos[0];
       const aulaDe18 = comDupla.ocupacoes.find((o) => o.data === "2026-12-18")!;
-      const avisou = rodar(comDupla, marcarPresenca, { ocupacaoId: aulaDe18.id, alunoId: "a03", presenca: "falta_avisada", sigla: "24h" });
+      const avisou = rodar(comDupla, marcarPresenca, {
+        ocupacaoId: aulaDe18.id,
+        alunoId: "a03",
+        presenca: "falta_avisada",
+        sigla: "24h",
+      });
       expect(saldo(avisou, "a03")).toBe(60);
 
-      const encerrado = rodar(avisou, encerrarHorarioFixo, { horarioFixoId: moldeDupla.id, fim: "2026-12-11" });
+      const encerrado = rodar(avisou, encerrarHorarioFixo, {
+        horarioFixoId: moldeDupla.id,
+        fim: "2026-12-11",
+      });
       expect(buscar(encerrado, aulaDe18.id)).toBeUndefined();
       expect(doAluno(encerrado, "a03")).toEqual([]);
 
-      const outra = comAula(avisou, { quadraId: "2", data: "2026-11-13", tipo: "LAP", professorId: "prof-3", alunosIds: ["a07"] });
-      const usou = rodar(outra.banco, usarReposicao, { ocupacaoId: outra.ocupacao.id, alunoId: "a03" });
-      expect(recusa(usou, encerrarHorarioFixo, { horarioFixoId: moldeDupla.id, fim: "2026-12-11" })).toMatch(
-        /já foi usado/,
-      );
+      const outra = comAula(avisou, {
+        quadraId: "2",
+        data: "2026-11-13",
+        tipo: "LAP",
+        professorId: "prof-3",
+        alunosIds: ["a07"],
+      });
+      const usou = rodar(outra.banco, usarReposicao, {
+        ocupacaoId: outra.ocupacao.id,
+        alunoId: "a03",
+      });
+      expect(
+        recusa(usou, encerrarHorarioFixo, { horarioFixoId: moldeDupla.id, fim: "2026-12-11" }),
+      ).toMatch(/já foi usado/);
     });
 
     it("recusa data antes do início do horário", () => {
-      expect(recusa(banco, encerrarHorarioFixo, { horarioFixoId: molde.id, fim: "2026-11-01" })).toMatch(
-        /o encerramento precisa ser depois disso/,
-      );
+      expect(
+        recusa(banco, encerrarHorarioFixo, { horarioFixoId: molde.id, fim: "2026-11-01" }),
+      ).toMatch(/o encerramento precisa ser depois disso/);
     });
   });
 });
@@ -335,59 +407,119 @@ describe("presença e falta avisada", () => {
   });
 
   it("falta avisada numa Dupla gera crédito só daquele aluno, válido por 3 meses (H1)", () => {
-    const banco = rodar(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "falta_avisada", sigla: "24h" });
+    const banco = rodar(comDupla, marcarPresenca, {
+      ocupacaoId: dupla.id,
+      alunoId: "a03",
+      presenca: "falta_avisada",
+      sigla: "24h",
+    });
     expect(doAluno(banco, "a03")).toEqual([
-      expect.objectContaining({ minutos: 60, sigla: "24h", ocupacaoOrigemId: dupla.id, validade: "2027-02-12" }),
+      expect.objectContaining({
+        minutos: 60,
+        sigla: "24h",
+        ocupacaoOrigemId: dupla.id,
+        validade: "2027-02-12",
+      }),
     ]);
     expect(doAluno(banco, "a13")).toEqual([]);
     expect(buscar(banco, dupla.id).situacao).toBe("agendada");
-    expect(banco.ocupacaoAlunos.find((p) => p.alunoId === "a03")).toMatchObject({ presenca: "falta_avisada", sigla: "24h" });
+    expect(banco.ocupacaoAlunos.find((p) => p.alunoId === "a03")).toMatchObject({
+      presenca: "falta_avisada",
+      sigla: "24h",
+    });
   });
 
   it("em aula Individual a falta avisada cancela a aula, com um crédito só", () => {
     const { banco: comIndividual, ocupacao: individual } = comAula(VAZIO);
-    const banco = rodar(comIndividual, marcarPresenca, { ocupacaoId: individual.id, alunoId: "a01", presenca: "falta_avisada", sigla: "TIP" });
-    expect(buscar(banco, individual.id)).toMatchObject({ situacao: "cancelada", motivoCancelamento: "TIP" });
+    const banco = rodar(comIndividual, marcarPresenca, {
+      ocupacaoId: individual.id,
+      alunoId: "a01",
+      presenca: "falta_avisada",
+      sigla: "TIP",
+    });
+    expect(buscar(banco, individual.id)).toMatchObject({
+      situacao: "cancelada",
+      motivoCancelamento: "TIP",
+    });
     expect(doAluno(banco, "a01")).toHaveLength(1);
     expect(saldo(banco, "a01")).toBe(60);
   });
 
   it("presença e falta só no dia da aula ou depois; a aula passa a realizada", () => {
-    expect(recusa(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "presente" })).toBe(
-      "Presença e falta só podem ser marcadas no dia da aula ou depois.",
-    );
+    expect(
+      recusa(comDupla, marcarPresenca, {
+        ocupacaoId: dupla.id,
+        alunoId: "a03",
+        presenca: "presente",
+      }),
+    ).toBe("Presença e falta só podem ser marcadas no dia da aula ou depois.");
     const noDia = ctx({ hoje: "2026-11-12", agora: "2026-11-12T10:05:00" });
-    const banco = rodar(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "presente" }, noDia);
+    const banco = rodar(
+      comDupla,
+      marcarPresenca,
+      { ocupacaoId: dupla.id, alunoId: "a03", presenca: "presente" },
+      noDia,
+    );
     expect(buscar(banco, dupla.id).situacao).toBe("realizada");
-    const comFalta = rodar(banco, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a13", presenca: "falta" }, noDia);
+    const comFalta = rodar(
+      banco,
+      marcarPresenca,
+      { ocupacaoId: dupla.id, alunoId: "a13", presenca: "falta" },
+      noDia,
+    );
     expect(comFalta.ocupacaoAlunos.find((p) => p.alunoId === "a13")?.presenca).toBe("falta");
     expect(comFalta.reposicoes).toEqual([]);
   });
 
   it("desfazer a falta avisada retira o crédito; se ele já foi usado, recusa", () => {
-    const avisou = rodar(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "falta_avisada", sigla: "24h" });
-    const desfeito = rodar(avisou, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "a_marcar" });
+    const avisou = rodar(comDupla, marcarPresenca, {
+      ocupacaoId: dupla.id,
+      alunoId: "a03",
+      presenca: "falta_avisada",
+      sigla: "24h",
+    });
+    const desfeito = rodar(avisou, marcarPresenca, {
+      ocupacaoId: dupla.id,
+      alunoId: "a03",
+      presenca: "a_marcar",
+    });
     expect(doAluno(desfeito, "a03")).toEqual([]);
 
     const outra = comAula(avisou, { quadraId: "2", data: "2026-11-13", alunosIds: ["a04"] });
-    const usou = rodar(outra.banco, usarReposicao, { ocupacaoId: outra.ocupacao.id, alunoId: "a03" });
-    expect(recusa(usou, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "a_marcar" })).toBe(
-      "O crédito desta falta avisada já foi usado numa reposição: não dá para desfazê-lo.",
-    );
+    const usou = rodar(outra.banco, usarReposicao, {
+      ocupacaoId: outra.ocupacao.id,
+      alunoId: "a03",
+    });
+    expect(
+      recusa(usou, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "a_marcar" }),
+    ).toBe("O crédito desta falta avisada já foi usado numa reposição: não dá para desfazê-lo.");
   });
 
   it("falta avisada pede sigla de aluno (CH é da aula inteira)", () => {
-    expect(recusa(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "falta_avisada" })).toBe(
-      "Escolha a sigla da falta avisada.",
-    );
     expect(
-      recusa(comDupla, marcarPresenca, { ocupacaoId: dupla.id, alunoId: "a03", presenca: "falta_avisada", sigla: "CH" }),
+      recusa(comDupla, marcarPresenca, {
+        ocupacaoId: dupla.id,
+        alunoId: "a03",
+        presenca: "falta_avisada",
+      }),
+    ).toBe("Escolha a sigla da falta avisada.");
+    expect(
+      recusa(comDupla, marcarPresenca, {
+        ocupacaoId: dupla.id,
+        alunoId: "a03",
+        presenca: "falta_avisada",
+        sigla: "CH",
+      }),
     ).toMatch(/é para cancelar a aula inteira/);
   });
 });
 
 describe("cancelar aula", () => {
-  const { banco, ocupacao } = comAula(VAZIO, { tipo: "Dupla", professorId: "prof-3", alunosIds: ["a03", "a13"] });
+  const { banco, ocupacao } = comAula(VAZIO, {
+    tipo: "Dupla",
+    professorId: "prof-3",
+    alunosIds: ["a03", "a13"],
+  });
 
   it("exige motivo", () => {
     expect(recusa(banco, cancelarOcupacao, { id: ocupacao.id, motivo: "  " })).toBe(
@@ -419,10 +551,18 @@ describe("cancelar aula", () => {
   });
 
   it("motivo em texto livre cancela sem crédito; quem já tinha crédito não ganha de novo", () => {
-    const semCredito = rodar(banco, cancelarOcupacao, { id: ocupacao.id, motivo: "Evento particular" });
+    const semCredito = rodar(banco, cancelarOcupacao, {
+      id: ocupacao.id,
+      motivo: "Evento particular",
+    });
     expect(semCredito.reposicoes).toEqual([]);
 
-    const avisou = rodar(banco, marcarPresenca, { ocupacaoId: ocupacao.id, alunoId: "a03", presenca: "falta_avisada", sigla: "24h" });
+    const avisou = rodar(banco, marcarPresenca, {
+      ocupacaoId: ocupacao.id,
+      alunoId: "a03",
+      presenca: "falta_avisada",
+      sigla: "24h",
+    });
     expect(efeitoDoCancelamento(avisou, ocupacao, "CH", "x").porAluno[0]).toEqual({
       alunoId: "a03",
       minutos: 0,
@@ -430,14 +570,19 @@ describe("cancelar aula", () => {
     });
     const cancelado = rodar(avisou, cancelarOcupacao, { id: ocupacao.id, motivo: "CH" });
     expect(doAluno(cancelado, "a03")).toHaveLength(1);
-    expect(doAluno(cancelado, "a13")).toEqual([expect.objectContaining({ sigla: "CH", minutos: 60 })]);
+    expect(doAluno(cancelado, "a13")).toEqual([
+      expect.objectContaining({ sigla: "CH", minutos: 60 }),
+    ]);
     // A falta avisada fica registrada; o resto volta para "a marcar".
     expect(cancelado.ocupacaoAlunos.map((p) => p.presenca)).toEqual(["falta_avisada", "a_marcar"]);
   });
 
   it("cancelar uma locação avulsa anula a cobrança ainda não paga (sem apagar)", () => {
     const reserva = comAula(VAZIO, { tipo: "Locação Avulsa", alunosIds: ["a20"] });
-    const cancelado = rodar(reserva.banco, cancelarOcupacao, { id: reserva.ocupacao.id, motivo: "Cliente desistiu" });
+    const cancelado = rodar(reserva.banco, cancelarOcupacao, {
+      id: reserva.ocupacao.id,
+      motivo: "Cliente desistiu",
+    });
     expect(cancelado.lancamentos).toHaveLength(1);
     expect(cancelado.lancamentos[0]).toMatchObject({
       canceladoEm: "2026-11-10T09:00:00",
@@ -448,20 +593,34 @@ describe("cancelar aula", () => {
 
 describe("remarcar", () => {
   const primeira = comAula(VAZIO);
-  const segunda = comAula(primeira.banco, { quadraId: "2", horaInicio: "15:00", horaFim: "16:00", alunosIds: ["a04"], professorId: "prof-2" });
+  const segunda = comAula(primeira.banco, {
+    quadraId: "2",
+    horaInicio: "15:00",
+    horaFim: "16:00",
+    alunosIds: ["a04"],
+    professorId: "prof-2",
+  });
 
   it("recusa remarcar para cima de outra ocupação e aceita um horário livre", () => {
-    const destino = { quadraId: "2" as const, data: "2026-11-12", horaInicio: "15:30", horaFim: "16:30" };
-    expect(recusa(segunda.banco, remarcarOcupacao, { id: primeira.ocupacao.id, ...destino })).toMatch(
-      /^Quadra 2 já está ocupada em 12\/11 das 15:00 às 16:00/,
-    );
+    const destino = {
+      quadraId: "2" as const,
+      data: "2026-11-12",
+      horaInicio: "15:30",
+      horaFim: "16:30",
+    };
+    expect(
+      recusa(segunda.banco, remarcarOcupacao, { id: primeira.ocupacao.id, ...destino }),
+    ).toMatch(/^Quadra 2 já está ocupada em 12\/11 das 15:00 às 16:00/);
     const remarcada = rodar(segunda.banco, remarcarOcupacao, {
       id: primeira.ocupacao.id,
       ...destino,
       horaInicio: "16:00",
       horaFim: "17:00",
     });
-    expect(buscar(remarcada, primeira.ocupacao.id)).toMatchObject({ quadraId: "2", horaInicio: "16:00" });
+    expect(buscar(remarcada, primeira.ocupacao.id)).toMatchObject({
+      quadraId: "2",
+      horaInicio: "16:00",
+    });
   });
 
   it("a cobrança da locação acompanha a nova data e duração", () => {
@@ -473,7 +632,10 @@ describe("remarcar", () => {
       horaInicio: "08:00",
       horaFim: "09:30",
     });
-    expect(remarcada.lancamentos[0]).toMatchObject({ item: "Locação avulsa · Paredão · 14/11 08:00", valor: 90 });
+    expect(remarcada.lancamentos[0]).toMatchObject({
+      item: "Locação avulsa · Paredão · 14/11 08:00",
+      valor: 90,
+    });
   });
 });
 
@@ -485,8 +647,19 @@ describe("bloquear quadra", () => {
     return resultado.ocupacao;
   };
   const individual = criar({ horaInicio: "08:00", horaFim: "09:00" });
-  const dupla = criar({ horaInicio: "09:00", horaFim: "10:00", tipo: "Dupla", professorId: "prof-3", alunosIds: ["a03", "a13"] });
-  const locacao = criar({ horaInicio: "07:00", horaFim: "08:00", tipo: "Locação Avulsa", alunosIds: ["a20"] });
+  const dupla = criar({
+    horaInicio: "09:00",
+    horaFim: "10:00",
+    tipo: "Dupla",
+    professorId: "prof-3",
+    alunosIds: ["a03", "a13"],
+  });
+  const locacao = criar({
+    horaInicio: "07:00",
+    horaFim: "08:00",
+    tipo: "Locação Avulsa",
+    alunosIds: ["a20"],
+  });
   const depois = criar({ horaInicio: "11:00", horaFim: "12:00", alunosIds: ["a04"] });
   const dados = {
     quadrasIds: ["4" as const],
@@ -499,7 +672,10 @@ describe("bloquear quadra", () => {
   it("cancela as aulas do período com IAC, gera os créditos e cria o bloqueio", () => {
     const bloqueado = rodar(banco, bloquearQuadra, dados);
     [individual, dupla, locacao].forEach((o) =>
-      expect(buscar(bloqueado, o.id)).toMatchObject({ situacao: "cancelada", motivoCancelamento: "IAC" }),
+      expect(buscar(bloqueado, o.id)).toMatchObject({
+        situacao: "cancelada",
+        motivoCancelamento: "IAC",
+      }),
     );
     expect(buscar(bloqueado, depois.id).situacao).toBe("agendada");
     // Locacao avulsa e paga por uso: nao gera credito; a cobranca e anulada.
@@ -510,20 +686,35 @@ describe("bloquear quadra", () => {
     ]);
     expect(bloqueado.lancamentos[0].canceladoEm).toBeDefined();
     const bloqueio = bloqueado.ocupacoes.find((o) => o.tipo === "Bloqueio");
-    expect(bloqueio).toMatchObject({ quadraId: "4", horaInicio: "07:00", horaFim: "10:00", descricao: "Manutenção do saibro" });
+    expect(bloqueio).toMatchObject({
+      quadraId: "4",
+      horaInicio: "07:00",
+      horaFim: "10:00",
+      descricao: "Manutenção do saibro",
+    });
 
-    expect(recusa(bloqueado, criarHorarioAvulso, aula({ quadraId: "4", data: "2026-11-14", horaInicio: "08:00", horaFim: "09:00" }))).toBe(
+    expect(
+      recusa(
+        bloqueado,
+        criarHorarioAvulso,
+        aula({ quadraId: "4", data: "2026-11-14", horaInicio: "08:00", horaFim: "09:00" }),
+      ),
+    ).toBe(
       "Quadra 4 já está ocupada em 14/11 das 07:00 às 10:00 (Bloqueio · Manutenção do saibro).",
     );
-    expect(recusa(bloqueado, bloquearQuadra, { ...dados, horaInicio: "09:00", horaFim: "11:00" })).toMatch(
-      /^Quadra 4 já está bloqueada em 14\/11 das 07:00 às 10:00/,
-    );
+    expect(
+      recusa(bloqueado, bloquearQuadra, { ...dados, horaInicio: "09:00", horaFim: "11:00" }),
+    ).toMatch(/^Quadra 4 já está bloqueada em 14\/11 das 07:00 às 10:00/);
   });
 
   it("bloqueia várias quadras de uma vez e exige descrição", () => {
     const bloqueado = rodar(banco, bloquearQuadra, { ...dados, quadrasIds: ["2", "3"] });
-    expect(bloqueado.ocupacoes.filter((o) => o.tipo === "Bloqueio").map((o) => o.quadraId)).toEqual(["2", "3"]);
-    expect(recusa(banco, bloquearQuadra, { ...dados, descricao: " " })).toMatch(/Descreva o motivo/);
+    expect(bloqueado.ocupacoes.filter((o) => o.tipo === "Bloqueio").map((o) => o.quadraId)).toEqual(
+      ["2", "3"],
+    );
+    expect(recusa(banco, bloquearQuadra, { ...dados, descricao: " " })).toMatch(
+      /Descreva o motivo/,
+    );
   });
 });
 
@@ -535,13 +726,42 @@ describe("cancelar por chuva", () => {
     return resultado.ocupacao;
   };
   const q1Tarde = criar({ quadraId: "1", horaInicio: "14:00", horaFim: "15:00" });
-  const q2Tarde = criar({ quadraId: "2", horaInicio: "16:00", horaFim: "17:00", tipo: "Dupla", professorId: "prof-3", alunosIds: ["a03", "a13"] });
-  const q2Noite = criar({ quadraId: "2", horaInicio: "19:00", horaFim: "20:00", alunosIds: ["a04"] });
-  const q3Tarde = criar({ quadraId: "3", horaInicio: "14:00", horaFim: "15:00", alunosIds: ["a06"], professorId: "prof-2" });
-  banco = rodar(banco, bloquearQuadra, { quadrasIds: ["1"], data: "2026-11-12", horaInicio: "08:00", horaFim: "10:00", descricao: "Evento" });
+  const q2Tarde = criar({
+    quadraId: "2",
+    horaInicio: "16:00",
+    horaFim: "17:00",
+    tipo: "Dupla",
+    professorId: "prof-3",
+    alunosIds: ["a03", "a13"],
+  });
+  const q2Noite = criar({
+    quadraId: "2",
+    horaInicio: "19:00",
+    horaFim: "20:00",
+    alunosIds: ["a04"],
+  });
+  const q3Tarde = criar({
+    quadraId: "3",
+    horaInicio: "14:00",
+    horaFim: "15:00",
+    alunosIds: ["a06"],
+    professorId: "prof-2",
+  });
+  banco = rodar(banco, bloquearQuadra, {
+    quadrasIds: ["1"],
+    data: "2026-11-12",
+    horaInicio: "08:00",
+    horaFim: "10:00",
+    descricao: "Evento",
+  });
 
   it("cancela com CH o que está ativo nas quadras e na faixa, e gera os créditos", () => {
-    const molhado = rodar(banco, cancelarPorChuva, { data: "2026-11-12", quadrasIds: ["1", "2"], horaInicio: "13:00", horaFim: "18:00" });
+    const molhado = rodar(banco, cancelarPorChuva, {
+      data: "2026-11-12",
+      quadrasIds: ["1", "2"],
+      horaInicio: "13:00",
+      horaFim: "18:00",
+    });
     expect(buscar(molhado, q1Tarde.id).motivoCancelamento).toBe("CH");
     expect(buscar(molhado, q2Tarde.id).motivoCancelamento).toBe("CH");
     expect(buscar(molhado, q2Noite.id).situacao).toBe("agendada");
@@ -556,7 +776,10 @@ describe("cancelar por chuva", () => {
   });
 
   it("sem horário, cancela o dia inteiro; sem aulas, recusa", () => {
-    const molhado = rodar(banco, cancelarPorChuva, { data: "2026-11-12", quadrasIds: ["1", "2", "3", "4", "paredao"] });
+    const molhado = rodar(banco, cancelarPorChuva, {
+      data: "2026-11-12",
+      quadrasIds: ["1", "2", "3", "4", "paredao"],
+    });
     expect(molhado.ocupacoes.filter((o) => o.motivoCancelamento === "CH")).toHaveLength(4);
     expect(recusa(molhado, cancelarPorChuva, { data: "2026-11-12", quadrasIds: ["1", "2"] })).toBe(
       "Não há aulas ativas nessas quadras nesse período.",
@@ -575,18 +798,28 @@ describe("cancelar por chuva", () => {
       { data: HOJE, quadrasIds: ["1", "2", "3", "4", "paredao"] },
       ctx({ hoje: HOJE, agora: `${HOJE}T06:30:00` }),
     );
-    expect(molhado.ocupacoes.filter((o) => o.data === HOJE && o.tipo !== "Bloqueio").every((o) => !ocupacaoAtiva(o))).toBe(true);
+    expect(
+      molhado.ocupacoes
+        .filter((o) => o.data === HOJE && o.tipo !== "Bloqueio")
+        .every((o) => !ocupacaoAtiva(o)),
+    ).toBe(true);
     expect(molhado.reposicoes.length).toBeGreaterThan(antes);
   });
 });
 
 describe("usar reposição", () => {
-  const destino = comAula(VAZIO, { quadraId: "2", data: "2026-11-13", tipo: "LAP", professorId: "prof-3", alunosIds: ["a07"] });
+  const destino = comAula(VAZIO, {
+    quadraId: "2",
+    data: "2026-11-13",
+    tipo: "LAP",
+    professorId: "prof-3",
+    alunosIds: ["a07"],
+  });
 
   it("sem saldo, recusa", () => {
-    expect(recusa(destino.banco, usarReposicao, { ocupacaoId: destino.ocupacao.id, alunoId: "a05" })).toBe(
-      "Saldo de reposição insuficiente: o aluno tem 0 minutos e a aula precisa de 60.",
-    );
+    expect(
+      recusa(destino.banco, usarReposicao, { ocupacaoId: destino.ocupacao.id, alunoId: "a05" }),
+    ).toBe("Saldo de reposição insuficiente: o aluno tem 0 minutos e a aula precisa de 60.");
     expect(
       recusa(destino.banco, marcarAulaDeReposicao, {
         alunoId: "a05",
@@ -601,16 +834,30 @@ describe("usar reposição", () => {
   });
 
   // a03 ganha 60 minutos com uma falta avisada numa dupla.
-  const dupla = comAula(destino.banco, { tipo: "Dupla", professorId: "prof-3", alunosIds: ["a03", "a13"] });
-  const comCredito = rodar(dupla.banco, marcarPresenca, { ocupacaoId: dupla.ocupacao.id, alunoId: "a03", presenca: "falta_avisada", sigla: "24h" });
+  const dupla = comAula(destino.banco, {
+    tipo: "Dupla",
+    professorId: "prof-3",
+    alunosIds: ["a03", "a13"],
+  });
+  const comCredito = rodar(dupla.banco, marcarPresenca, {
+    ocupacaoId: dupla.ocupacao.id,
+    alunoId: "a03",
+    presenca: "falta_avisada",
+    sigla: "24h",
+  });
 
   it("com saldo, inclui o aluno numa aula existente e debita os minutos; remover devolve", () => {
-    const usou = rodar(comCredito, usarReposicao, { ocupacaoId: destino.ocupacao.id, alunoId: "a03" });
+    const usou = rodar(comCredito, usarReposicao, {
+      ocupacaoId: destino.ocupacao.id,
+      alunoId: "a03",
+    });
     expect(saldo(usou, "a03")).toBe(0);
     expect(doAluno(usou, "a03")).toContainEqual(
       expect.objectContaining({ minutos: -60, ocupacaoUsoId: destino.ocupacao.id }),
     );
-    expect(usou.ocupacaoAlunos.some((p) => p.ocupacaoId === destino.ocupacao.id && p.alunoId === "a03")).toBe(true);
+    expect(
+      usou.ocupacaoAlunos.some((p) => p.ocupacaoId === destino.ocupacao.id && p.alunoId === "a03"),
+    ).toBe(true);
     expect(recusa(usou, usarReposicao, { ocupacaoId: destino.ocupacao.id, alunoId: "a03" })).toBe(
       "Este aluno já está na aula.",
     );
@@ -635,19 +882,25 @@ describe("usar reposição", () => {
   });
 
   it("incluir aluno sem reposição não mexe no saldo", () => {
-    const incluido = rodar(comCredito, incluirAluno, { ocupacaoId: destino.ocupacao.id, alunoId: "a03" });
+    const incluido = rodar(comCredito, incluirAluno, {
+      ocupacaoId: destino.ocupacao.id,
+      alunoId: "a03",
+    });
     expect(saldo(incluido, "a03")).toBe(60);
   });
 });
 
 describe("reservas sem pagamento (H5)", () => {
-  const { banco, ocupacao: reserva } = comAula(VAZIO, { tipo: "Locação Avulsa", alunosIds: ["a20"] });
+  const { banco, ocupacao: reserva } = comAula(VAZIO, {
+    tipo: "Locação Avulsa",
+    alunosIds: ["a20"],
+  });
   const depoisDoPrazo = ctx({ agora: "2026-11-11T10:00:00", hoje: "2026-11-11" });
 
   it("antes do prazo, recusa liberar", () => {
-    expect(recusa(banco, liberarReserva, { id: reserva.id }, ctx({ agora: "2026-11-10T20:00:00" }))).toBe(
-      "O prazo desta reserva só vence em 11/11/2026 às 09:00.",
-    );
+    expect(
+      recusa(banco, liberarReserva, { id: reserva.id }, ctx({ agora: "2026-11-10T20:00:00" })),
+    ).toBe("O prazo desta reserva só vence em 11/11/2026 às 09:00.");
   });
 
   it("vencida, libera o horário sem crédito e anula a cobrança", () => {
@@ -659,7 +912,10 @@ describe("reservas sem pagamento (H5)", () => {
     expect(liberado.reposicoes).toEqual([]);
     expect(situacaoLancamento(liberado.lancamentos[0], "2026-11-11")).toBe("cancelado");
     // O horario fica livre para outra pessoa.
-    expect(executarOperacao(liberado, criarHorarioAvulso, aula({ alunosIds: ["a23"] }), depoisDoPrazo).ok).toBe(true);
+    expect(
+      executarOperacao(liberado, criarHorarioAvulso, aula({ alunosIds: ["a23"] }), depoisDoPrazo)
+        .ok,
+    ).toBe(true);
   });
 
   it("liberar todas as vencidas de uma vez; sem vencidas, não muda nada", () => {

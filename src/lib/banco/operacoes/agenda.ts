@@ -91,7 +91,10 @@ function buscarOcupacao(banco: Banco, id: string): Ocupacao {
 }
 
 function garantirQuadra(banco: Banco, quadraId: QuadraId): void {
-  exigir(banco.quadras.some((q) => q.id === quadraId), "Quadra não encontrada.");
+  exigir(
+    banco.quadras.some((q) => q.id === quadraId),
+    "Quadra não encontrada.",
+  );
 }
 
 /** Alunos de um agendamento: pelo menos um, sem repetir, todos ativos na arena. */
@@ -139,7 +142,13 @@ function usoDeReposicao(
   ocupacaoId: string,
   agora: string,
 ): LancamentoReposicao {
-  return { id: novoId("rp"), alunoId, minutos: -minutos, ocupacaoUsoId: ocupacaoId, criadoEm: agora };
+  return {
+    id: novoId("rp"),
+    alunoId,
+    minutos: -minutos,
+    ocupacaoUsoId: ocupacaoId,
+    criadoEm: agora,
+  };
 }
 
 /** "Locação avulsa · Quadra 2 · 10/11 19:00" (mesmo texto dos dados de exemplo). */
@@ -241,7 +250,7 @@ function removerOcupacoes(
   const ligadoAsAulas = (r: LancamentoReposicao) =>
     Boolean(
       (r.ocupacaoUsoId && alvo.has(r.ocupacaoUsoId)) ||
-        (r.minutos > 0 && r.ocupacaoOrigemId && alvo.has(r.ocupacaoOrigemId)),
+      (r.minutos > 0 && r.ocupacaoOrigemId && alvo.has(r.ocupacaoOrigemId)),
     );
   const ligados = banco.reposicoes.filter(ligadoAsAulas);
   const reposicoes =
@@ -518,7 +527,10 @@ export const usarReposicao = definirOperacao(
       TIPOS_COM_DIREITO_A_REPOSICAO.includes(ocupacao.tipo),
       "A reposição só pode ser usada em aulas e locações do plano.",
     );
-    exigir(ocupacao.data >= ctx.hoje, "A reposição precisa ser marcada numa aula de hoje em diante.");
+    exigir(
+      ocupacao.data >= ctx.hoje,
+      "A reposição precisa ser marcada numa aula de hoje em diante.",
+    );
     const [alunoId] = validarAlunos(banco, [dados.alunoId]);
     exigir(!jaParticipa(banco, ocupacao.id, alunoId), "Este aluno já está na aula.");
     const minutos = duracaoEmMinutos(ocupacao);
@@ -595,7 +607,10 @@ export const marcarPresenca = definirOperacao(
       exigir(sigla, "Escolha a sigla da falta avisada.");
       const regra = buscarSigla(banco.configuracoes, sigla);
       exigir(regra, `A sigla ${sigla} não existe nas Configurações.`);
-      exigir(regra.aplicaA !== "ocupacao", `A sigla ${sigla} é para cancelar a aula inteira, não para a falta de um aluno.`);
+      exigir(
+        regra.aplicaA !== "ocupacao",
+        `A sigla ${sigla} é para cancelar a aula inteira, não para a falta de um aluno.`,
+      );
     }
     if (participacao.presenca === dados.presenca && participacao.sigla === sigla) return banco;
 
@@ -633,7 +648,10 @@ export const marcarPresenca = definirOperacao(
     if (dados.presenca === "falta_avisada" && sigla && ocupacao.tipo === "Individual") {
       return cancelarNoBanco(novo, [ocupacao.id], sigla, ctx);
     }
-    if ((dados.presenca === "presente" || dados.presenca === "falta") && ocupacao.situacao === "agendada") {
+    if (
+      (dados.presenca === "presente" || dados.presenca === "falta") &&
+      ocupacao.situacao === "agendada"
+    ) {
       return {
         ...novo,
         ocupacoes: atualizar(novo.ocupacoes, (o) =>
@@ -861,7 +879,12 @@ export const cancelarPorChuva = definirOperacao(
     garantirHorarioValido(periodo.horaInicio, periodo.horaFim);
     const afetadas = aulasNoPeriodo(banco, periodo);
     exigir(afetadas.length > 0, "Não há aulas ativas nessas quadras nesse período.");
-    return cancelarNoBanco(banco, afetadas.map((o) => o.id), SIGLA_CHUVA, ctx);
+    return cancelarNoBanco(
+      banco,
+      afetadas.map((o) => o.id),
+      SIGLA_CHUVA,
+      ctx,
+    );
   },
 );
 
@@ -901,6 +924,11 @@ export const liberarReservasVencidas = definirOperacao(
     garantirPodeEditarAgenda(ctx.usuario);
     const vencidas = banco.ocupacoes.filter((o) => reservaVencida(o, ctx.agora));
     if (vencidas.length === 0) return banco;
-    return cancelarNoBanco(banco, vencidas.map((o) => o.id), MOTIVO_SEM_PAGAMENTO, ctx);
+    return cancelarNoBanco(
+      banco,
+      vencidas.map((o) => o.id),
+      MOTIVO_SEM_PAGAMENTO,
+      ctx,
+    );
   },
 );
