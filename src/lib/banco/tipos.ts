@@ -260,6 +260,21 @@ export interface Congelamento {
   /** Preenchido quando o aluno volta. */
   fimReal?: string;
   motivo: string;
+  /**
+   * Aulas fixas que o congelamento suspendeu, para poderem voltar na
+   * reativacao. Nao muda depois: o que ja voltou se ve pelo estado das aulas.
+   */
+  aulasSuspensas?: AulaSuspensa[];
+}
+
+/**
+ * Aula fixa suspensa por um congelamento (Hipotese H4):
+ *  - "cancelada": a aula era so do aluno e foi cancelada (motivo "Congelamento");
+ *  - "retirado": aula em grupo; o aluno saiu da lista de participantes.
+ */
+export interface AulaSuspensa {
+  ocupacaoId: string;
+  acao: "cancelada" | "retirado";
 }
 
 // ---------------------------------------------------------------------------
