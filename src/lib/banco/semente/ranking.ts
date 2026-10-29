@@ -4,16 +4,18 @@
  * - Partidas de ranking: uma para cada reserva de quadra do tipo "Ranking".
  *   As passadas tem resultado; quem tem mais nivel tende a vencer.
  * - Torneios: um em inscricoes, um em andamento (duplas) e um encerrado,
- *   cobrindo os tres formatos da v1. As chaves (partidas de torneio) ficam a
- *   cargo dos geradores de chave do modulo de torneios.
+ *   cobrindo os tres formatos da v1. As chaves sao geradas pelos mesmos
+ *   geradores que a tela usa (`regras/torneios.ts`), e os resultados entram
+ *   por `aplicarResultado`, que leva o vencedor adiante.
  */
 
 import { somarDias } from "../../date";
 import { HOJE } from "../constantes";
+import { aplicarResultado, gerarChave } from "../regras/torneios";
 import type { Ocupacao, OcupacaoAluno, Partida, Torneio, TorneioInscrito } from "../tipos";
 import { criarRng, embaralhar, inteiro, type Sorteio } from "./aleatorio";
 import { DATA_TORNEIO_INTERNO } from "./agenda";
-import { PERFIL_POR_ALUNO, PERFIS_DE_SEMENTE } from "./cadastros";
+import { CONFIGURACOES_INICIAIS, PERFIL_POR_ALUNO, PERFIS_DE_SEMENTE } from "./cadastros";
 
 export interface RankingGerado {
   torneios: Torneio[];
@@ -42,6 +44,31 @@ function inverter(sets: string[]): string {
   return sets
     .map((s) => s.split("/").reverse().join("/"))
     .join(" ");
+}
+
+/** Nivel de uma inscricao de torneio (dupla = media dos dois). */
+function forcaDaInscricao(inscricao: TorneioInscrito | undefined): number {
+  const forcas = (inscricao?.alunosIds ?? []).map((id) => PERFIL_POR_ALUNO.get(id)?.forca ?? 1000);
+  return forcas.length ? forcas.reduce((soma, f) => soma + f, 0) / forcas.length : 1000;
+}
+
+/** Joga uma partida da chave e leva o vencedor adiante. */
+function jogarPartidaDaChave(
+  rng: Sorteio,
+  partidas: Partida[],
+  partidaId: string,
+  inscritos: TorneioInscrito[],
+  data: string,
+  wo = false,
+): Partida[] {
+  const partida = partidas.find((p) => p.id === partidaId);
+  const forcaA = forcaDaInscricao(inscritos.find((i) => i.id === partida?.inscricaoAId));
+  const forcaB = forcaDaInscricao(inscritos.find((i) => i.id === partida?.inscricaoBId));
+  const vencedor = rng() < chanceDeVitoria(forcaA, forcaB) ? "A" : "B";
+  if (wo) return aplicarResultado(partidas, partidaId, { placar: "W.O.", vencedor, wo: true, data });
+  const sets = placarDoVencedor(rng);
+  const placar = vencedor === "A" ? sets.join(" ") : inverter(sets);
+  return aplicarResultado(partidas, partidaId, { placar, vencedor, wo: false, data });
 }
 
 export function gerarRanking(
@@ -159,5 +186,40 @@ export function gerarRanking(
     }),
   );
 
-  return { torneios, torneioInscritos, partidas };
+  // --- Chaves de t-2 e t-3 ----------------------------------------------------
+  // Sorteio proprio, para nao mudar os dados gerados acima. O t-1 continua
+  // com as inscricoes abertas (sem chave).
+  const rngChaves = criarRng(8080);
+  const gerar = (torneioId: string) => {
+    const torneio = torneios.find((t) => t.id === torneioId) as Torneio;
+    const inscritos = torneioInscritos.filter((i) => i.torneioId === torneioId);
+    const chave = gerarChave(torneio, inscritos, {
+      prefixoId: `pt-${torneioId}`,
+      criadoEm: `${somarDias(torneio.data, -2)}T18:00:00`,
+      classificadosPorGrupo: CONFIGURACOES_INICIAIS.classificadosPorGrupo,
+    });
+    return { torneio, inscritos, partidas: chave.partidas };
+  };
+
+  // t-2 (em andamento): jogadas as quartas e a 1a semifinal; a outra
+  // semifinal e a final foram remarcadas para o fim de semana.
+  const duplas = gerar("t-2");
+  let chaveDuplas = duplas.partidas;
+  const jogarDuplas = (quais: (p: Partida) => boolean) =>
+    chaveDuplas.filter(quais).forEach((p) => {
+      chaveDuplas = jogarPartidaDaChave(rngChaves, chaveDuplas, p.id, duplas.inscritos, duplas.torneio.data);
+    });
+  jogarDuplas((p) => p.rodada === 1);
+  jogarDuplas((p) => p.rodada === 2 && p.ordem === 1);
+  const remarcadas = somarDias(HOJE, 3);
+  chaveDuplas = chaveDuplas.map((p) => (p.vencedor ? p : { ...p, data: remarcadas }));
+
+  // t-3 (encerrado): as 10 partidas jogadas no dia, uma delas por W.O.
+  const copa = gerar("t-3");
+  let chaveCopa = copa.partidas;
+  copa.partidas.forEach((p, i) => {
+    chaveCopa = jogarPartidaDaChave(rngChaves, chaveCopa, p.id, copa.inscritos, copa.torneio.data, i === 6);
+  });
+
+  return { torneios, torneioInscritos, partidas: [...partidas, ...chaveDuplas, ...chaveCopa] };
 }
