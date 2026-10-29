@@ -470,7 +470,7 @@ const ROTULOS_DOS_CAMPOS: Record<string, string> = {
   produtoId: "Produto",
   quantidade: "Quantidade",
   responsavel: "Responsável",
-  produtoNome: "Produto",
+  produtoNome: "Nome do produto na venda",
   valorUnitario: "Valor unitário",
   // Comentarios
   entidade: "Registro comentado",
@@ -615,12 +615,30 @@ export function formatarValorDoCampo(banco: Banco, campo: string, valor: unknown
   return JSON.stringify(valor);
 }
 
-/** Campos de um registro criado ou apagado (sem o id e sem os vazios). */
+/** Referencias que viram nome no detalhe (as outras sao codigos internos). */
+const REFERENCIAS_COM_NOME = new Set([
+  ...CAMPOS_DE_PESSOA,
+  "planoId",
+  "produtoId",
+  "torneioId",
+  "quadraId",
+]);
+
+/**
+ * Campos de um registro criado ou apagado, para o detalhe do historico:
+ * sem os vazios e sem os codigos internos ("id", "ocupacaoId"...), que nao
+ * dizem nada a quem le.
+ */
 export function camposDoRegistro(
   registro: RegistroAuditoria,
 ): Array<{ campo: string; valor: unknown }> {
   return Object.entries(conteudo(registro))
-    .filter(([campo, valor]) => campo !== "id" && valor !== undefined && valor !== "")
+    .filter(([campo, valor]) => {
+      if (valor === undefined || valor === "") return false;
+      const codigoInterno = campo === "id" || (campo.endsWith("Id") && !REFERENCIAS_COM_NOME.has(campo));
+      // O nome do autor ja vem gravado no proprio comentario.
+      return !codigoInterno && campo !== "autorId";
+    })
     .map(([campo, valor]) => ({ campo, valor }));
 }
 

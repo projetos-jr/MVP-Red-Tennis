@@ -53,21 +53,25 @@ function Detalhe({ banco, registro }: { banco: Banco; registro: RegistroAuditori
     );
   }
 
-  const campos = camposAlterados(registro);
+  const campos = camposAlterados(registro).map((c) => ({
+    ...c,
+    frases: frasesDoCampo(banco, c.campo, c.antes, c.depois),
+  }));
   if (campos.length === 0) {
     return <p className="mt-3 text-xs text-areia-500">Nenhum campo mudou nesta gravação.</p>;
   }
 
   return (
     <div className="mt-3 overflow-hidden rounded-xl border border-areia-200">
-      <div className="hidden grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)] gap-4 bg-areia-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-areia-500 sm:grid">
-        <span>Campo</span>
-        <span>Antes</span>
-        <span>Depois</span>
-      </div>
+      {campos.some((c) => !c.frases) && (
+        <div className="hidden grid-cols-[12rem_minmax(0,1fr)_minmax(0,1fr)] gap-4 bg-areia-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-areia-500 sm:grid">
+          <span>Campo</span>
+          <span>Antes</span>
+          <span>Depois</span>
+        </div>
+      )}
       <ul className="divide-y divide-areia-100 text-xs">
-        {campos.map(({ campo, antes, depois }) => {
-          const frases = frasesDoCampo(banco, campo, antes, depois);
+        {campos.map(({ campo, antes, depois, frases }) => {
           return (
             <li
               key={campo}
