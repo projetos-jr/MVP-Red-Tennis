@@ -4,7 +4,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { IconeRelogio } from "@/components/ui/Icons";
 import type { RegistroAuditoria, TabelaDoBanco } from "@/lib/banco/tipos";
 import { historicoDoRegistro } from "@/lib/consultas/base";
-import { formatarDataHora } from "@/lib/date";
+import { formatarData, formatarDataHora } from "@/lib/date";
 import { useApp } from "@/store/AppStore";
 
 const ACAO: Record<RegistroAuditoria["acao"], string> = {
@@ -16,6 +16,10 @@ const ACAO: Record<RegistroAuditoria["acao"], string> = {
 function formatarValor(valor: unknown): string {
   if (valor === undefined || valor === null || valor === "") return "vazio";
   if (typeof valor === "boolean") return valor ? "sim" : "não";
+  // Datas e carimbos ("2026-10-29", "2026-10-29T15:01:56") no formato brasileiro.
+  if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(valor)) {
+    return valor.length === 10 ? formatarData(valor) : formatarDataHora(valor);
+  }
   if (typeof valor === "object") return JSON.stringify(valor);
   return String(valor);
 }

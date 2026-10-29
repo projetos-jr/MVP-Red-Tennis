@@ -88,9 +88,19 @@ export function somarDias(iso: string, dias: number): string {
   return paraISO(d);
 }
 
+/**
+ * Soma meses mantendo o dia; quando o dia nao existe no mes de destino, cai
+ * no ultimo dia dele (31/01 + 1 mes = 28/02, e nao 03/03).
+ */
 export function somarMeses(iso: string, meses: number): string {
   const d = paraData(iso);
+  const dia = d.getUTCDate();
+  d.setUTCDate(1);
   d.setUTCMonth(d.getUTCMonth() + meses);
+  const ultimoDia = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0, 12),
+  ).getUTCDate();
+  d.setUTCDate(Math.min(dia, ultimoDia));
   return paraISO(d);
 }
 
