@@ -10,6 +10,7 @@
 
 import { somarDias } from "../../date";
 import { HOJE } from "../constantes";
+import { CATEGORIAS_PRODUTO } from "../regras/estoque";
 import type {
   CategoriaProduto,
   Consumo,
@@ -20,6 +21,9 @@ import type {
 import { criarRng, doisDigitos, escolher, inteiro } from "./aleatorio";
 import { DIAS_COM_CHUVA } from "./agenda";
 import { CONFIGURACOES_INICIAIS, PERFIS_DE_SEMENTE, PROFESSORES } from "./cadastros";
+
+// A lista mora nas regras; continua exportada daqui para quem ja a usava.
+export { CATEGORIAS_PRODUTO };
 
 interface ProdutoDoMvp extends Omit<Produto, "ativo"> {
   /** Saldo que o produto deve ter hoje (o que o MVP mostrava). */
@@ -55,13 +59,6 @@ const PRODUTOS_DO_MVP: ProdutoDoMvp[] = [
   { id: "p22", nome: "Munhequeira", categoria: "Acessórios", unidade: "par", precoCusto: 12, precoVenda: 28, saldoHoje: 4, estoqueMinimo: 10 },
   { id: "p23", nome: "Antivibrador", categoria: "Acessórios", unidade: "unidade", precoCusto: 6, precoVenda: 15, saldoHoje: 30, estoqueMinimo: 10 },
   { id: "p24", nome: "Viseira Red Tennis", categoria: "Acessórios", unidade: "unidade", precoCusto: 22, precoVenda: 55, saldoHoje: 14, estoqueMinimo: 6 },
-];
-
-export const CATEGORIAS_PRODUTO: CategoriaProduto[] = [
-  "Bebidas",
-  "Cervejas",
-  "Lanches",
-  "Acessórios",
 ];
 
 const FORNECEDOR_POR_CATEGORIA: Record<CategoriaProduto, string> = {
@@ -111,11 +108,14 @@ export function gerarEstoque(): EstoqueGerado {
         ? { id: escolher(rng, PROFESSORES).id }
         : { id: escolher(rng, clientes).alunoId };
       const produto = escolher(rng, deBalcao);
+      // Hoje so ha vendas de manha: nenhuma venda de exemplo fica "no futuro"
+      // e o consumo lancado na demonstracao aparece no topo das movimentacoes.
+      const hora = inteiro(rng, 8, diasAtras === 0 ? 11 : 21);
       const consumo: Consumo = {
         id: `cs-${diasAtras}-${i}`,
         pessoaId: pessoa.id,
         pessoaTipo: ehProfessor ? "professor" : "aluno",
-        data: `${data}T${doisDigitos(inteiro(rng, 8, 21))}:${escolher(rng, ["04", "13", "27", "35", "48", "56"])}:00`,
+        data: `${data}T${doisDigitos(hora)}:${escolher(rng, ["04", "13", "27", "35", "48", "56"])}:00`,
         produtoId: produto.id,
         produtoNome: produto.nome,
         quantidade: rng() > 0.78 ? 2 : 1,
@@ -185,33 +185,38 @@ export function gerarEstoque(): EstoqueGerado {
   const inicioDoInventario = somarDias(HOJE, -31);
   PRODUTOS_DO_MVP.forEach((produto, indice) => {
     const rngProduto = criarRng(8800 + indice * 13);
-    const saidas = movimentos
-      .filter((m) => m.produtoId === produto.id)
-      .reduce((soma, m) => soma + m.quantidade, 0);
+    const saidasDoProduto = movimentos.filter((m) => m.produtoId === produto.id);
+    const somar = (lista: MovimentoEstoque[]) => lista.reduce((soma, m) => soma + m.quantidade, 0);
 
-    let entrada = rngProduto() < 0.45 ? inteiro(rngProduto, 12, 60) : 0;
-    let inventario = produto.saldoHoje + saidas - entrada;
-    if (inventario < 0) {
-      entrada += inventario;
-      inventario = 0;
+    const sorteada = rngProduto() < 0.45 ? inteiro(rngProduto, 12, 60) : 0;
+    const dia = somarDias(HOJE, -inteiro(rngProduto, 1, 26));
+    const dataDaEntrada = `${dia}T${doisDigitos(inteiro(rngProduto, 8, 17))}:${escolher(rngProduto, ["10", "25", "40"])}:00`;
+
+    // O estoque nunca fica negativo, nem no meio do historico: antes da entrada,
+    // o inventario precisa cobrir tudo o que saiu. Por isso a entrada nao passa
+    // do saldo de hoje mais o que saiu depois dela.
+    const saidasDepois = somar(saidasDoProduto.filter((m) => m.data > dataDaEntrada));
+    const entrada = Math.min(sorteada, produto.saldoHoje + saidasDepois);
+    const inventario = produto.saldoHoje + somar(saidasDoProduto) - entrada;
+
+    // Contagem zerada nao vira movimento (a regra do ajuste tambem a recusaria).
+    if (inventario > 0) {
+      movimentos.push({
+        id: `mv-inv-${produto.id}`,
+        produtoId: produto.id,
+        data: `${inicioDoInventario}T08:00:00`,
+        tipo: "ajuste",
+        quantidade: inventario,
+        responsavel: "Francisco Menezes",
+        observacao: "Inventário inicial (contagem)",
+      });
     }
 
-    movimentos.push({
-      id: `mv-inv-${produto.id}`,
-      produtoId: produto.id,
-      data: `${inicioDoInventario}T08:00:00`,
-      tipo: "ajuste",
-      quantidade: inventario,
-      responsavel: "Francisco Menezes",
-      observacao: "Inventário inicial (contagem)",
-    });
-
     if (entrada > 0) {
-      const dia = somarDias(HOJE, -inteiro(rngProduto, 1, 26));
       const movimento: MovimentoEstoque = {
         id: `mv-ent-${produto.id}`,
         produtoId: produto.id,
-        data: `${dia}T${doisDigitos(inteiro(rngProduto, 8, 17))}:${escolher(rngProduto, ["10", "25", "40"])}:00`,
+        data: dataDaEntrada,
         tipo: "entrada",
         quantidade: entrada,
         responsavel: RESPONSAVEIS[indice % 2],
@@ -231,6 +236,7 @@ export function gerarEstoque(): EstoqueGerado {
         vencimento,
         pagoEm: vencimento < HOJE ? vencimento : undefined,
         formaPagamento: vencimento < HOJE ? "Bradesco" : undefined,
+        movimentoEstoqueId: movimento.id,
         criadoEm: movimento.data,
       });
     }
