@@ -1,363 +1,429 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { GraficoFluxoCaixa } from "@/components/financeiro/GraficoFluxoCaixa";
-import { GraficoFormasPagamento } from "@/components/financeiro/GraficoFormasPagamento";
-import { TabelaPagamentos } from "@/components/financeiro/TabelaPagamentos";
-import { Card, CardHeader } from "@/components/ui/Card";
-import { Segmentado } from "@/components/ui/Segmentado";
-import { StatCard } from "@/components/ui/StatCard";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { DetalheDoLancamento } from "@/components/financeiro/DetalheDoLancamento";
 import {
-  IconeAlerta,
-  IconeBusca,
-  IconeCheck,
+  FILTROS_INICIAIS,
+  FiltrosDaLista,
+  filtrosDoIndicador,
+  montarFiltro,
+  mesmosFiltros,
+  type FiltrosDaTela,
+} from "@/components/financeiro/FiltrosDaLista";
+import { IndicadoresDoMes } from "@/components/financeiro/IndicadoresDoMes";
+import {
+  LANCAMENTOS_POR_PAGINA,
+  ListaDeLancamentos,
+} from "@/components/financeiro/ListaDeLancamentos";
+import { ModalAnular } from "@/components/financeiro/ModalAnular";
+import { ModalFecharRepasse } from "@/components/financeiro/ModalFecharRepasse";
+import { ModalGerarMensalidades } from "@/components/financeiro/ModalGerarMensalidades";
+import { ModalNovoLancamento } from "@/components/financeiro/ModalNovoLancamento";
+import { ModalPagamento } from "@/components/financeiro/ModalPagamento";
+import { RecebidoPorForma } from "@/components/financeiro/RecebidoPorForma";
+import { RelatorioProfessores } from "@/components/financeiro/RelatorioProfessores";
+import { ReservasSemPagamento } from "@/components/financeiro/ReservasSemPagamento";
+import { baixarArquivo } from "@/components/financeiro/utilitarios";
+import { useAvisos } from "@/components/ui/Avisos";
+import { Card, CardHeader } from "@/components/ui/Card";
+import {
+  IconeAnterior,
+  IconeCadeado,
   IconeExportar,
   IconeFinanceiro,
-  IconeRelogio,
-  IconeUsuarios,
+  IconeMais,
+  IconeNota,
+  IconeProximo,
 } from "@/components/ui/Icons";
-import { formatarMesAno } from "@/lib/date";
-import { HOJE } from "@/lib/mock-data";
+import { Segmentado } from "@/components/ui/Segmentado";
+import { HOJE } from "@/lib/banco/constantes";
+import type { TipoLancamento } from "@/lib/banco/tipos";
+import { podeAcessar } from "@/lib/consultas/base";
 import {
-  filtrarPagamentos,
-  fluxoDeCaixa,
-  receitaRecorrente,
-  reservasSemPagamento,
-  resumoFinanceiro,
-  resumoProfessores,
-  totaisPorForma,
-} from "@/lib/selectors";
-import { formatarMoeda } from "@/lib/theme";
-import type { FormaPagamento } from "@/lib/types";
+  competenciaValida,
+  filtroDoIndicador,
+  gerarCsv,
+  indicadoresDoMes,
+  listarLancamentos,
+  mesTerminado,
+  nomeDoMes,
+  recebidoPorForma,
+  relatorioDeProfessores,
+  reservasAguardandoPagamento,
+  somarMesesNaCompetencia,
+  type ChaveIndicador,
+  type SituacaoNoFiltro,
+} from "@/lib/consultas/financeiro";
+import { useApp } from "@/store/AppStore";
 
-const FORMAS: Array<FormaPagamento | "todas"> = [
-  "todas",
-  "Stone",
-  "Bradesco",
-  "Total Pass",
-  "Dinheiro",
-];
+type Aba = "receber" | "pagar" | "professores";
+
+/** No máximo um modal por vez: abrir "Registrar pagamento" no detalhe troca o modal. */
+type ModalAberto =
+  | { tipo: "detalhe"; id: string }
+  | { tipo: "pagamento"; id: string; voltarAoDetalhe: boolean }
+  | { tipo: "anular"; id: string; voltarAoDetalhe: boolean }
+  | { tipo: "novo" }
+  | { tipo: "gerar" }
+  | { tipo: "fechar" }
+  | null;
+
+const MES_ATUAL = HOJE.slice(0, 7);
+const INDICADORES: ChaveIndicador[] = ["recebido", "aReceber", "emAtraso", "aPagar"];
+const SITUACOES_DA_URL: SituacaoNoFiltro[] = ["em_aberto", "pendente", "em_atraso", "pago", "cancelado"];
+const ID_DA_LISTA = "lista-de-lancamentos";
+
+function rolarAteALista() {
+  window.requestAnimationFrame(() =>
+    document.getElementById(ID_DA_LISTA)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
+}
 
 export default function PaginaFinanceiro() {
-  const [aba, setAba] = useState<"operacional" | "planejamento">("operacional");
-  const [status, setStatus] = useState<"todos" | "confirmado" | "pendente">(
-    "todos",
+  // A tela lê a URL (?aba=, ?situacao=, ?mes=, ?lancamento=), então fica
+  // dentro de Suspense, como o Next pede para quem usa useSearchParams.
+  return (
+    <Suspense fallback={null}>
+      <TelaFinanceiro />
+    </Suspense>
   );
-  const [forma, setForma] = useState<FormaPagamento | "todas">("todas");
-  const [busca, setBusca] = useState("");
+}
 
-  const resumo = resumoFinanceiro();
-  const pendencias = reservasSemPagamento();
+function TelaFinanceiro() {
+  const { banco, colaborador } = useApp();
+  const { avisar } = useAvisos();
+  const parametros = useSearchParams();
 
-  const pagamentos = useMemo(
-    () => filtrarPagamentos({ status, forma, busca }).slice(0, 60),
-    [status, forma, busca],
+  // H9: a recepção vê só as contas a receber; o professor não vê o financeiro.
+  const podeVer = podeAcessar(banco, colaborador, "financeiro");
+  const podePagar = podeAcessar(banco, colaborador, "financeiro_pagar");
+
+  const [mes, setMes] = useState(() => {
+    const daUrl = parametros.get("mes") ?? undefined;
+    return competenciaValida(daUrl) ? daUrl : MES_ATUAL;
+  });
+  const [aba, setAba] = useState<Aba>(() => {
+    const daUrl = parametros.get("aba");
+    return daUrl === "pagar" || daUrl === "professores" ? daUrl : "receber";
+  });
+  const [filtros, setFiltros] = useState<Record<TipoLancamento, FiltrosDaTela>>(() => {
+    const situacao = parametros.get("situacao") as SituacaoNoFiltro | null;
+    const inicial: FiltrosDaTela =
+      situacao && SITUACOES_DA_URL.includes(situacao)
+        ? { ...FILTROS_INICIAIS, situacao, periodo: situacao === "em_atraso" ? "todos" : "mes" }
+        : FILTROS_INICIAIS;
+    return { receber: inicial, pagar: inicial };
+  });
+  const [limite, setLimite] = useState(LANCAMENTOS_POR_PAGINA);
+  const [modal, setModal] = useState<ModalAberto>(() => {
+    const id = parametros.get("lancamento");
+    return id ? { tipo: "detalhe", id } : null;
+  });
+
+  const abaVisivel: Aba = podePagar ? aba : "receber";
+  const tipoDaLista: TipoLancamento = abaVisivel === "pagar" ? "pagar" : "receber";
+  const filtrosDaLista = filtros[tipoDaLista];
+
+  const indicadores = useMemo(() => indicadoresDoMes(banco, mes, HOJE), [banco, mes]);
+  const linhas = useMemo(
+    () => listarLancamentos(banco, montarFiltro(tipoDaLista, filtrosDaLista, mes), HOJE),
+    [banco, tipoDaLista, filtrosDaLista, mes],
+  );
+  const reservas = useMemo(() => reservasAguardandoPagamento(banco, HOJE), [banco]);
+  const porForma = useMemo(() => recebidoPorForma(banco, mes, HOJE), [banco, mes]);
+  const relatorio = useMemo(
+    () => (abaVisivel === "professores" ? relatorioDeProfessores(banco, mes, HOJE) : null),
+    [banco, mes, abaVisivel],
+  );
+  const mesAnteriorAFechar = useMemo(
+    () =>
+      abaVisivel === "professores" && !mesTerminado(mes, HOJE)
+        ? relatorioDeProfessores(banco, somarMesesNaCompetencia(mes, -1), HOJE).aFechar.length
+        : 0,
+    [banco, mes, abaVisivel],
   );
 
-  const fluxo = useMemo(() => fluxoDeCaixa(21), []);
-  const formas = useMemo(() => totaisPorForma(), []);
-  const professores = useMemo(() => resumoProfessores(), []);
-  const recorrente = receitaRecorrente();
+  if (!podeVer) {
+    return (
+      <Card className="mx-auto max-w-lg px-6 py-10 text-center">
+        <IconeCadeado className="mx-auto h-8 w-8 text-areia-400" />
+        <h1 className="mt-3 text-lg font-semibold text-areia-900">Sem acesso ao financeiro</h1>
+        <p className="mt-1 text-sm text-areia-600">
+          O seu perfil não enxerga esta área (hipótese H9). Fale com o dono da arena.
+        </p>
+      </Card>
+    );
+  }
+
+  // Indicador cujo filtro está aplicado na lista (fica destacado).
+  const indicadorAtivo =
+    abaVisivel === "professores"
+      ? undefined
+      : INDICADORES.find((chave) => {
+          const filtro = filtroDoIndicador(chave, mes);
+          return (
+            filtro.tipo === tipoDaLista &&
+            mesmosFiltros(filtrosDoIndicador(filtro, filtrosDaLista.ordem), filtrosDaLista)
+          );
+        });
+
+  function mudarFiltros(parcial: Partial<FiltrosDaTela>) {
+    setFiltros((atual) => ({ ...atual, [tipoDaLista]: { ...atual[tipoDaLista], ...parcial } }));
+    setLimite(LANCAMENTOS_POR_PAGINA);
+  }
+
+  function limparFiltros() {
+    setFiltros((atual) => ({
+      ...atual,
+      [tipoDaLista]: { ...FILTROS_INICIAIS, ordem: atual[tipoDaLista].ordem },
+    }));
+    setLimite(LANCAMENTOS_POR_PAGINA);
+  }
+
+  /** Clique num indicador: a lista passa a mostrar exatamente o que ele soma. */
+  function mostrarIndicador(chave: ChaveIndicador) {
+    const filtro = filtroDoIndicador(chave, mes);
+    setAba(filtro.tipo);
+    setFiltros((atual) => ({
+      ...atual,
+      [filtro.tipo]: filtrosDoIndicador(filtro, atual[filtro.tipo].ordem),
+    }));
+    setLimite(LANCAMENTOS_POR_PAGINA);
+    rolarAteALista();
+  }
+
+  function trocarMes(novo: string) {
+    setMes(novo);
+    setLimite(LANCAMENTOS_POR_PAGINA);
+  }
+
+  function trocarAba(nova: Aba) {
+    setAba(nova);
+    setLimite(LANCAMENTOS_POR_PAGINA);
+  }
+
+  function exportar() {
+    if (linhas.length === 0) {
+      avisar("info", "Não há lançamentos para exportar com estes filtros.");
+      return;
+    }
+    const periodo =
+      filtrosDaLista.periodo === "todos"
+        ? "todos-os-meses"
+        : filtrosDaLista.periodo === "ate"
+          ? `ate-${mes}`
+          : mes;
+    const nome = `financeiro-${tipoDaLista === "receber" ? "a-receber" : "a-pagar"}-${periodo}.csv`;
+    baixarArquivo(nome, gerarCsv(linhas), "text/csv;charset=utf-8");
+    avisar(
+      "sucesso",
+      `Planilha baixada com ${linhas.length} ${linhas.length === 1 ? "lançamento" : "lançamentos"}.`,
+    );
+  }
+
+  function verMensalidadesNaLista(competencia: string) {
+    setModal(null);
+    setMes(competencia);
+    setAba("receber");
+    setFiltros((atual) => ({
+      ...atual,
+      receber: { ...FILTROS_INICIAIS, ordem: atual.receber.ordem, categoria: "Mensalidade" },
+    }));
+    setLimite(LANCAMENTOS_POR_PAGINA);
+    rolarAteALista();
+  }
+
+  const abrirDetalhe = (id: string) => setModal({ tipo: "detalhe", id });
+  const abrirPagamento = (id: string) => setModal({ tipo: "pagamento", id, voltarAoDetalhe: false });
 
   return (
     <div className="space-y-6">
+      {/* Cabeçalho: título, mês de referência e ações */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">
-            Financeiro
-          </h1>
-          <p className="mt-1 text-sm text-areia-600 first-letter:uppercase">
-            {formatarMesAno(HOJE)} · operação e planejamento
-          </p>
+          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Financeiro</h1>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => trocarMes(somarMesesNaCompetencia(mes, -1))}
+              className="btn-fantasma px-2 py-1.5"
+              aria-label="Mês anterior"
+            >
+              <IconeAnterior className="h-4 w-4" />
+            </button>
+            <p
+              className="inline-block min-w-[150px] text-center text-sm font-semibold text-areia-800 first-letter:uppercase"
+              aria-live="polite"
+            >
+              {nomeDoMes(mes)}
+            </p>
+            <button
+              type="button"
+              onClick={() => trocarMes(somarMesesNaCompetencia(mes, 1))}
+              className="btn-fantasma px-2 py-1.5"
+              aria-label="Próximo mês"
+            >
+              <IconeProximo className="h-4 w-4" />
+            </button>
+            {mes !== MES_ATUAL && (
+              <button
+                type="button"
+                onClick={() => trocarMes(MES_ATUAL)}
+                className="btn-fantasma px-2.5 py-1.5 text-xs"
+              >
+                Voltar ao mês atual
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Segmentado
-            aria="Área do financeiro"
-            valor={aba}
-            aoMudar={setAba}
-            opcoes={[
-              { valor: "operacional", rotulo: "Operacional" },
-              { valor: "planejamento", rotulo: "Planejamento" },
-            ]}
-          />
+        {/* No celular os botões ficam um embaixo do outro, o principal em cima. */}
+        <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center">
           <button
             type="button"
-            className="btn-secundario py-2"
-            title="Exportação simulada — o MVP não gera arquivo"
+            onClick={() => setModal({ tipo: "gerar" })}
+            className="btn-secundario"
           >
-            <IconeExportar className="h-4 w-4" />
-            Exportar
+            <IconeNota className="h-4 w-4" />
+            Gerar mensalidades
+          </button>
+          <button
+            type="button"
+            onClick={() => setModal({ tipo: "novo" })}
+            className="btn-primario"
+          >
+            <IconeMais className="h-4 w-4" />
+            Novo lançamento
           </button>
         </div>
       </div>
 
-      {/* Indicadores do mes */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard
-          rotulo="Recebido no mês"
-          rotuloCurto="Recebido"
-          valor={formatarMoeda(resumo.recebidoNoMes)}
-          detalhe={`Ticket médio ${formatarMoeda(resumo.ticketMedio)}`}
-          icone={<IconeCheck className="h-5 w-5" />}
-          tom="positivo"
+      <IndicadoresDoMes
+        indicadores={indicadores}
+        mes={mes}
+        mostrarAPagar={podePagar}
+        ativo={indicadorAtivo}
+        aoEscolher={mostrarIndicador}
+      />
+
+      {podePagar && (
+        <Segmentado
+          aria="Área do financeiro"
+          valor={abaVisivel}
+          aoMudar={trocarAba}
+          opcoes={[
+            { valor: "receber", rotulo: "A receber" },
+            { valor: "pagar", rotulo: "A pagar" },
+            { valor: "professores", rotulo: "Professores" },
+          ]}
         />
-        <StatCard
-          rotulo="A receber"
-          rotuloCurto="A receber"
-          valor={formatarMoeda(resumo.aReceber)}
-          detalhe="Boletos, crédito e convênio a compensar"
-          icone={<IconeRelogio className="h-5 w-5" />}
-          tom="saibro"
+      )}
+
+      {abaVisivel === "professores" && relatorio ? (
+        <RelatorioProfessores
+          relatorio={relatorio}
+          mesAnteriorAFechar={mesAnteriorAFechar}
+          aoFecharMes={() => setModal({ tipo: "fechar" })}
+          aoVerMesAnterior={() => trocarMes(somarMesesNaCompetencia(mes, -1))}
         />
-        <StatCard
-          rotulo="Em atraso"
-          rotuloCurto="Em atraso"
-          valor={formatarMoeda(resumo.emAtraso)}
-          detalhe={`${resumo.quantidadeEmAtraso} reserva(s) sem pagamento confirmado`}
-          icone={<IconeAlerta className="h-5 w-5" />}
-          tom={resumo.quantidadeEmAtraso > 0 ? "alerta" : "neutro"}
-        />
-        <StatCard
-          rotulo="Receita recorrente"
-          rotuloCurto="Recorrente"
-          valor={formatarMoeda(recorrente)}
-          detalhe="Soma das mensalidades de planos ativos"
-          icone={<IconeFinanceiro className="h-5 w-5" />}
-        />
-      </div>
-
-      {aba === "operacional" ? (
-        <>
-          {/* Pendencias em destaque */}
-          {pendencias.length > 0 && (
-            <Card className="border-tijolo-200">
-              <CardHeader
-                titulo="Reservas sem pagamento confirmado no prazo"
-                descricao="Pagamento não identificado depois do prazo acordado."
-                icone={<IconeAlerta className="h-5 w-5" />}
-                className="bg-tijolo-50/50"
-              />
-              <TabelaPagamentos pagamentos={pendencias.slice(0, 6)} />
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader
-              titulo="Lançamentos"
-              descricao="Pagamentos vinculados a alunos, horários e serviços avulsos."
-              icone={<IconeFinanceiro className="h-5 w-5" />}
-            />
-
-            {/* Filtros */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-areia-200 px-4 py-3">
-              <div className="relative min-w-[220px] flex-1">
-                <IconeBusca className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
-                <input
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar por aluno, pagante ou item…"
-                  className="campo py-2 pl-9 text-sm"
-                />
-              </div>
-
-              <Segmentado
-                aria="Situação do pagamento"
-                valor={status}
-                aoMudar={setStatus}
-                opcoes={[
-                  { valor: "todos", rotulo: "Todos" },
-                  { valor: "confirmado", rotulo: "Confirmados" },
-                  { valor: "pendente", rotulo: "Pendentes" },
-                ]}
-              />
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-medium text-areia-500">Forma:</span>
-                {FORMAS.map((opcao) => (
-                  <button
-                    key={opcao}
-                    type="button"
-                    onClick={() => setForma(opcao)}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      forma === opcao
-                        ? "bg-saibro-600 text-white"
-                        : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-                    }`}
-                  >
-                    {opcao === "todas" ? "Todas" : opcao}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <TabelaPagamentos pagamentos={pagamentos} />
-
-            <footer className="border-t border-areia-200 px-5 py-3 text-xs text-areia-500">
-              Exibindo {pagamentos.length} lançamentos mais recentes.
-            </footer>
-          </Card>
-        </>
       ) : (
         <>
-          <Card>
-            <CardHeader
-              titulo="Fluxo de caixa"
-              descricao="Entradas por dia nas últimas três semanas, separando o que já entrou do que está previsto."
-              icone={<IconeFinanceiro className="h-5 w-5" />}
-            />
-            <div className="p-5">
-              <GraficoFluxoCaixa dados={fluxo} />
-            </div>
-          </Card>
+          {abaVisivel === "receber" && (
+            <ReservasSemPagamento reservas={reservas} aoPagar={abrirPagamento} aoAbrir={abrirDetalhe} />
+          )}
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div id={ID_DA_LISTA} className="scroll-mt-36">
             <Card>
               <CardHeader
-                titulo="Divisão por forma de pagamento"
-                descricao={`Participação de cada meio no mês.`}
+                titulo={tipoDaLista === "receber" ? "Contas a receber" : "Contas a pagar"}
+                descricao={
+                  tipoDaLista === "receber"
+                    ? "Mensalidades, aulas avulsas, locações, consumo do balcão e torneios."
+                    : "Despesas da arena, fornecedores e repasses dos professores."
+                }
                 icone={<IconeFinanceiro className="h-5 w-5" />}
+                acao={
+                  <button type="button" onClick={exportar} className="btn-secundario py-2">
+                    <IconeExportar className="h-4 w-4" />
+                    Exportar planilha
+                  </button>
+                }
               />
-              <div className="p-5">
-                <GraficoFormasPagamento dados={formas} />
-
-                <div className="mt-5 rounded-xl border border-areia-200 bg-areia-50 p-3.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-areia-500">
-                    Total Pass no mês
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-                    <span className="text-sm text-areia-700">
-                      Coberto pelo convênio{" "}
-                      <strong className="font-semibold text-areia-900">
-                        {formatarMoeda(resumo.cobertoTotalPass)}
-                      </strong>
-                    </span>
-                    <span className="text-sm text-areia-700">
-                      Complemento pago à parte{" "}
-                      <strong className="font-semibold text-areia-900">
-                        {formatarMoeda(resumo.complementoTotalPass)}
-                      </strong>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader
-                titulo="Resumo de professores"
-                descricao="Comissão por aula na grade semanal — visão agregada, não folha de pagamento."
-                icone={<IconeUsuarios className="h-5 w-5" />}
+              <FiltrosDaLista
+                tipo={tipoDaLista}
+                filtros={filtrosDaLista}
+                mes={mes}
+                formas={banco.configuracoes.formasPagamento}
+                aoMudar={mudarFiltros}
+                aoLimpar={limparFiltros}
               />
-              {/* Celular: um cartão por professor */}
-              <ul className="divide-y divide-areia-100 md:hidden">
-                {professores.map((item) => (
-                  <li key={`m-${item.professor.id}`} className="px-4 py-3">
-                    <Link
-                      href={`/professores/${item.professor.id}`}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: item.professor.cor }}
-                        />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-areia-900">
-                            {item.professor.nome}
-                          </span>
-                          <span className="block truncate text-xs text-areia-500">
-                            {item.aulasSemana} aulas · {item.horasSemana.toFixed(0)}h
-                            por semana
-                          </span>
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="block text-base font-bold tabular-nums text-areia-900">
-                          {formatarMoeda(item.comissaoMes)}
-                        </span>
-                        <span className="block text-[11px] text-areia-500">
-                          por mês
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-                <li className="flex items-center justify-between bg-areia-50 px-4 py-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-areia-600">
-                    Total estimado
-                  </span>
-                  <span className="text-base font-bold tabular-nums text-areia-900">
-                    {formatarMoeda(
-                      professores.reduce((s, p) => s + p.comissaoMes, 0),
-                    )}
-                  </span>
-                </li>
-              </ul>
-
-              <div className="hidden overflow-x-auto rolagem-suave md:block">
-                <table className="w-full min-w-[520px] text-sm">
-                  <thead>
-                    <tr className="border-b border-areia-200 text-left text-xs uppercase tracking-wide text-areia-500">
-                      <th className="px-5 py-2.5 font-medium">Professor</th>
-                      <th className="px-3 py-2.5 text-right font-medium">Aulas/sem</th>
-                      <th className="px-3 py-2.5 text-right font-medium">Horas/sem</th>
-                      <th className="px-5 py-2.5 text-right font-medium">
-                        Comissão / mês
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-areia-100">
-                    {professores.map((item) => (
-                      <tr key={item.professor.id} className="hover:bg-areia-50">
-                        <td className="px-5 py-3">
-                          <Link
-                            href={`/professores/${item.professor.id}`}
-                            className="flex items-center gap-2 font-medium text-areia-800 hover:text-tijolo-700 hover:underline"
-                          >
-                            <span
-                              className="h-2.5 w-2.5 rounded-full"
-                              style={{ backgroundColor: item.professor.cor }}
-                            />
-                            {item.professor.nome}
-                          </Link>
-                          <span className="mt-0.5 block text-xs text-areia-500">
-                            {item.professor.especialidade} ·{" "}
-                            {formatarMoeda(item.professor.valorHoraAula)}/h ·{" "}
-                            {item.alunosAtendidos} alunos
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-right tabular-nums text-areia-700">
-                          {item.aulasSemana}
-                        </td>
-                        <td className="px-3 py-3 text-right tabular-nums text-areia-700">
-                          {item.horasSemana.toFixed(0)}h
-                        </td>
-                        <td className="px-5 py-3 text-right font-semibold tabular-nums text-areia-900">
-                          {formatarMoeda(item.comissaoMes)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-areia-200 bg-areia-50">
-                      <td className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-areia-600">
-                        Total estimado
-                      </td>
-                      <td colSpan={2} />
-                      <td className="px-5 py-2.5 text-right font-semibold tabular-nums text-areia-900">
-                        {formatarMoeda(
-                          professores.reduce((s, p) => s + p.comissaoMes, 0),
-                        )}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+              <ListaDeLancamentos
+                tipo={tipoDaLista}
+                linhas={linhas}
+                limite={limite}
+                ordem={filtrosDaLista.ordem}
+                aoAlternarOrdem={() =>
+                  mudarFiltros({
+                    ordem: filtrosDaLista.ordem === "vencimento_desc" ? "vencimento_asc" : "vencimento_desc",
+                  })
+                }
+                aoMostrarMais={() => setLimite((atual) => atual + LANCAMENTOS_POR_PAGINA)}
+                aoAbrir={abrirDetalhe}
+                aoPagar={abrirPagamento}
+              />
             </Card>
           </div>
+
+          {abaVisivel === "receber" && <RecebidoPorForma dados={porForma} mes={mes} />}
         </>
+      )}
+
+      {modal?.tipo === "detalhe" && (
+        <DetalheDoLancamento
+          key={modal.id}
+          id={modal.id}
+          aoFechar={() => setModal(null)}
+          aoPagar={(id) => setModal({ tipo: "pagamento", id, voltarAoDetalhe: true })}
+          aoAnular={(id) => setModal({ tipo: "anular", id, voltarAoDetalhe: true })}
+        />
+      )}
+      {modal?.tipo === "pagamento" && (
+        <ModalPagamento
+          key={modal.id}
+          id={modal.id}
+          aoFechar={() => setModal(modal.voltarAoDetalhe ? { tipo: "detalhe", id: modal.id } : null)}
+          aoConcluir={() => setModal(modal.voltarAoDetalhe ? { tipo: "detalhe", id: modal.id } : null)}
+        />
+      )}
+      {modal?.tipo === "anular" && (
+        <ModalAnular
+          key={modal.id}
+          id={modal.id}
+          aoFechar={() => setModal(modal.voltarAoDetalhe ? { tipo: "detalhe", id: modal.id } : null)}
+          aoConcluir={() => setModal(modal.voltarAoDetalhe ? { tipo: "detalhe", id: modal.id } : null)}
+        />
+      )}
+      {modal?.tipo === "novo" && (
+        <ModalNovoLancamento
+          tipoInicial={tipoDaLista}
+          podePagar={podePagar}
+          aoFechar={() => setModal(null)}
+          aoConcluir={(tipo) => {
+            setModal(null);
+            trocarAba(tipo);
+          }}
+        />
+      )}
+      {modal?.tipo === "gerar" && (
+        <ModalGerarMensalidades aoFechar={() => setModal(null)} aoVerNaLista={verMensalidadesNaLista} />
+      )}
+      {modal?.tipo === "fechar" && relatorio && (
+        <ModalFecharRepasse
+          relatorio={relatorio}
+          aoFechar={() => setModal(null)}
+          aoConcluir={() => setModal(null)}
+        />
       )}
     </div>
   );
