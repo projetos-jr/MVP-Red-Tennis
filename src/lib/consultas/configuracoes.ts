@@ -33,33 +33,58 @@ export const NOMES_DOS_PERFIS: Record<Perfil, string> = {
   professor: "Professor",
 };
 
-export const NOMES_DOS_MODULOS: Record<ModuloSistema, { nome: string; descricao: string }> = {
-  painel: { nome: "Painel", descricao: "Quadras do dia e o que precisa de atenção." },
-  agenda: { nome: "Agenda", descricao: "Aulas, reservas e bloqueios de quadra." },
-  alunos: { nome: "Alunos", descricao: "Lista e fichas dos alunos." },
-  professores: { nome: "Professores", descricao: "Fichas e repasses dos professores." },
-  financeiro: { nome: "Financeiro: a receber", descricao: "Mensalidades, reservas e consumo." },
+/** `nome` aparece na matriz de permissoes; `curto`, nos resumos de acesso. */
+export const NOMES_DOS_MODULOS: Record<
+  ModuloSistema,
+  { nome: string; curto: string; descricao: string }
+> = {
+  painel: { nome: "Painel", curto: "Painel", descricao: "Quadras do dia e o que precisa de atenção." },
+  agenda: { nome: "Agenda", curto: "Agenda", descricao: "Aulas, reservas e bloqueios de quadra." },
+  alunos: { nome: "Alunos", curto: "Alunos", descricao: "Lista e fichas dos alunos." },
+  professores: {
+    nome: "Professores",
+    curto: "Professores",
+    descricao: "Fichas e repasses dos professores.",
+  },
+  financeiro: {
+    nome: "Financeiro: a receber",
+    curto: "Financeiro a receber",
+    descricao: "Mensalidades, reservas e consumo.",
+  },
   financeiro_pagar: {
     nome: "Financeiro: a pagar",
+    curto: "Contas a pagar",
     descricao: "Despesas, fornecedores e repasses.",
   },
-  estoque: { nome: "Estoque", descricao: "Produtos do balcão e consumo." },
-  ranking: { nome: "Ranking e torneios", descricao: "Partidas, ranking e chaves." },
-  configuracoes: { nome: "Configurações", descricao: "Regras, planos e permissões." },
-  historico: { nome: "Histórico de alterações", descricao: "Quem mudou o quê, e quando." },
+  estoque: { nome: "Estoque", curto: "Estoque", descricao: "Produtos do balcão e consumo." },
+  ranking: { nome: "Ranking e torneios", curto: "Ranking", descricao: "Partidas, ranking e chaves." },
+  configuracoes: {
+    nome: "Configurações",
+    curto: "Configurações",
+    descricao: "Regras, planos e permissões.",
+  },
+  historico: {
+    nome: "Histórico de alterações",
+    curto: "Histórico",
+    descricao: "Quem mudou o quê, e quando.",
+  },
 };
+
+/** ["a", "b", "c"] -> "a, b e c" */
+function listaComE(itens: string[]): string {
+  return itens.length <= 1
+    ? (itens[0] ?? "")
+    : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+}
 
 /** "Acesso a todo o sistema" ou "Agenda e Alunos". */
 export function resumoDoAcesso(configuracoes: Configuracoes, perfil: Perfil): string {
   const modulos = configuracoes.permissoes[perfil] ?? [];
   if (MODULOS_DO_SISTEMA.every((m) => modulos.includes(m))) return "Acesso a todo o sistema";
   if (modulos.length === 0) return "Sem acesso a nenhuma área";
-  const nomes = MODULOS_DO_SISTEMA.filter((m) => modulos.includes(m)).map(
-    (m) => NOMES_DOS_MODULOS[m].nome,
+  return listaComE(
+    MODULOS_DO_SISTEMA.filter((m) => modulos.includes(m)).map((m) => NOMES_DOS_MODULOS[m].curto),
   );
-  return nomes.length === 1
-    ? nomes[0]
-    : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -219,8 +244,14 @@ function quandoNaQuadra(r: Registro): string {
 export function descreverRegistro(banco: Banco, registro: RegistroAuditoria): string {
   const r = conteudo(registro);
   switch (registro.tabela) {
-    case "configuracoes":
-      return "Regras da arena (Configurações)";
+    case "configuracoes": {
+      // O registro de configuracoes e um so: o que interessa e quais regras mudaram.
+      const antes = (registro.antes ?? {}) as Registro;
+      const mudaram = Object.keys(r).filter(
+        (campo) => JSON.stringify(antes[campo]) !== JSON.stringify(r[campo]),
+      );
+      return mudaram.length > 0 ? listaComE(mudaram.map(rotuloDoCampo)) : "Regras da arena";
+    }
     case "colaboradores":
     case "professores":
     case "alunos":

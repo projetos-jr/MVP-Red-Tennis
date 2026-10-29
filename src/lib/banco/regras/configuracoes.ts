@@ -50,7 +50,7 @@ export type ParametrosGerais = Omit<Configuracoes, "siglas" | "permissoes">;
 /** Comparacao de textos sem diferenciar maiusculas, acentos e espacos nas pontas. */
 export function mesmoTexto(a: string, b: string): boolean {
   const normalizar = (texto: string) =>
-    texto.trim().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    texto.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   return normalizar(a) === normalizar(b);
 }
 
