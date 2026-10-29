@@ -71,11 +71,12 @@ function conferirPagamento(
   }
 
   let valorConvenio: number | undefined;
-  if (dados.valorConvenio !== undefined && !Number.isNaN(dados.valorConvenio)) {
+  if (dados.valorConvenio !== undefined) {
     exigir(
-      Number.isFinite(dados.valorConvenio) && dados.valorConvenio >= 0,
-      "A parte coberta pelo convênio não pode ser negativa.",
+      Number.isFinite(dados.valorConvenio),
+      "Informe a parte coberta pelo convênio em reais (ou deixe o campo vazio).",
     );
+    exigir(dados.valorConvenio >= 0, "A parte coberta pelo convênio não pode ser negativa.");
     exigir(
       dados.valorConvenio <= valor,
       "A parte coberta pelo convênio não pode ser maior que o valor do lançamento.",

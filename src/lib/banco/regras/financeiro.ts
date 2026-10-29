@@ -180,6 +180,11 @@ export function somarMesesNaCompetencia(competencia: string, meses: number): str
   return somarMeses(`${competencia}-01`, meses).slice(0, 7);
 }
 
+/** Ultimo dia do mes: "2026-02" -> "2026-02-28". */
+export function fimDoMes(competencia: string): string {
+  return vencimentoNoMes(competencia, 31);
+}
+
 /** O mes ja terminou? ("2026-09" com hoje em outubro: sim.) */
 export function mesTerminado(competencia: string, hoje: string): boolean {
   return competencia < hoje.slice(0, 7);

@@ -536,6 +536,8 @@ describe("indicadores e lista (dados de exemplo inteiros)", () => {
     expect(anterior.aFechar.length).toBeGreaterThan(0);
     const contasAtrasadas = listarLancamentos(banco, { tipo: "pagar", situacao: "em_atraso" }, HOJE);
     expect(contasAtrasadas.length).toBeGreaterThan(0);
+    // "A pagar" do mes inclui a conta que atrasou num mes anterior.
+    expect(indicadores.aPagar.vencidas).toBe(contasAtrasadas.length);
   });
 });
 

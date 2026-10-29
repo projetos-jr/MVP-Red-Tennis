@@ -48,6 +48,8 @@ export {
   CATEGORIAS_A_PAGAR,
   CATEGORIAS_A_RECEBER,
   categoriasDoTipo,
+  competenciaValida,
+  fimDoMes,
   mesCurto,
   mesTerminado,
   nomeDoMes,
@@ -132,6 +134,8 @@ export interface FiltroLancamentos {
   forma?: string;
   /** "YYYY-MM" ou "todos". O mes de cada lancamento e o de `mesDoLancamento`. */
   mes?: string;
+  /** "YYYY-MM": so lancamentos ate o fim deste mes (inclui os meses anteriores). */
+  ateMes?: string;
   ordem?: OrdemDaLista;
 }
 
@@ -169,6 +173,7 @@ export function listarLancamentos(
     if (forma === "sem_forma" && lancamento.formaPagamento) return;
     if (forma !== "todas" && forma !== "sem_forma" && lancamento.formaPagamento !== forma) return;
     if (mes !== "todos" && mesDoLancamento(lancamento) !== mes) return;
+    if (filtro.ateMes && mesDoLancamento(lancamento) > filtro.ateMes) return;
 
     const linha = montarLinha(banco, pessoas, lancamento, hoje);
     if (!passaNaSituacao(linha.situacao, situacao)) return;
@@ -203,6 +208,21 @@ export function totalizar(linhas: LinhaLancamento[]): Totais {
   };
 }
 
+export interface ResumoDaLista {
+  /** Lancamentos validos (sem os anulados) e a soma deles. */
+  validos: Totais;
+  /** Anulados: aparecem na lista, mas ficam fora do total. */
+  anulados: Totais;
+}
+
+/** Rodape da lista: anulado nunca entra no total. */
+export function resumoDaLista(linhas: LinhaLancamento[]): ResumoDaLista {
+  return {
+    validos: totalizar(linhas.filter((l) => l.situacao !== "cancelado")),
+    anulados: totalizar(linhas.filter((l) => l.situacao === "cancelado")),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Indicadores do mes
 // ---------------------------------------------------------------------------
@@ -220,7 +240,9 @@ export function filtroDoIndicador(chave: ChaveIndicador, mes: string): FiltroLan
       // Nao depende do mes: a divida de setembro continua devida em outubro.
       return { tipo: "receber", situacao: "em_atraso", mes: "todos" };
     case "aPagar":
-      return { tipo: "pagar", situacao: "em_aberto", mes };
+      // Tudo o que precisa ser pago ate o fim do mes, inclusive o que atrasou
+      // antes (nas contas a pagar nao ha um cartao separado de atrasadas).
+      return { tipo: "pagar", situacao: "em_aberto", mes: "todos", ateMes: mes };
   }
 }
 
@@ -236,7 +258,7 @@ export interface IndicadoresDoMes {
   aReceber: Indicador;
   /** Tudo o que venceu e nao foi pago, de qualquer mes. */
   emAtraso: Indicador;
-  /** Contas a pagar em aberto com vencimento no mes. */
+  /** Contas a pagar em aberto que vencem ate o fim do mes (as atrasadas inclusive). */
   aPagar: Indicador & { vencidas: number };
 }
 
@@ -445,12 +467,16 @@ export interface LinhaRepasse {
   emAberto: number;
   /** Previsto menos pago. */
   diferenca: number;
+  /** O que o fechamento ainda lanca: previsto menos o ja lancado (pago ou nao). */
+  faltaLancar: number;
   situacao: SituacaoRepasse;
 }
 
 export interface RelatorioDeRepasses {
   competencia: string;
   terminado: boolean;
+  /** O mes ainda nao comecou. */
+  futuro: boolean;
   linhas: LinhaRepasse[];
   totais: Omit<LinhaRepasse, "professor" | "fechamento" | "situacao">;
   /** Professores com aulas no mes e sem fechamento: o que "Fechar repasse" fecha. */
@@ -498,18 +524,20 @@ export function relatorioDeProfessores(
         pago,
         emAberto,
         diferenca,
+        faltaLancar: Math.max(emReais(calculo.valorPrevisto - pago - emAberto), 0),
         situacao,
       };
     })
     .filter((l) => l.professor.ativo || l.aulasDadas > 0 || l.fechamento || l.pago || l.emAberto)
     .sort((a, b) => a.professor.nome.localeCompare(b.professor.nome));
 
-  const somar = (campo: "aulasDadas" | "minutosDados" | "previsto" | "pago" | "emAberto" | "diferenca") =>
+  const somar = (campo: keyof RelatorioDeRepasses["totais"]) =>
     emReais(linhas.reduce((soma, l) => soma + l[campo], 0));
 
   return {
     competencia,
     terminado,
+    futuro: competencia > hoje.slice(0, 7),
     linhas,
     totais: {
       aulasDadas: somar("aulasDadas"),
@@ -518,6 +546,7 @@ export function relatorioDeProfessores(
       pago: somar("pago"),
       emAberto: somar("emAberto"),
       diferenca: somar("diferenca"),
+      faltaLancar: somar("faltaLancar"),
     },
     aFechar: linhas.filter((l) => l.situacao === "a_fechar"),
   };
