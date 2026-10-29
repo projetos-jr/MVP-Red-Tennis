@@ -1,182 +1,312 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { LinhaDaPartida } from "@/components/ranking/LinhaDaPartida";
+import { ListaPartidas } from "@/components/ranking/ListaPartidas";
 import { ListaRanking } from "@/components/ranking/ListaRanking";
-import { PiramideTorneio } from "@/components/ranking/PiramideTorneio";
+import { ListaTorneios } from "@/components/ranking/ListaTorneios";
+import { ModalNovaPartida, type ModoDaPartida } from "@/components/ranking/ModalNovaPartida";
+import { ModalPartida } from "@/components/ranking/ModalPartida";
+import { ModalTorneio } from "@/components/ranking/ModalTorneio";
+import { PodioRanking } from "@/components/ranking/PodioRanking";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import {
+  IconeAgenda,
+  IconeBola,
+  IconeMais,
+  IconeTrofeu,
+  IconeUsuarios,
+} from "@/components/ui/Icons";
+import { Segmentado } from "@/components/ui/Segmentado";
 import { StatCard } from "@/components/ui/StatCard";
-import { IconeBola, IconeTrofeu, IconeUsuarios } from "@/components/ui/Icons";
+import { HOJE } from "@/lib/banco/constantes";
+import type { CategoriaRanking } from "@/lib/banco/tipos";
+import { nomeCompacto } from "@/lib/consultas/base";
+import {
+  buscarPartida,
+  listarTorneios,
+  proximasPartidas,
+  rankingDaArena,
+  resumoDoRanking,
+  type PartidaNaLista,
+} from "@/lib/consultas/ranking";
 import { formatarData } from "@/lib/date";
-import { IDS_INSCRITOS_RANKING, TORNEIOS } from "@/lib/mock-data";
-import { nomeCompacto, piramideDaEtapa, rankingGeral } from "@/lib/selectors";
 import { ESTILO_CATEGORIA } from "@/lib/theme";
-import type { CategoriaRanking } from "@/lib/types";
+import { useApp } from "@/store/AppStore";
 
+type Aba = "ranking" | "partidas" | "torneios";
+const ABAS: Aba[] = ["ranking", "partidas", "torneios"];
 const CATEGORIAS: CategoriaRanking[] = ["A", "B", "C", "D"];
 
 export default function PaginaRanking() {
+  // A aba fica na URL (?aba=partidas), entao a tela le os parametros dentro
+  // de um Suspense, como pede o Next.
+  return (
+    <Suspense fallback={null}>
+      <ConteudoDoRanking />
+    </Suspense>
+  );
+}
+
+function FiltroDeCategoria({
+  valor,
+  aoMudar,
+}: {
+  valor: CategoriaRanking | "todas";
+  aoMudar: (valor: CategoriaRanking | "todas") => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por categoria">
+      <button
+        type="button"
+        onClick={() => aoMudar("todas")}
+        aria-pressed={valor === "todas"}
+        className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          valor === "todas" ? "bg-saibro-600 text-white" : "bg-areia-100 text-areia-700 hover:bg-areia-200"
+        }`}
+      >
+        Todas
+      </button>
+      {CATEGORIAS.map((c) => {
+        const estilo = ESTILO_CATEGORIA[c];
+        const ativo = valor === c;
+        return (
+          <button
+            key={c}
+            type="button"
+            onClick={() => aoMudar(c)}
+            aria-pressed={ativo}
+            title={`${estilo.label} · ${estilo.descricao}`}
+            className="rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{
+              color: ativo ? "#fff" : estilo.cor,
+              backgroundColor: ativo ? estilo.cor : estilo.fundo,
+              borderColor: estilo.borda,
+            }}
+          >
+            Cat. {c}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConteudoDoRanking() {
+  const { banco } = useApp();
+  const router = useRouter();
+  const parametros = useSearchParams();
+  const pedida = parametros.get("aba") as Aba | null;
+  const aba: Aba = pedida && ABAS.includes(pedida) ? pedida : "ranking";
+
   const [categoria, setCategoria] = useState<CategoriaRanking | "todas">("todas");
+  const [novaPartida, setNovaPartida] = useState<{ modo: ModoDaPartida; vez: number } | null>(null);
+  const [partidaAberta, setPartidaAberta] = useState<string | null>(null);
+  const [novoTorneio, setNovoTorneio] = useState<number | null>(null);
 
-  const geral = useMemo(() => rankingGeral(), []);
-  const faixas = useMemo(() => piramideDaEtapa(), []);
+  const geral = useMemo(() => rankingDaArena(banco, HOJE), [banco]);
+  const linhas = useMemo(
+    () => (categoria === "todas" ? geral : rankingDaArena(banco, HOJE, categoria)),
+    [banco, geral, categoria],
+  );
+  const resumo = useMemo(() => resumoDoRanking(banco, HOJE, geral), [banco, geral]);
+  const torneios = useMemo(() => listarTorneios(banco), [banco]);
+  const proximas = useMemo(() => proximasPartidas(banco), [banco]);
+  const itemAberto = partidaAberta ? buscarPartida(banco, partidaAberta) : undefined;
+  const { pontosVitoria, pontosDerrota } = banco.configuracoes;
 
-  const etapaAtual = TORNEIOS[0];
-  const lider = geral[0];
+  function trocarAba(nova: Aba) {
+    router.replace(nova === "ranking" ? "/ranking" : `/ranking?aba=${nova}`, { scroll: false });
+  }
+
+  function abrirPartida(item: PartidaNaLista) {
+    if (item.torneio) router.push(`/ranking/torneio?id=${item.torneio.id}`);
+    else setPartidaAberta(item.partida.id);
+  }
+
+  function abrirNovaPartida(modo: ModoDaPartida) {
+    setNovaPartida((atual) => ({ modo, vez: (atual?.vez ?? 0) + 1 }));
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">
-            Ranking &amp; Torneios
-          </h1>
+          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Ranking &amp; Torneios</h1>
           <p className="mt-1 text-sm text-areia-600">
-            {geral.length} jogadores pontuando · {etapaAtual.inscritos} inscritos na
-            etapa atual
+            {resumo.jogadores} jogadores no ranking · vitória vale {pontosVitoria} pontos e derrota{" "}
+            {pontosDerrota}
           </p>
+        </div>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setNovoTorneio(Date.now())}
+            className="btn-secundario flex-1 sm:flex-none"
+          >
+            <IconeTrofeu className="h-4 w-4" />
+            Novo torneio
+          </button>
+          <button
+            type="button"
+            onClick={() => abrirNovaPartida("resultado")}
+            className="btn-primario flex-1 sm:flex-none"
+          >
+            <IconeMais className="h-4 w-4" />
+            Registrar partida
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           rotulo="Líder do ranking"
           rotuloCurto="Líder"
-          valor={nomeCompacto(lider.nome)}
-          detalhe={`${lider.rankingPontuacao} pontos · Categoria ${lider.categoriaRanking}`}
+          valor={resumo.lider ? nomeCompacto(resumo.lider.aluno.nome) : "—"}
+          detalhe={
+            resumo.lider
+              ? `${resumo.lider.pontos} pontos · ${resumo.lider.vitorias} vitórias${
+                  resumo.lider.aluno.categoriaRanking ? ` · Categoria ${resumo.lider.aluno.categoriaRanking}` : ""
+                }`
+              : undefined
+          }
           icone={<IconeTrofeu className="h-5 w-5" />}
           tom="saibro"
         />
         <StatCard
           rotulo="Jogadores no ranking"
           rotuloCurto="Jogadores"
-          valor={String(geral.length)}
-          detalhe="Todos os matriculados pontuam ao longo das etapas"
+          valor={String(resumo.jogadores)}
+          detalhe="Inscritos nas categorias A a D"
           icone={<IconeUsuarios className="h-5 w-5" />}
         />
         <StatCard
-          rotulo="Próxima etapa"
-          rotuloCurto="Próxima etapa"
-          valor={formatarData(etapaAtual.data)}
-          detalhe={etapaAtual.nome}
+          rotulo="Partidas em 30 dias"
+          rotuloCurto="Partidas (30d)"
+          valor={String(resumo.partidasRecentes)}
+          detalhe="Partidas de ranking com resultado"
           icone={<IconeBola className="h-5 w-5" />}
+        />
+        <StatCard
+          rotulo="Próximo torneio"
+          rotuloCurto="Torneio"
+          valor={resumo.proximoTorneio ? formatarData(resumo.proximoTorneio.data) : "—"}
+          detalhe={resumo.proximoTorneio?.nome ?? "Nenhum torneio marcado"}
+          icone={<IconeAgenda className="h-5 w-5" />}
         />
       </div>
 
-      {/* Chave do torneio */}
-      <Card>
-        <CardHeader
-          titulo={etapaAtual.nome}
-          descricao={`${etapaAtual.formato} · ${etapaAtual.inscritos} inscritos`}
-          icone={<IconeTrofeu className="h-5 w-5" />}
-          acao={
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setCategoria("todas")}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  categoria === "todas"
-                    ? "bg-saibro-600 text-white"
-                    : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-                }`}
-              >
-                Todas
-              </button>
-              {CATEGORIAS.map((c) => {
-                const estilo = ESTILO_CATEGORIA[c];
-                const ativo = categoria === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCategoria(c)}
-                    className="rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                    style={{
-                      color: ativo ? "#fff" : estilo.cor,
-                      backgroundColor: ativo ? estilo.cor : estilo.fundo,
-                      borderColor: estilo.borda,
-                    }}
-                  >
-                    Cat. {c}
-                  </button>
-                );
-              })}
-            </div>
-          }
+      <div className="overflow-x-auto">
+        <Segmentado
+          aria="Seções do ranking"
+          valor={aba}
+          aoMudar={trocarAba}
+          opcoes={[
+            { valor: "ranking", rotulo: "Ranking" },
+            { valor: "partidas", rotulo: "Partidas" },
+            { valor: "torneios", rotulo: `Torneios (${torneios.length})` },
+          ]}
         />
+      </div>
 
-        <PiramideTorneio faixas={faixas} categoriaEmFoco={categoria} />
+      {aba === "ranking" && (
+        <div className="grid items-start gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader
+              titulo={categoria === "todas" ? "Ranking geral" : `Ranking · ${ESTILO_CATEGORIA[categoria].label}`}
+              descricao="Calculado das partidas com resultado. Quem perde por W.O. não ganha os pontos da derrota."
+              icone={<IconeTrofeu className="h-5 w-5" />}
+              acao={<FiltroDeCategoria valor={categoria} aoMudar={setCategoria} />}
+            />
+            {linhas.length > 0 && (
+              <div className="border-b border-areia-200 bg-gradient-to-b from-saibro-50/70 to-white">
+                <PodioRanking linhas={linhas} />
+              </div>
+            )}
+            <ListaRanking linhas={linhas} />
+            <footer className="border-t border-areia-200 px-5 py-3 text-xs text-areia-500">
+              “7 dias”: posições ganhas ou perdidas na última semana. Clique num jogador para abrir a
+              ficha.
+            </footer>
+          </Card>
 
-        <footer className="border-t border-areia-200 px-5 py-3 text-xs text-areia-500">
-          Posições correspondem à situação após a última rodada disputada. Clique em
-          um jogador para abrir a ficha completa.
-        </footer>
-      </Card>
+          <div className="min-w-0 space-y-6">
+            <Card>
+              <CardHeader
+                titulo="Próximas partidas"
+                descricao="Ainda sem resultado."
+                icone={<IconeAgenda className="h-5 w-5" />}
+                acao={
+                  <button
+                    type="button"
+                    onClick={() => abrirNovaPartida("marcar")}
+                    className="btn-fantasma px-2.5 py-1.5 text-xs"
+                  >
+                    <IconeMais className="h-3.5 w-3.5" />
+                    Marcar
+                  </button>
+                }
+              />
+              <ul className="divide-y divide-areia-100">
+                {proximas.map((item) => (
+                  <li key={item.partida.id}>
+                    <LinhaDaPartida item={item} aoAbrir={abrirPartida} />
+                  </li>
+                ))}
+                {proximas.length === 0 && (
+                  <li className="px-5 py-8 text-center text-sm text-areia-500">
+                    Nenhuma partida marcada.
+                  </li>
+                )}
+              </ul>
+            </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Ranking geral */}
-        <Card className="lg:col-span-2">
-          <CardHeader
-            titulo="Ranking geral"
-            descricao="Todos os jogadores da arena, ordenados por pontuação."
-            icone={<IconeTrofeu className="h-5 w-5" />}
-          />
-          <div className="max-h-[560px] overflow-y-auto rolagem-suave">
-            <ListaRanking jogadores={geral} inscritos={IDS_INSCRITOS_RANKING} />
+            <Card>
+              <CardHeader
+                titulo="Torneios"
+                descricao="Em andamento, abertos e encerrados."
+                icone={<IconeTrofeu className="h-5 w-5" />}
+                acao={
+                  <button
+                    type="button"
+                    onClick={() => trocarAba("torneios")}
+                    className="btn-fantasma px-2.5 py-1.5 text-xs"
+                  >
+                    Ver todos
+                  </button>
+                }
+              />
+              <ListaTorneios torneios={torneios.slice(0, 3)} />
+            </Card>
           </div>
-        </Card>
+        </div>
+      )}
 
-        {/* Torneios */}
+      {aba === "partidas" && <ListaPartidas aoAbrir={abrirPartida} />}
+
+      {aba === "torneios" && (
         <Card>
           <CardHeader
             titulo="Torneios"
-            descricao="Etapas recentes e próximas."
-            icone={<IconeBola className="h-5 w-5" />}
+            descricao="Clique num torneio para ver a chave, registrar resultados e comentar."
+            icone={<IconeTrofeu className="h-5 w-5" />}
           />
-          <ul className="divide-y divide-areia-100">
-            {TORNEIOS.map((torneio) => (
-              <li key={torneio.id} className="px-5 py-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-areia-900">
-                    {torneio.nome}
-                  </h3>
-                  <Badge
-                    cor={
-                      torneio.status === "encerrado"
-                        ? "#6B6255"
-                        : torneio.status === "em andamento"
-                          ? "#15803D"
-                          : "#9A4720"
-                    }
-                    fundo={
-                      torneio.status === "encerrado"
-                        ? "#F4F1EC"
-                        : torneio.status === "em andamento"
-                          ? "#F0FDF4"
-                          : "#FAE8DA"
-                    }
-                    className="shrink-0 whitespace-nowrap text-[11px]"
-                  >
-                    {torneio.status}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-areia-600">{torneio.formato}</p>
-                <p className="mt-1.5 text-xs text-areia-500">
-                  {formatarData(torneio.data)} · {torneio.inscritos} inscritos
-                </p>
-              </li>
-            ))}
-          </ul>
-
-          <div className="border-t border-areia-200 p-4">
-            <p className="rounded-xl border border-dashed border-areia-300 px-3.5 py-3 text-xs leading-relaxed text-areia-500">
-              O chaveamento automático por nível e disponibilidade de horário está
-              fora do escopo deste MVP — a chave exibida é um estado fixo de
-              demonstração.
-            </p>
-          </div>
+          <ListaTorneios torneios={torneios} emGrade />
         </Card>
-      </div>
+      )}
+
+      {novaPartida && (
+        <ModalNovaPartida
+          key={novaPartida.vez}
+          modoInicial={novaPartida.modo}
+          aoFechar={() => setNovaPartida(null)}
+        />
+      )}
+      {itemAberto && (
+        <ModalPartida key={itemAberto.partida.id} item={itemAberto} aoFechar={() => setPartidaAberta(null)} />
+      )}
+      {novoTorneio !== null && <ModalTorneio key={novoTorneio} aoFechar={() => setNovoTorneio(null)} />}
     </div>
   );
 }
