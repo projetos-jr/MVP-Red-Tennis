@@ -75,235 +75,238 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   const linhas = verTodos ? extrato : extrato.slice(0, MOVIMENTOS_VISIVEIS);
 
   return (
-    <div className="space-y-6">
-      <Link
-        href="/estoque"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Voltar para o estoque
-      </Link>
+    <>
+      <div className="space-y-6">
+        <Link
+          href="/estoque"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
+        >
+          <IconeVoltar className="h-4 w-4" />
+          Voltar para o estoque
+        </Link>
 
-      {/* Cabeçalho */}
-      <section className="card p-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge cor={categoria.cor} fundo={categoria.fundo} borda={categoria.borda}>
-                {produto.categoria}
-              </Badge>
-              {!produto.ativo && <Badge>Inativo · fora das listas de venda</Badge>}
-            </div>
-            <h1 className="mt-2 text-2xl font-bold text-areia-900">{produto.nome}</h1>
-            <p className="mt-0.5 text-sm text-areia-600">Vendido por {produto.unidade}</p>
-            <p className="mt-3 text-sm text-areia-700">
-              Venda <strong className="font-semibold">{formatarMoeda(produto.precoVenda)}</strong>
-              <span className="text-areia-500">
-                {" "}
-                · custo {formatarMoeda(produto.precoCusto)} · margem {formatarMoeda(margem)}
-                {produto.precoCusto > 0 && ` (${Math.round((margem / produto.precoCusto) * 100)}%)`}
-              </span>
-            </p>
-            {vendaAbaixoDoCusto(produto.precoCusto, produto.precoVenda) && (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
-                <IconeAlerta className="h-3.5 w-3.5" />
-                Venda abaixo do custo
+        {/* Cabeçalho */}
+        <section className="card p-5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge cor={categoria.cor} fundo={categoria.fundo} borda={categoria.borda}>
+                  {produto.categoria}
+                </Badge>
+                {!produto.ativo && <Badge>Inativo · fora das listas de venda</Badge>}
+              </div>
+              <h1 className="mt-2 text-2xl font-bold text-areia-900">{produto.nome}</h1>
+              <p className="mt-0.5 text-sm text-areia-600">Vendido por {produto.unidade}</p>
+              <p className="mt-3 text-sm text-areia-700">
+                Venda <strong className="font-semibold">{formatarMoeda(produto.precoVenda)}</strong>
+                <span className="text-areia-500">
+                  {" "}
+                  · custo {formatarMoeda(produto.precoCusto)} · margem {formatarMoeda(margem)}
+                  {produto.precoCusto > 0 && ` (${Math.round((margem / produto.precoCusto) * 100)}%)`}
+                </span>
               </p>
-            )}
-          </div>
+              {vendaAbaixoDoCusto(produto.precoCusto, produto.precoVenda) && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
+                  <IconeAlerta className="h-3.5 w-3.5" />
+                  Venda abaixo do custo
+                </p>
+              )}
+            </div>
 
-          <div className="w-full shrink-0 rounded-xl border border-areia-200 bg-areia-50 p-4 lg:w-72">
-            <div className="flex items-end justify-between gap-2">
-              <SaldoEmDestaque
+            <div className="w-full shrink-0 rounded-xl border border-areia-200 bg-areia-50 p-4 lg:w-72">
+              <div className="flex items-end justify-between gap-2">
+                <SaldoEmDestaque
+                  saldo={saldo}
+                  estoqueMinimo={produto.estoqueMinimo}
+                  nivel={nivel}
+                  tamanho="lg"
+                />
+                {produto.ativo ? (
+                  <SeloDoNivel nivel={nivel} className="text-[11px]" />
+                ) : (
+                  <Badge className="text-[11px]">Inativo</Badge>
+                )}
+              </div>
+              <BarraDoNivel
                 saldo={saldo}
                 estoqueMinimo={produto.estoqueMinimo}
                 nivel={nivel}
-                tamanho="lg"
+                className="mt-3"
               />
-              {produto.ativo ? (
-                <SeloDoNivel nivel={nivel} className="text-[11px]" />
-              ) : (
-                <Badge className="text-[11px]">Inativo</Badge>
-              )}
+              <p className="mt-2 text-xs text-areia-500">
+                Saldo = soma dos movimentos abaixo.
+              </p>
             </div>
-            <BarraDoNivel
-              saldo={saldo}
-              estoqueMinimo={produto.estoqueMinimo}
-              nivel={nivel}
-              className="mt-3"
-            />
-            <p className="mt-2 text-xs text-areia-500">
-              Saldo = soma dos movimentos abaixo.
-            </p>
           </div>
-        </div>
 
-        {/* No celular, os botões ficam em duas colunas; a entrada ocupa a linha toda. */}
-        <div className="mt-5 grid grid-cols-2 gap-2 border-t border-areia-200 pt-4 sm:flex sm:flex-wrap">
-          {produto.ativo && (
-            <button
-              type="button"
-              onClick={() => setAcao({ tipo: "entrada", produtoId: produto.id })}
-              className="btn-primario col-span-2"
-            >
-              <IconeEntrada className="h-4 w-4" />
-              Entrada de mercadoria
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setAcao({ tipo: "perda", produtoId: produto.id })}
-            disabled={saldo <= 0}
-            className="btn-secundario"
-          >
-            <IconeLixeira className="h-4 w-4" />
-            Perda
-          </button>
-          <button
-            type="button"
-            onClick={() => setAcao({ tipo: "inventario", produtoId: produto.id })}
-            className="btn-secundario"
-            title="Ajuste de inventário: informe quanto há na prateleira"
-          >
-            <IconeContagem className="h-4 w-4" />
-            Contagem
-          </button>
-          <button
-            type="button"
-            onClick={() => setAcao({ tipo: "editar", produtoId: produto.id })}
-            className="btn-secundario"
-            aria-label="Editar cadastro"
-          >
-            <IconeEditar className="h-4 w-4" />
-            <span className="sm:hidden">Editar</span>
-            <span className="hidden sm:inline">Editar cadastro</span>
-          </button>
-          {produto.ativo ? (
-            <button
-              type="button"
-              onClick={() => setAcao({ tipo: "inativar", produtoId: produto.id })}
-              className="btn-fantasma text-tijolo-700 hover:text-tijolo-800 sm:ml-auto"
-            >
-              <IconeArquivar className="h-4 w-4" />
-              Inativar
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                gravar(
-                  reativarProduto,
-                  { id: produto.id },
-                  `${produto.nome} voltou para o catálogo e para as listas de venda.`,
-                )
-              }
-              className="btn-secundario sm:ml-auto"
-            >
-              Reativar produto
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* Indicadores */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard
-          rotulo="Vendidos em 30 dias"
-          rotuloCurto="Vendidos"
-          valor={String(vendidos30Dias.unidades)}
-          detalhe={`${formatarMoeda(vendidos30Dias.total)} em consumo`}
-          icone={<IconeSubiu className="h-5 w-5" />}
-          tom="saibro"
-        />
-        <StatCard
-          rotulo="Valor em estoque"
-          rotuloCurto="Valor"
-          valor={formatarMoeda(Math.max(saldo, 0) * produto.precoVenda)}
-          detalhe={`Custo ${formatarMoeda(Math.max(saldo, 0) * produto.precoCusto)}`}
-          icone={<IconeFinanceiro className="h-5 w-5" />}
-        />
-        <StatCard
-          rotulo="Última entrada"
-          rotuloCurto="Últ. entrada"
-          valor={ultimaEntrada ? formatarDiaMes(ultimaEntrada.data) : "—"}
-          detalhe={
-            ultimaEntrada
-              ? `+${ultimaEntrada.quantidade} · ${ultimaEntrada.responsavel}`
-              : "Nenhuma entrada registrada"
-          }
-          icone={<IconeEntrada className="h-5 w-5" />}
-        />
-        <StatCard
-          rotulo="Perdas em 30 dias"
-          rotuloCurto="Perdas"
-          valor={String(perdas30Dias)}
-          detalhe={
-            perdas30Dias > 0
-              ? `${formatarMoeda(perdas30Dias * produto.precoCusto)} de custo perdido`
-              : "Nenhuma perda"
-          }
-          icone={<IconeLixeira className="h-5 w-5" />}
-          tom={perdas30Dias > 0 ? "alerta" : "neutro"}
-        />
-      </div>
-
-      <div className="grid items-start gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader
-            titulo="Movimentos do produto"
-            descricao="Entradas, vendas, perdas e ajustes, com quem registrou e o saldo depois de cada um."
-            icone={<IconeEstoque className="h-5 w-5" />}
-          />
-          <ul className="divide-y divide-areia-100">
-            {linhas.map((linha) => (
-              <li key={linha.movimento.id} className="px-5 py-3">
-                <LinhaDeMovimento item={linha} mostrarProduto={false} saldoApos={linha.saldoApos} />
-                {linha.contaAPagar && (
-                  <p className="mt-1 text-xs text-areia-600">
-                    Conta a pagar: {formatarMoeda(linha.contaAPagar.valor)} para{" "}
-                    {linha.contaAPagar.nomePagante} · vence{" "}
-                    {formatarDiaMes(linha.contaAPagar.vencimento)}
-                    {linha.contaAPagar.pagoEm && " · paga"}
-                  </p>
-                )}
-              </li>
-            ))}
-            {extrato.length === 0 && (
-              <li className="px-5 py-8 text-center text-sm text-areia-500">
-                Nenhum movimento ainda. Registre a primeira entrada de mercadoria.
-              </li>
-            )}
-          </ul>
-          {extrato.length > MOVIMENTOS_VISIVEIS && (
-            <div className="border-t border-areia-200 px-5 py-3">
+          {/* No celular, os botões ficam em duas colunas; a entrada ocupa a linha toda. */}
+          <div className="mt-5 grid grid-cols-2 gap-2 border-t border-areia-200 pt-4 sm:flex sm:flex-wrap">
+            {produto.ativo && (
               <button
                 type="button"
-                onClick={() => setVerTodos((atual) => !atual)}
-                className="btn-fantasma px-3 py-1.5 text-xs"
+                onClick={() => setAcao({ tipo: "entrada", produtoId: produto.id })}
+                className="btn-primario col-span-2"
               >
-                {verTodos
-                  ? "Mostrar só os mais recentes"
-                  : `Mostrar todos os ${extrato.length} movimentos`}
+                <IconeEntrada className="h-4 w-4" />
+                Entrada de mercadoria
               </button>
-            </div>
-          )}
-        </Card>
+            )}
+            <button
+              type="button"
+              onClick={() => setAcao({ tipo: "perda", produtoId: produto.id })}
+              disabled={saldo <= 0}
+              className="btn-secundario"
+            >
+              <IconeLixeira className="h-4 w-4" />
+              Perda
+            </button>
+            <button
+              type="button"
+              onClick={() => setAcao({ tipo: "inventario", produtoId: produto.id })}
+              className="btn-secundario"
+              title="Ajuste de inventário: informe quanto há na prateleira"
+            >
+              <IconeContagem className="h-4 w-4" />
+              Contagem
+            </button>
+            <button
+              type="button"
+              onClick={() => setAcao({ tipo: "editar", produtoId: produto.id })}
+              className="btn-secundario"
+              aria-label="Editar cadastro"
+            >
+              <IconeEditar className="h-4 w-4" />
+              <span className="sm:hidden">Editar</span>
+              <span className="hidden sm:inline">Editar cadastro</span>
+            </button>
+            {produto.ativo ? (
+              <button
+                type="button"
+                onClick={() => setAcao({ tipo: "inativar", produtoId: produto.id })}
+                className="btn-fantasma text-tijolo-700 hover:text-tijolo-800 sm:ml-auto"
+              >
+                <IconeArquivar className="h-4 w-4" />
+                Inativar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  gravar(
+                    reativarProduto,
+                    { id: produto.id },
+                    `${produto.nome} voltou para o catálogo e para as listas de venda.`,
+                  )
+                }
+                className="btn-secundario sm:ml-auto"
+              >
+                Reativar produto
+              </button>
+            )}
+          </div>
+        </section>
 
-        <div className="min-w-0 space-y-6">
-          <ComentariosDoRegistro
-            entidade="produto"
-            entidadeId={produto.id}
-            descricao="Notas da equipe sobre este produto."
+        {/* Indicadores */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <StatCard
+            rotulo="Vendidos em 30 dias"
+            rotuloCurto="Vendidos"
+            valor={String(vendidos30Dias.unidades)}
+            detalhe={`${formatarMoeda(vendidos30Dias.total)} em consumo`}
+            icone={<IconeSubiu className="h-5 w-5" />}
+            tom="saibro"
           />
-          <HistoricoDoRegistro
-            tabela="produtos"
-            registroId={produto.id}
-            rotulos={ROTULOS_DO_PRODUTO}
+          <StatCard
+            rotulo="Valor em estoque"
+            rotuloCurto="Valor"
+            valor={formatarMoeda(Math.max(saldo, 0) * produto.precoVenda)}
+            detalhe={`Custo ${formatarMoeda(Math.max(saldo, 0) * produto.precoCusto)}`}
+            icone={<IconeFinanceiro className="h-5 w-5" />}
           />
+          <StatCard
+            rotulo="Última entrada"
+            rotuloCurto="Últ. entrada"
+            valor={ultimaEntrada ? formatarDiaMes(ultimaEntrada.data) : "—"}
+            detalhe={
+              ultimaEntrada
+                ? `+${ultimaEntrada.quantidade} · ${ultimaEntrada.responsavel}`
+                : "Nenhuma entrada registrada"
+            }
+            icone={<IconeEntrada className="h-5 w-5" />}
+          />
+          <StatCard
+            rotulo="Perdas em 30 dias"
+            rotuloCurto="Perdas"
+            valor={String(perdas30Dias)}
+            detalhe={
+              perdas30Dias > 0
+                ? `${formatarMoeda(perdas30Dias * produto.precoCusto)} de custo perdido`
+                : "Nenhuma perda"
+            }
+            icone={<IconeLixeira className="h-5 w-5" />}
+            tom={perdas30Dias > 0 ? "alerta" : "neutro"}
+          />
+        </div>
+
+        <div className="grid items-start gap-6 xl:grid-cols-3">
+          <Card className="xl:col-span-2">
+            <CardHeader
+              titulo="Movimentos do produto"
+              descricao="Entradas, vendas, perdas e ajustes, com quem registrou e o saldo depois de cada um."
+              icone={<IconeEstoque className="h-5 w-5" />}
+            />
+            <ul className="divide-y divide-areia-100">
+              {linhas.map((linha) => (
+                <li key={linha.movimento.id} className="px-5 py-3">
+                  <LinhaDeMovimento item={linha} mostrarProduto={false} saldoApos={linha.saldoApos} />
+                  {linha.contaAPagar && (
+                    <p className="mt-1 text-xs text-areia-600">
+                      Conta a pagar: {formatarMoeda(linha.contaAPagar.valor)} para{" "}
+                      {linha.contaAPagar.nomePagante} · vence{" "}
+                      {formatarDiaMes(linha.contaAPagar.vencimento)}
+                      {linha.contaAPagar.pagoEm && " · paga"}
+                    </p>
+                  )}
+                </li>
+              ))}
+              {extrato.length === 0 && (
+                <li className="px-5 py-8 text-center text-sm text-areia-500">
+                  Nenhum movimento ainda. Registre a primeira entrada de mercadoria.
+                </li>
+              )}
+            </ul>
+            {extrato.length > MOVIMENTOS_VISIVEIS && (
+              <div className="border-t border-areia-200 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={() => setVerTodos((atual) => !atual)}
+                  className="btn-fantasma px-3 py-1.5 text-xs"
+                >
+                  {verTodos
+                    ? "Mostrar só os mais recentes"
+                    : `Mostrar todos os ${extrato.length} movimentos`}
+                </button>
+              </div>
+            )}
+          </Card>
+
+          <div className="min-w-0 space-y-6">
+            <ComentariosDoRegistro
+              entidade="produto"
+              entidadeId={produto.id}
+              descricao="Notas da equipe sobre este produto."
+            />
+            <HistoricoDoRegistro
+              tabela="produtos"
+              registroId={produto.id}
+              rotulos={ROTULOS_DO_PRODUTO}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Fora do space-y-6: a margem entre filhos deslocaria o fundo fixo do modal. */}
       <ModaisDoEstoque acao={acao} aoFechar={() => setAcao(null)} />
-    </div>
+    </>
   );
 }
