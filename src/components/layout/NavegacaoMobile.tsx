@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ABAS } from "./abas";
+import { useApp } from "@/store/AppStore";
+import { abasPermitidas, estaNaArea } from "./abas";
 
 /**
  * Barra de navegação fixa no rodapé, exibida apenas no celular.
@@ -10,10 +11,15 @@ import { ABAS } from "./abas";
  * Substitui as abas da topbar em telas estreitas, onde elas exigiriam rolagem
  * horizontal. Os alvos de toque têm 56px de altura e ícone grande com rótulo,
  * para leitura e acerto fáceis — a arena é operada também por quem não tem
- * intimidade com celular.
+ * intimidade com celular. Mostra só as áreas que o perfil pode abrir; as do
+ * dono (Configurações e Histórico) ficam no menu do usuário, no topo.
  */
 export function NavegacaoMobile() {
-  const pathname = usePathname();
+  const caminho = usePathname();
+  const { banco, colaborador } = useApp();
+  const abas = abasPermitidas(banco, colaborador);
+
+  if (abas.length === 0) return null;
 
   return (
     <nav
@@ -22,8 +28,8 @@ export function NavegacaoMobile() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="flex items-stretch">
-        {ABAS.map(({ href, curto, Icone }) => {
-          const ativo = pathname.startsWith(href);
+        {abas.map(({ href, curto, Icone }) => {
+          const ativo = estaNaArea(caminho, href);
           return (
             <li key={href} className="flex-1">
               <Link
