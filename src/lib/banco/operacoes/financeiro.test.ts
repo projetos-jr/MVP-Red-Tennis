@@ -177,6 +177,13 @@ describe("novo lancamento", () => {
       usuarioId: recepcao.id,
       operacao: "Novo lançamento",
     });
+    // A busca acha pelo aluno, por quem pagou e pelo item, sem ligar para acento.
+    const filtro = { tipo: "receber", mes: "todos" } as const;
+    expect(listarLancamentos(banco, { ...filtro, busca: "guilherme" }, "2026-11-01")).toHaveLength(1);
+    expect(listarLancamentos(banco, { ...filtro, busca: "helena" }, "2026-11-01")).toHaveLength(1);
+    expect(listarLancamentos(banco, { ...filtro, busca: "AULA AVULSA" }, "2026-11-01")).toHaveLength(1);
+    expect(listarLancamentos(banco, { ...filtro, pessoaId: "a01" }, "2026-11-01")).toHaveLength(1);
+    expect(listarLancamentos(banco, { ...filtro, pessoaId: "a02" }, "2026-11-01")).toHaveLength(0);
   });
 
   it("conta a pagar exige o favorecido e so quem ve as contas a pagar lanca (H9)", () => {

@@ -126,6 +126,8 @@ export type OrdemDaLista = "vencimento_desc" | "vencimento_asc";
 
 export interface FiltroLancamentos {
   tipo: TipoLancamento;
+  /** So os lancamentos de um aluno ou professor (fichas de aluno e de professor). */
+  pessoaId?: string;
   /** Procura no nome da pessoa, em quem pagou (ou no favorecido) e no item. */
   busca?: string;
   situacao?: SituacaoNoFiltro;
@@ -169,6 +171,7 @@ export function listarLancamentos(
   const linhas: LinhaLancamento[] = [];
   banco.lancamentos.forEach((lancamento) => {
     if (lancamento.tipo !== filtro.tipo) return;
+    if (filtro.pessoaId && lancamento.pessoaId !== filtro.pessoaId) return;
     if (categoria !== "todas" && lancamento.categoria !== categoria) return;
     if (forma === "sem_forma" && lancamento.formaPagamento) return;
     if (forma !== "todas" && forma !== "sem_forma" && lancamento.formaPagamento !== forma) return;
