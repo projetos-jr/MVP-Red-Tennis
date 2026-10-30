@@ -5,7 +5,8 @@ import { IconeVoltar } from "./Icons";
 /**
  * Cabeçalho padrão das telas: título, descrição embaixo e as ações à direita,
  * com a ação principal (`btn-primario`) por último. No celular as ações
- * descem para baixo do título e dividem a largura da tela.
+ * descem para baixo do título e dividem a largura da tela (texto longo
+ * demais? Ponha `whitespace-nowrap` no botão: ele vai para uma linha só dele).
  *
  *   <CabecalhoDaPagina
  *     titulo="Alunos"
@@ -47,9 +48,11 @@ export function CabecalhoDaPagina({
         <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">{titulo}</h1>
         {descricao && <div className="mt-1 text-sm text-areia-600">{descricao}</div>}
       </div>
+      {/* flex-wrap-reverse: se as ações não couberem lado a lado no celular,
+          a principal (a última) fica em cima, como no rodapé dos formulários. */}
       {acoes && (
         <div
-          className={`${esconderAcoesNoCelular ? "hidden md:flex" : "flex"} w-full flex-wrap gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none`}
+          className={`${esconderAcoesNoCelular ? "hidden md:flex" : "flex"} w-full flex-wrap-reverse gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none`}
         >
           {acoes}
         </div>

@@ -51,7 +51,7 @@ export function SecaoRepasse() {
             {podeAbrirFicha && (
               <Link
                 href={`/professores/${professor.id}`}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
+                className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
                 aria-label={`Abrir a ficha de ${professor.nome}`}
               >
                 Abrir ficha <IconeSeta className="h-3.5 w-3.5" />

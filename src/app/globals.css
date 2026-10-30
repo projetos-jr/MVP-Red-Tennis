@@ -90,14 +90,13 @@
   /* Telas de toque (tablet na quadra e celular): botões, campos e filtros com
      pelo menos 44px, o tamanho mínimo confortável para o dedo. O computador,
      com mouse, continua exatamente igual. */
+  /* Só a altura: uma largura mínima fixa tiraria do navegador o mínimo pelo
+     conteúdo, e botões que dividem a largura no celular encolheriam demais. */
   @media (pointer: coarse) {
     .btn,
     .campo,
     .alvo-de-toque {
       min-height: 2.75rem;
-    }
-    .btn {
-      min-width: 2.75rem;
     }
   }
 
