@@ -6,6 +6,7 @@ import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegist
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import { StatCard } from "@/components/ui/StatCard";
 import {
   IconeAlerta,
@@ -42,7 +43,7 @@ const ROTULOS_DO_PRODUTO: Record<string, string> = {
   ativo: "Ativo",
 };
 
-/** Quantos movimentos aparecem antes de "Mostrar todos". */
+/** Quantos movimentos aparecem de cada vez (o resto vem em "Mostrar mais"). */
 const MOVIMENTOS_VISIVEIS = 15;
 
 /**
@@ -53,7 +54,7 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   const { banco, colaborador } = useApp();
   const gravar = useGravar();
   const [acao, setAcao] = useState<AcaoDoEstoque | null>(null);
-  const [verTodos, setVerTodos] = useState(false);
+  const [limite, setLimite] = useState(MOVIMENTOS_VISIVEIS);
   const detalhe = useMemo(() => detalheDoProduto(banco, produtoId, HOJE), [banco, produtoId]);
 
   if (!podeAcessar(banco, colaborador, "estoque")) return <SemAcessoAoEstoque />;
@@ -72,7 +73,7 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   const { produto, saldo, nivel, extrato, vendidos30Dias, perdas30Dias, ultimaEntrada } = detalhe;
   const categoria = ESTILO_CATEGORIA_PRODUTO[produto.categoria];
   const margem = produto.precoVenda - produto.precoCusto;
-  const linhas = verTodos ? extrato : extrato.slice(0, MOVIMENTOS_VISIVEIS);
+  const linhas = extrato.slice(0, limite);
 
   return (
     <>
@@ -275,19 +276,12 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
                 </li>
               )}
             </ul>
-            {extrato.length > MOVIMENTOS_VISIVEIS && (
-              <div className="border-t border-areia-200 px-5 py-3">
-                <button
-                  type="button"
-                  onClick={() => setVerTodos((atual) => !atual)}
-                  className="btn-fantasma px-3 py-1.5 text-xs"
-                >
-                  {verTodos
-                    ? "Mostrar só os mais recentes"
-                    : `Mostrar todos os ${extrato.length} movimentos`}
-                </button>
-              </div>
-            )}
+            <MostrarMais
+              mostrando={linhas.length}
+              total={extrato.length}
+              passo={MOVIMENTOS_VISIVEIS}
+              aoMostrarMais={() => setLimite((atual) => atual + MOVIMENTOS_VISIVEIS)}
+            />
           </Card>
 
           <div className="min-w-0 space-y-6">

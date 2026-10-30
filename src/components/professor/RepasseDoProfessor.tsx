@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EtiquetaDeSituacao, type Tom } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeAlerta, IconeCadeado, IconeFinanceiro, IconeRelogio } from "@/components/ui/Icons";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import type { RegraRepasse } from "@/lib/banco/tipos";
 import type { RepasseDoMes } from "@/lib/consultas/professores";
 import { formatarMesAno } from "@/lib/date";
 import { formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { rotuloDaRegraDeRepasse } from "@/components/aluno/estilos";
 
-/** Meses mostrados antes de "Ver meses anteriores": o corrente e os dois ultimos fechados. */
+/** Meses mostrados antes de "Mostrar mais": o corrente e os dois ultimos fechados. */
 const MESES_VISIVEIS = 3;
 
 /** Mesmo tom e icone da aba Professores do financeiro ("Mes em andamento", "A fechar"). */
@@ -50,9 +51,9 @@ export function RepasseDoProfessor({
   repasses: RepasseDoMes[];
   regra: RegraRepasse;
 }) {
-  const [todos, setTodos] = useState(false);
+  const [limite, setLimite] = useState(MESES_VISIVEIS);
   const atual = repasses[0];
-  const visiveis = todos ? repasses : repasses.slice(0, MESES_VISIVEIS);
+  const visiveis = repasses.slice(0, limite);
 
   return (
     <Card>
@@ -164,15 +165,12 @@ export function RepasseDoProfessor({
         </table>
       </div>
 
-      {repasses.length > MESES_VISIVEIS && (
-        <button
-          type="button"
-          onClick={() => setTodos(!todos)}
-          className="w-full border-t border-areia-200 px-5 py-2.5 text-sm font-medium text-saibro-700 hover:bg-areia-50"
-        >
-          {todos ? "Mostrar só os últimos meses" : "Ver meses anteriores"}
-        </button>
-      )}
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={repasses.length}
+        passo={repasses.length}
+        aoMostrarMais={() => setLimite(repasses.length)}
+      />
 
       <p className="border-t border-areia-200 px-5 py-3 text-xs leading-relaxed text-areia-500">
         {regra.modo === "por_hora"

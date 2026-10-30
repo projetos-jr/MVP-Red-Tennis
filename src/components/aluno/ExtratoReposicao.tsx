@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeRelogio } from "@/components/ui/Icons";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import type { Ocupacao, SiglaReposicao } from "@/lib/banco/tipos";
 import type { ExtratoDoAluno, MovimentoDeReposicao } from "@/lib/consultas/alunos";
 import { rotuloDaQuadra } from "@/lib/consultas/base";
@@ -88,15 +89,12 @@ export function ExtratoReposicao({
         )}
       </ul>
 
-      {movimentos.length > limite && (
-        <button
-          type="button"
-          onClick={() => setLimite(limite + POR_PAGINA * 2)}
-          className="w-full border-t border-areia-200 px-5 py-3 text-sm font-medium text-saibro-700 hover:bg-areia-50"
-        >
-          Ver mais ({movimentos.length - limite} restantes)
-        </button>
-      )}
+      <MostrarMais
+        mostrando={Math.min(limite, movimentos.length)}
+        total={movimentos.length}
+        passo={POR_PAGINA * 2}
+        aoMostrarMais={() => setLimite(limite + POR_PAGINA * 2)}
+      />
     </Card>
   );
 }

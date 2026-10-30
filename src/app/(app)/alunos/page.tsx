@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { IconeBusca, IconeCheck, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import { HOJE } from "@/lib/banco/constantes";
 import {
   filtrarAlunos,
@@ -57,6 +58,8 @@ function ListaDeAlunos() {
     situacaoDaUrl(parametros.get("situacao")),
   );
   const [formularioAberto, setFormularioAberto] = useState(false);
+  // A lista mostra 20 alunos por vez e volta ao começo quando um filtro muda.
+  const [limite, setLimite] = useState(ITENS_POR_PAGINA);
 
   const linhas = useMemo(() => linhasDaListaDeAlunos(banco, HOJE), [banco]);
   const resultado = useMemo(
@@ -86,6 +89,7 @@ function ListaDeAlunos() {
     setPlano("todos");
     setProfessor("todos");
     setSituacao("todas");
+    setLimite(ITENS_POR_PAGINA);
   }
 
   return (
@@ -124,7 +128,10 @@ function ListaDeAlunos() {
             situacao={chave}
             quantidade={resultado.contagem[chave]}
             selecionado={situacao === chave}
-            aoClicar={() => setSituacao(situacao === chave ? "todas" : chave)}
+            aoClicar={() => {
+              setSituacao(situacao === chave ? "todas" : chave);
+              setLimite(ITENS_POR_PAGINA);
+            }}
           />
         ))}
       </div>
@@ -136,7 +143,10 @@ function ListaDeAlunos() {
             <input
               type="search"
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               placeholder="Buscar por nome, telefone ou e-mail…"
               className="campo py-2 pl-9"
               aria-label="Buscar aluno por nome, telefone ou e-mail"
@@ -145,7 +155,10 @@ function ListaDeAlunos() {
           <div className="grid grid-cols-2 gap-3 md:contents">
             <select
               value={plano}
-              onChange={(e) => setPlano(e.target.value)}
+              onChange={(e) => {
+                setPlano(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               className="campo py-2"
               aria-label="Filtrar por plano"
             >
@@ -168,7 +181,10 @@ function ListaDeAlunos() {
             </select>
             <select
               value={professor}
-              onChange={(e) => setProfessor(e.target.value)}
+              onChange={(e) => {
+                setProfessor(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               className="campo py-2"
               aria-label="Filtrar por professor principal"
             >
@@ -210,7 +226,7 @@ function ListaDeAlunos() {
         </div>
 
         <ul className="divide-y divide-areia-100">
-          {resultado.linhas.map((linha) => (
+          {resultado.linhas.slice(0, limite).map((linha) => (
             <LinhaDoAluno key={linha.aluno.id} linha={linha} />
           ))}
           {resultado.linhas.length === 0 && (
@@ -231,6 +247,11 @@ function ListaDeAlunos() {
             </li>
           )}
         </ul>
+        <MostrarMais
+          mostrando={Math.min(limite, resultado.linhas.length)}
+          total={resultado.linhas.length}
+          aoMostrarMais={() => setLimite((atual) => atual + ITENS_POR_PAGINA)}
+        />
       </Card>
 
       <FormularioAluno

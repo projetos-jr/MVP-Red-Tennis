@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Campo } from "@/components/ui/Formulario";
 import { IconeBola, IconeBusca } from "@/components/ui/Icons";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import { Segmentado } from "@/components/ui/Segmentado";
 import { HOJE } from "@/lib/banco/constantes";
 import {
@@ -17,7 +18,7 @@ import { useApp } from "@/store/AppStore";
 import { LinhaDaPartida } from "./LinhaDaPartida";
 
 type Periodo = "30" | "90" | "tudo";
-const POR_PAGINA = 25;
+const POR_PAGINA = ITENS_POR_PAGINA;
 
 /** Historico de partidas (ranking e torneios) com filtros. */
 export function ListaPartidas({ aoAbrir }: { aoAbrir: (item: PartidaNaLista) => void }) {
@@ -123,17 +124,11 @@ export function ListaPartidas({ aoAbrir }: { aoAbrir: (item: PartidaNaLista) => 
         )}
       </ul>
 
-      {partidas.length > visiveis.length && (
-        <div className="border-t border-areia-200 p-4 text-center">
-          <button
-            type="button"
-            onClick={() => setQuantas((atual) => atual + POR_PAGINA)}
-            className="btn-secundario"
-          >
-            Mostrar mais ({partidas.length - visiveis.length} restantes)
-          </button>
-        </div>
-      )}
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={partidas.length}
+        aoMostrarMais={() => setQuantas((atual) => atual + POR_PAGINA)}
+      />
     </Card>
   );
 }

@@ -7,6 +7,7 @@ import { RegistroDoHistorico } from "@/components/base/historico/RegistroDoHisto
 import { moduloDaRota } from "@/components/layout/abas";
 import { Card } from "@/components/ui/Card";
 import { IconeFiltro } from "@/components/ui/Icons";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import type { RegistroAuditoria, TabelaDoBanco } from "@/lib/banco/tipos";
 import { podeAcessar } from "@/lib/consultas/base";
 import {
@@ -20,7 +21,7 @@ import {
 } from "@/lib/consultas/configuracoes";
 import { useApp } from "@/store/AppStore";
 
-const POR_PAGINA = 50;
+const POR_PAGINA = ITENS_POR_PAGINA;
 
 type Filtro = Required<FiltroDoHistorico>;
 
@@ -190,17 +191,11 @@ export default function PaginaHistorico() {
                 ))}
               </ul>
             )}
-            {registros.length > visiveis.length && (
-              <div className="border-t border-areia-200 px-5 py-3 text-center">
-                <button
-                  type="button"
-                  onClick={() => setLimite((atual) => atual + POR_PAGINA)}
-                  className="btn-secundario"
-                >
-                  Mostrar mais {Math.min(POR_PAGINA, registros.length - visiveis.length)}
-                </button>
-              </div>
-            )}
+            <MostrarMais
+              mostrando={visiveis.length}
+              total={registros.length}
+              aoMostrarMais={() => setLimite((atual) => atual + POR_PAGINA)}
+            />
           </Card>
         </>
       )}

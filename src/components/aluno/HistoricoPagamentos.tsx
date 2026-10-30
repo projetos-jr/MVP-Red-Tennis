@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EtiquetaDeSituacao, EtiquetaNeutra } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeFinanceiro } from "@/components/ui/Icons";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import type { PagamentoDoAluno, PagamentosDoAluno } from "@/lib/consultas/alunos";
 import { formatarData } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
@@ -107,15 +108,12 @@ export function HistoricoPagamentos({ pagamentos }: { pagamentos: PagamentosDoAl
         <p className="px-5 py-8 text-center text-sm text-areia-500">Nenhuma cobrança registrada.</p>
       )}
 
-      {lista.length > limite && (
-        <button
-          type="button"
-          onClick={() => setLimite(limite + POR_PAGINA)}
-          className="w-full border-t border-areia-200 px-5 py-3 text-sm font-medium text-saibro-700 hover:bg-areia-50"
-        >
-          Ver mais ({lista.length - limite} restantes)
-        </button>
-      )}
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={lista.length}
+        passo={POR_PAGINA}
+        aoMostrarMais={() => setLimite(limite + POR_PAGINA)}
+      />
     </Card>
   );
 }
