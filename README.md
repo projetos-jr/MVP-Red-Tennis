@@ -137,7 +137,7 @@ src/
     └── useGravar.ts          # Gravar a partir de uma tela, com aviso de sucesso/erro
 ```
 
-Detalhes técnicos em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**.
+Detalhes técnicos em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**; o banco (migrações, regras, permissões e testes) em **[`docs/BANCO.md`](docs/BANCO.md)**.
 
 ---
 
