@@ -10,6 +10,7 @@ import {
 } from "@/components/estoque/CartoesLaterais";
 import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/ModaisDoEstoque";
 import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
+import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -180,24 +181,18 @@ export default function PaginaEstoque() {
 
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Categoria">
                 {(["todas", ...CATEGORIAS_PRODUTO] as const).map((c) => (
-                  <button
+                  <BotaoFiltro
                     key={c}
-                    type="button"
-                    onClick={() => mudarFiltro({ categoria: c })}
-                    aria-pressed={filtro.categoria === c}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      filtro.categoria === c
-                        ? "bg-saibro-600 text-white"
-                        : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-                    }`}
+                    ativo={filtro.categoria === c}
+                    aoClicar={() => mudarFiltro({ categoria: c })}
                   >
                     {c === "todas" ? "Todas" : c}
-                  </button>
+                  </BotaoFiltro>
                 ))}
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
                   <input
                     type="checkbox"
                     checked={filtro.apenasRepor}
@@ -206,7 +201,7 @@ export default function PaginaEstoque() {
                   />
                   Só o que precisa repor
                 </label>
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
                   <input
                     type="checkbox"
                     checked={filtro.incluirInativos}

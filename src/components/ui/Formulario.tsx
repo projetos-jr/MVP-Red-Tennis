@@ -79,7 +79,7 @@ export function RodapeDoFormulario({
       <button
         type="submit"
         disabled={desabilitado}
-        className={perigoso ? "btn bg-tijolo-700 text-white hover:bg-tijolo-800" : "btn-primario"}
+        className={perigoso ? "btn-perigo" : "btn-primario"}
       >
         {rotuloConfirmar}
       </button>

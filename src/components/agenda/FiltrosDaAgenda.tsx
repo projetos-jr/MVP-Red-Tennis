@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { IconeFiltro } from "@/components/ui/Icons";
 import type { Professor, Quadra, TipoOcupacao } from "@/lib/banco/tipos";
 import type { FiltroAgenda } from "@/lib/consultas/agenda";
@@ -111,7 +112,7 @@ export function FiltrosDaAgenda({
             value={filtro.tipo}
             onChange={(e) => aoMudar({ tipo: e.target.value as TipoOcupacao | "todos" })}
             aria-label="Tipo de ocupação"
-            className="rounded-lg border border-areia-200 bg-white px-2.5 py-1.5 text-xs font-medium text-areia-700 focus:border-saibro-500 focus:outline-none"
+            className="alvo-de-toque rounded-lg border border-areia-200 bg-white px-2.5 py-1.5 text-xs font-medium text-areia-700 focus:border-saibro-500 focus:outline-none"
           >
             <option value="todos">Todos os tipos</option>
             {ORDEM_TIPOS_AGENDA.map((t) => (
@@ -122,7 +123,7 @@ export function FiltrosDaAgenda({
           </select>
         </GrupoFiltro>
 
-        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+        <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
           <input
             type="checkbox"
             checked={filtro.mostrarCanceladas}
@@ -144,33 +145,5 @@ function GrupoFiltro({ rotulo, children }: { rotulo: string; children: ReactNode
       <span className="text-xs font-medium text-areia-500">{rotulo}:</span>
       {children}
     </div>
-  );
-}
-
-function BotaoFiltro({
-  ativo,
-  aoClicar,
-  children,
-  cor,
-}: {
-  ativo: boolean;
-  aoClicar: () => void;
-  children: ReactNode;
-  cor?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={aoClicar}
-      aria-pressed={ativo}
-      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-        ativo ? "bg-saibro-600 text-white" : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-      }`}
-    >
-      {cor && (
-        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ativo ? "#fff" : cor }} />
-      )}
-      {children}
-    </button>
   );
 }

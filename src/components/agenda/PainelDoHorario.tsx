@@ -213,7 +213,7 @@ function ConteudoDoPainel({
               <button
                 type="button"
                 onClick={() => setAcao("liberar")}
-                className="btn mt-2 w-full bg-tijolo-700 py-2 text-white hover:bg-tijolo-800 sm:w-auto"
+                className="btn-perigo mt-2 w-full py-2 sm:w-auto"
               >
                 Liberar horário
               </button>

@@ -117,7 +117,7 @@ export function ModalReservas({
                       <button
                         type="button"
                         onClick={() => setLiberando(item)}
-                        className="btn bg-tijolo-700 px-3 py-1.5 text-xs text-white hover:bg-tijolo-800"
+                        className="btn-perigo px-3 py-1.5 text-xs"
                       >
                         Liberar horário
                       </button>
@@ -136,7 +136,7 @@ export function ModalReservas({
             <button
               type="button"
               onClick={() => setLiberandoTodas(true)}
-              className="btn bg-tijolo-700 text-white hover:bg-tijolo-800"
+              className="btn-perigo"
             >
               Liberar as {vencidas} vencidas
             </button>
