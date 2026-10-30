@@ -28,6 +28,8 @@ import { baixarArquivo } from "@/components/financeiro/utilitarios";
 import { useAvisos } from "@/components/ui/Avisos";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAnterior,
   IconeCadeado,
@@ -85,7 +87,7 @@ export default function PaginaFinanceiro() {
   // A tela lê a URL (?aba=, ?situacao=, ?mes=, ?lancamento=), então fica
   // dentro de Suspense, como o Next pede para quem usa useSearchParams.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <TelaFinanceiro />
     </Suspense>
   );
@@ -147,13 +149,14 @@ function TelaFinanceiro() {
 
   if (!podeVer) {
     return (
-      <Card className="mx-auto max-w-lg px-6 py-10 text-center">
-        <IconeCadeado className="mx-auto h-8 w-8 text-areia-400" />
-        <h1 className="mt-3 text-lg font-semibold text-areia-900">Sem acesso ao financeiro</h1>
-        <p className="mt-1 text-sm text-areia-600">
-          O seu perfil não enxerga esta área (hipótese H9). Fale com o dono da arena.
-        </p>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeCadeado className="h-6 w-6" />}
+        titulo="Sem acesso ao financeiro"
+        tituloDaPagina
+      >
+        O seu perfil não enxerga esta área (hipótese H9). Fale com o dono da arena.
+      </EstadoVazio>
     );
   }
 

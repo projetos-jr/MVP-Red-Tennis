@@ -7,10 +7,12 @@ import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
 import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import { MostrarMais } from "@/components/ui/MostrarMais";
 import { StatCard } from "@/components/ui/StatCard";
 import {
   IconeAlerta,
+  IconeBusca,
   IconeEntrada,
   IconeEstoque,
   IconeFinanceiro,
@@ -61,12 +63,16 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
 
   if (!detalhe) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Produto não encontrado.</p>
-        <Link href="/estoque" className="btn-secundario mt-4">
-          Voltar para o estoque
-        </Link>
-      </Card>
+      <EstadoVazio
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Produto não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/estoque" className="btn-secundario">
+            Voltar para o estoque
+          </Link>
+        }
+      />
     );
   }
 

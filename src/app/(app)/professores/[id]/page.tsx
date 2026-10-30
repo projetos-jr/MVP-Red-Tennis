@@ -14,9 +14,10 @@ import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegist
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
 import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
-import { Card } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAgenda,
+  IconeBusca,
   IconeEmail,
   IconeFinanceiro,
   IconeRelogio,
@@ -54,12 +55,16 @@ export default function PaginaFichaProfessor() {
 
   if (!professor) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Professor não encontrado.</p>
-        <Link href="/professores" className="btn-secundario mt-4">
-          Voltar para a lista de professores
-        </Link>
-      </Card>
+      <EstadoVazio
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Professor não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/professores" className="btn-secundario">
+            Voltar para a lista de professores
+          </Link>
+        }
+      />
     );
   }
 

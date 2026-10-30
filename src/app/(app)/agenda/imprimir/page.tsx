@@ -6,6 +6,7 @@ import { IconeImpressora } from "@/components/agenda/Icones";
 import { intervalo, rotuloCurtoDaQuadra } from "@/components/agenda/estilos";
 import { useAgora } from "@/components/agenda/useAgora";
 import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { Carregando } from "@/components/ui/Carregando";
 import { FAIXAS_HORARIAS, HOJE } from "@/lib/banco/constantes";
 import {
   FILTRO_INICIAL,
@@ -37,7 +38,7 @@ const ESTILO_DE_IMPRESSAO = `
 
 export default function PaginaImprimirAgenda() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <ImpressaoPelaUrl />
     </Suspense>
   );

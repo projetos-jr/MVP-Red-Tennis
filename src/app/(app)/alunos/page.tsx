@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import { IconeBusca, IconeCheck, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
 import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import { HOJE } from "@/lib/banco/constantes";
@@ -31,7 +32,7 @@ import { useApp } from "@/store/AppStore";
 
 export default function PaginaAlunos() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <ListaDeAlunos />
     </Suspense>
   );

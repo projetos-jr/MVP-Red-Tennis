@@ -8,6 +8,7 @@ import { Marcadores } from "@/components/agenda/Marcadores";
 import { FUNDO_BLOQUEIO, ROTULO_SITUACAO, intervalo, plural } from "@/components/agenda/estilos";
 import { useAgora } from "@/components/agenda/useAgora";
 import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { Carregando } from "@/components/ui/Carregando";
 import { IconeAnterior, IconeProximo } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import {
@@ -23,7 +24,7 @@ import { useApp } from "@/store/AppStore";
 
 export default function PaginaModoQuadra() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <ModoQuadraPelaUrl />
     </Suspense>
   );

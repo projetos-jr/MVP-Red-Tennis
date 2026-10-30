@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { Card } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import { IconeCadeado } from "@/components/ui/Icons";
 import { podeAcessar } from "@/lib/consultas/base";
 import { NOMES_DOS_MODULOS, NOMES_DOS_PERFIS } from "@/lib/consultas/configuracoes";
@@ -36,27 +36,27 @@ export function ProtecaoDeRota({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto max-w-lg py-6 sm:py-12">
-      <Card className="px-6 py-8 text-center sm:px-10">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-tijolo-50 text-tijolo-700">
-          <IconeCadeado className="h-6 w-6" />
-        </span>
-        <h1 className="mt-4 text-xl font-bold text-areia-900">Sem acesso a esta área</h1>
-        <p className="mt-2 text-sm leading-relaxed text-areia-600">
-          O perfil <strong className="font-semibold">{NOMES_DOS_PERFIS[colaborador.perfil]}</strong>{" "}
-          não abre <strong className="font-semibold">{NOMES_DOS_MODULOS[modulo].nome}</strong>. Se
-          precisar, peça ao dono para liberar em Configurações, na parte de permissões.
-        </p>
-        <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-          {inicial && (
-            <Link href={inicial.href} className="btn-primario">
-              {inicial.modulo === "painel" ? "Voltar ao painel" : `Ir para ${inicial.rotulo}`}
-            </Link>
-          )}
-          <button type="button" onClick={trocarDeUsuario} className="btn-secundario">
-            Entrar com outro usuário
-          </button>
-        </div>
-      </Card>
+      <EstadoVazio
+        icone={<IconeCadeado className="h-6 w-6" />}
+        titulo="Sem acesso a esta área"
+        tituloDaPagina
+        acoes={
+          <>
+            {inicial && (
+              <Link href={inicial.href} className="btn-primario">
+                {inicial.modulo === "painel" ? "Voltar ao painel" : `Ir para ${inicial.rotulo}`}
+              </Link>
+            )}
+            <button type="button" onClick={trocarDeUsuario} className="btn-secundario">
+              Entrar com outro usuário
+            </button>
+          </>
+        }
+      >
+        O perfil <strong className="font-semibold">{NOMES_DOS_PERFIS[colaborador.perfil]}</strong>{" "}
+        não abre <strong className="font-semibold">{NOMES_DOS_MODULOS[modulo].nome}</strong>. Se
+        precisar, peça ao dono para liberar em Configurações, na parte de permissões.
+      </EstadoVazio>
     </div>
   );
 }

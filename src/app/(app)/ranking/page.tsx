@@ -13,6 +13,7 @@ import { PodioRanking } from "@/components/ranking/PodioRanking";
 import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import {
   IconeAgenda,
   IconeBola,
@@ -45,7 +46,7 @@ export default function PaginaRanking() {
   // A aba fica na URL (?aba=partidas), entao a tela le os parametros dentro
   // de um Suspense, como pede o Next.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <ConteudoDoRanking />
     </Suspense>
   );

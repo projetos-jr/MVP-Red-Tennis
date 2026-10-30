@@ -15,10 +15,13 @@ import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegist
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import { Confirmacao } from "@/components/ui/Confirmacao";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAlerta,
   IconeBola,
+  IconeBusca,
   IconeCheck,
   IconeTrofeu,
   IconeUsuarios,
@@ -48,7 +51,7 @@ const ROTULOS_DO_TORNEIO: Record<string, string> = {
 export default function PaginaTorneio() {
   // O torneio vem da URL (?id=t-1); o Next pede um Suspense em volta.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <ConteudoDoTorneio />
     </Suspense>
   );
@@ -176,12 +179,16 @@ function ConteudoDoTorneio() {
 
   if (!detalhe) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Torneio não encontrado.</p>
-        <Link href="/ranking?aba=torneios" className="btn-secundario mt-4">
-          Voltar para os torneios
-        </Link>
-      </Card>
+      <EstadoVazio
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Torneio não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/ranking?aba=torneios" className="btn-secundario">
+            Voltar para os torneios
+          </Link>
+        }
+      />
     );
   }
 
