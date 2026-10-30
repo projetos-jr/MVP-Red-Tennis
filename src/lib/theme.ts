@@ -157,17 +157,18 @@ export const ESTILO_CATEGORIA: Record<
     fundo: "#FBE3E0",
     borda: "#EC9A90",
   },
+  // B e C: texto um tom mais escuro que o do MVP, para o contraste passar de 4,5:1.
   B: {
     label: "Categoria B",
     descricao: "Intermediário +",
-    cor: "#9A4720",
+    cor: "#7C391C",
     fundo: "#F3CEAF",
     borda: "#EAAD82",
   },
   C: {
     label: "Categoria C",
     descricao: "Intermediário",
-    cor: "#B95A28",
+    cor: "#9A4720",
     fundo: "#FAE8DA",
     borda: "#F3CEAF",
   },

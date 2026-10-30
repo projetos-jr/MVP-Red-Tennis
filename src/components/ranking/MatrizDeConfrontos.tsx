@@ -29,7 +29,7 @@ export function MatrizDeConfrontos({
                 scope="col"
                 className="min-w-[92px] px-1 pb-1 text-center align-bottom font-semibold text-areia-700"
               >
-                <span className="block text-[10px] font-medium text-areia-400">{i + 1}º</span>
+                <span className="block text-[10px] font-medium text-areia-500">{i + 1}º</span>
                 <span className="block truncate" title={coluna.inscricao.nome}>
                   {coluna.inscricao.nome}
                 </span>
@@ -42,7 +42,7 @@ export function MatrizDeConfrontos({
             <tr key={linha.inscricao.inscricao.id}>
               <th scope="row" className="pr-2 text-left font-medium text-areia-900">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-areia-400">
+                  <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-areia-500">
                     {i + 1}º
                   </span>
                   <AvataresDoLado alunos={linha.inscricao.alunos} />

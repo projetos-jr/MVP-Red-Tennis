@@ -228,7 +228,7 @@ export function EditorDeInscricoes({
               const nome = inscricao.alunosIds.map(nomeDe).join(" / ");
               return (
                 <li key={inscricao.chave} className="flex items-center gap-2.5 px-3 py-2">
-                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-areia-400">
+                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-areia-500">
                     {i + 1}
                   </span>
                   <AvataresDoLado

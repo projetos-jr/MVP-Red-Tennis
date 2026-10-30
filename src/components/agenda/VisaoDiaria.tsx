@@ -112,13 +112,13 @@ export function VisaoDiaria({
                     <button
                       type="button"
                       onClick={() => aoAdicionar({ data: dia, horaInicio: faixa })}
-                      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-areia-200 px-3 py-2 text-left text-xs text-areia-400 transition-colors hover:border-saibro-300 hover:text-saibro-600"
+                      className="flex w-full items-center gap-2 rounded-lg border border-dashed border-areia-200 px-3 py-2 text-left text-xs text-areia-500 transition-colors hover:border-saibro-300 hover:text-saibro-600"
                     >
                       <IconeMais className="h-3.5 w-3.5" />
                       Livre
                     </button>
                   ) : (
-                    <p className="px-3 py-2 text-xs text-areia-400">Livre</p>
+                    <p className="px-3 py-2 text-xs text-areia-500">Livre</p>
                   ))}
               </div>
             </li>

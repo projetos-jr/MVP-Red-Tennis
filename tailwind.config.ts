@@ -42,7 +42,9 @@ const config: Config = {
           200: "#E8E3DB",
           300: "#D6CEC2",
           400: "#B3A897",
-          500: "#8C8172",
+          // Texto de apoio (datas, rótulos, legendas). Mais escuro que o do MVP
+          // (#8C8172) para ter contraste de 4,5:1 sobre o branco e o fundo areia.
+          500: "#776D5F",
           600: "#6B6255",
           700: "#4F483E",
           800: "#33302A",

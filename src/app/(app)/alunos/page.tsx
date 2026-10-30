@@ -311,7 +311,7 @@ function LinhaDoAluno({ linha }: { linha: LinhaDaListaDeAlunos }) {
 
         <span className="hidden min-w-0 md:block">
           <span className="block truncate text-sm text-areia-800">
-            {plano?.nome ?? <span className="text-areia-400">Sem plano mensal</span>}
+            {plano?.nome ?? <span className="text-areia-500">Sem plano mensal</span>}
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
             {plano?.tabela === "antiga" && (

@@ -191,7 +191,7 @@ function EscalaOcupacao() {
           </div>
         </div>
       ))}
-      <span className="text-[11px] text-areia-400">livre → lotada</span>
+      <span className="text-[11px] text-areia-500">livre → lotada</span>
     </div>
   );
 }

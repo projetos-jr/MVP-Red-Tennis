@@ -167,7 +167,7 @@ function Situacao({ pagamento }: { pagamento: PagamentoDoAluno }) {
 
 function Forma({ pagamento }: { pagamento: PagamentoDoAluno }) {
   const { formaPagamento, valorConvenio, valor } = pagamento.lancamento;
-  if (!formaPagamento) return <span className="text-areia-300">—</span>;
+  if (!formaPagamento) return <span className="text-areia-400">—</span>;
   const estilo = estiloDaForma(formaPagamento);
   return (
     <span className="inline-flex flex-col items-start gap-0.5">

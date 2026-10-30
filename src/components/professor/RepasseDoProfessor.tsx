@@ -135,7 +135,7 @@ export function RepasseDoProfessor({
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-areia-600">
                     {repasse.aulasDadas}
-                    <span className="block text-[11px] text-areia-400">{formatarMinutos(repasse.minutosDados)}</span>
+                    <span className="block text-[11px] text-areia-500">{formatarMinutos(repasse.minutosDados)}</span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-areia-800">
                     {formatarMoeda(repasse.previsto)}
