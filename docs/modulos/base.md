@@ -208,3 +208,56 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
   Configurações (`components/base/configuracoes/`).
 - `useHoraAtual()` (`components/base/useHoraAtual.ts`) dá a hora da arena sem
   `new Date()` na renderização (sem erro de hidratação).
+
+## No banco (funções)
+
+Migração `supabase/migrations/20261030120200_funcoes_alunos.sql` (a mesma do
+módulo de alunos); testes em `supabase/tests/50_alunos.test.sql`. Esta seção
+substitui a tabela "Notas para a migração ao Supabase" acima onde as duas
+divergirem: as siglas, as formas de pagamento e as permissões continuam como
+listas dentro da linha única de `configuracoes` (não viraram tabelas).
+
+A tela chama cada função com `supabase.rpc("nome", { p_campo: valor })`
+(campo da tela em snake_case com `p_` na frente). As mensagens de recusa são
+as mesmas da tela; sem permissão, a mensagem é "Seu perfil não tem permissão
+para esta operação." (código 42501).
+
+**Configurações (só o dono):**
+
+| Operação da tela | No banco | Retorno |
+| --- | --- | --- |
+| `salvarParametros` | `salvar_parametros(p_validade_reposicao_meses, p_prazo_pagamento_reserva_horas, p_liberar_reserva_automaticamente, p_semanas_geradas_a_frente, p_bloquear_professor_em_duas_aulas, p_pontos_vitoria, p_pontos_derrota, p_torneio_conta_para_ranking, p_classificados_por_grupo, p_criterios_desempate, p_formas_pagamento, p_prazo_pagamento_consumo_dias, p_preco_locacao_hora, p_preco_paredao_hora)` — todos opcionais; o que não vier fica como está | nada |
+| `incluirSigla` | `incluir_sigla(p_codigo, p_nome, p_descricao, p_gera_credito, p_aplica_a)` | nada |
+| `editarSigla` | `editar_sigla(p_codigo_atual, p_sigla)`; `p_sigla` = `{ codigo, nome, descricao, geraCredito, aplicaA }` | nada |
+| `desativarSigla` / `reativarSigla` | `desativar_sigla(p_codigo)` / `reativar_sigla(p_codigo)` | nada |
+| `incluirPlano` | `incluir_plano(p_nome, p_tipo, p_valor_mensal, p_aulas_por_semana, p_duracao_minutos, p_tabela, p_ativo)` | id do plano |
+| `editarPlano` | `editar_plano(p_id, p_nome, p_tipo, p_valor_mensal, p_aulas_por_semana, p_duracao_minutos, p_tabela, p_ativo)` | id do plano |
+| `desativarPlano` / `reativarPlano` (catálogo) | grava direto em `planos` (`ativo = false/true`) | — |
+| `apagarPlano` | `apagar_plano(p_id)` | nada |
+| `alterarPermissoes` | `alterar_permissoes(p_permissoes)`; `p_permissoes` = `{ dono: [...], recepcao: [...], professor: [...] }` | nada |
+| `alterarConfiguracoes` | não tem função própria: a tela grava pelas funções acima, que validam os valores antes | — |
+
+O que as funções garantem e a tabela sozinha não garantia: vitória vale pelo
+menos a derrota; formas de pagamento sem nome vazio e sem repetição; critérios
+de desempate só mudam de ordem; código de sigla de 1 a 6 letras ou números,
+sem repetir, e que não muda depois de usado; nome de plano sem repetir; tipo
+de plano que não muda depois de ter matrícula; plano usado não se apaga
+(vigente ou no histórico); o dono nunca perde o acesso às Configurações e só
+ele o tem; contas a pagar exigem o Financeiro. Atenção: um `update` direto em
+`configuracoes` (permitido ao dono pela RLS) pula essas conferências, por
+isso a tela deve usar sempre as funções.
+
+**Comentários (qualquer pessoa da equipe):**
+
+| Operação da tela | No banco | Retorno |
+| --- | --- | --- |
+| `adicionarComentario` | `adicionar_comentario(p_entidade, p_entidade_id, p_texto)`: autor e nome do autor vêm de quem está logado, não da tela | id do comentário |
+| `editarComentario` | `editar_comentario(p_id, p_texto)`: só quem escreveu; grava a hora da edição | id do comentário |
+| `apagarComentario` | `apagar_comentario(p_id)`: só quem escreveu (a auditoria guarda o texto) | nada |
+
+Comentar não depende de módulo: o professor também comenta (a mesma regra da
+RLS de `comentarios`).
+
+Diferença em relação à tela: na comparação de nomes (siglas, formas de
+pagamento, planos), o banco ignora maiúsculas, espaços nas pontas e os
+acentos mais comuns do português (á, ã, ç, é...), sem a extensão `unaccent`.
