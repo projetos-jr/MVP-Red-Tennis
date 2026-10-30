@@ -48,3 +48,6 @@ CLAUDE.local.md
 
 # criado pelo next dev para agentes de IA
 /AGENTS.md
+
+# dados de exemplo para o Supabase (gerados por npm run banco:seed)
+/supabase/seed.sql
