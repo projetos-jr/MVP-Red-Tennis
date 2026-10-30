@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { IconeFinanceiro } from "@/components/ui/Icons";
+import { EtiquetaDeSituacao, type Tom } from "@/components/ui/EtiquetaDeSituacao";
+import { IconeAlerta, IconeCadeado, IconeFinanceiro, IconeRelogio } from "@/components/ui/Icons";
 import type { RegraRepasse } from "@/lib/banco/tipos";
 import type { RepasseDoMes } from "@/lib/consultas/professores";
 import { formatarMesAno } from "@/lib/date";
@@ -13,10 +13,11 @@ import { rotuloDaRegraDeRepasse } from "@/components/aluno/estilos";
 /** Meses mostrados antes de "Ver meses anteriores": o corrente e os dois ultimos fechados. */
 const MESES_VISIVEIS = 3;
 
-const SITUACAO: Record<RepasseDoMes["situacao"], { rotulo: string; cor: string; fundo: string }> = {
-  em_andamento: { rotulo: "Mês em andamento", cor: "#0369A1", fundo: "#F0FAFF" },
-  fechado: { rotulo: "Fechado", cor: "#4F483E", fundo: "#F4F1EC" },
-  aberto: { rotulo: "Sem fechamento", cor: "#A16207", fundo: "#FEFBEB" },
+/** Mesmo tom e icone da aba Professores do financeiro ("Mes em andamento", "A fechar"). */
+const SITUACAO: Record<RepasseDoMes["situacao"], { rotulo: string; tom: Tom; icone: typeof IconeRelogio }> = {
+  em_andamento: { rotulo: "Mês em andamento", tom: "neutro", icone: IconeRelogio },
+  fechado: { rotulo: "Fechado", tom: "neutro", icone: IconeCadeado },
+  aberto: { rotulo: "Sem fechamento", tom: "atencao", icone: IconeAlerta },
 };
 
 function nomeDoMes(competencia: string): string {
@@ -97,9 +98,9 @@ export function RepasseDoProfessor({
             <li key={repasse.competencia} className="px-4 py-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-areia-900">{nomeDoMes(repasse.competencia)}</span>
-                <Badge cor={situacao.cor} fundo={situacao.fundo}>
+                <EtiquetaDeSituacao tom={situacao.tom} icone={situacao.icone}>
                   {situacao.rotulo}
-                </Badge>
+                </EtiquetaDeSituacao>
               </div>
               <p className="mt-1 text-xs text-areia-600">
                 {repasse.aulasDadas} aulas · previsto {formatarMoeda(repasse.previsto)} · pago{" "}
@@ -152,9 +153,9 @@ export function RepasseDoProfessor({
                     <Diferenca repasse={repasse} />
                   </td>
                   <td className="px-5 py-2.5">
-                    <Badge cor={situacao.cor} fundo={situacao.fundo}>
+                    <EtiquetaDeSituacao tom={situacao.tom} icone={situacao.icone} className="whitespace-nowrap">
                       {situacao.rotulo}
-                    </Badge>
+                    </EtiquetaDeSituacao>
                   </td>
                 </tr>
               );

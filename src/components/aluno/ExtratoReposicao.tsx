@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeRelogio } from "@/components/ui/Icons";
 import type { Ocupacao, SiglaReposicao } from "@/lib/banco/tipos";
 import type { ExtratoDoAluno, MovimentoDeReposicao } from "@/lib/consultas/alunos";
@@ -171,15 +172,17 @@ function Movimento({
           +{formatarMinutos(minutos)}
         </span>
         {perdido ? (
-          <Badge cor="#8A2118" fundo="#FBE3E0" className="px-2 py-0.5 text-[10px]">
+          <EtiquetaDeSituacao tom="alerta" pequena>
             Vencido
-          </Badge>
+          </EtiquetaDeSituacao>
         ) : usado ? (
-          <Badge className="px-2 py-0.5 text-[10px]">Usado</Badge>
+          <EtiquetaDeSituacao tom="neutro" pequena>
+            Usado
+          </EtiquetaDeSituacao>
         ) : (
-          <Badge cor="#15803D" fundo="#F0FDF4" className="px-2 py-0.5 text-[10px]">
+          <EtiquetaDeSituacao tom="positivo" pequena>
             Disponível
-          </Badge>
+          </EtiquetaDeSituacao>
         )}
       </span>
     </li>

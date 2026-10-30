@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import { EtiquetaNeutra } from "@/components/ui/EtiquetaDeSituacao";
 import type {
   LinhaLancamento,
   OrdemDaLista,
@@ -11,7 +12,7 @@ import { resumoDaLista } from "@/lib/consultas/financeiro";
 import type { TipoLancamento } from "@/lib/banco/tipos";
 import { formatarData } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
-import { BadgeCongelado, BadgeSituacao, ChipNeutro } from "./Etiquetas";
+import { BadgeCongelado, BadgeSituacao } from "./Etiquetas";
 
 /** Quantos lançamentos aparecem de cada vez (o resto vem em "Mostrar mais"). */
 export const LANCAMENTOS_POR_PAGINA = 40;
@@ -120,8 +121,8 @@ export function ListaDeLancamentos({
               <p className="mt-1 text-xs text-areia-500">Vence em {formatarData(lancamento.vencimento)}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <BadgeSituacao linha={linha} />
-                <ChipNeutro>{lancamento.categoria}</ChipNeutro>
-                {lancamento.formaPagamento && <ChipNeutro>{lancamento.formaPagamento}</ChipNeutro>}
+                <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
+                {lancamento.formaPagamento && <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>}
                 {linha.congelada && <BadgeCongelado />}
               </div>
               {emAberto(linha) && (
@@ -197,13 +198,13 @@ export function ListaDeLancamentos({
                       {lancamento.item}
                     </button>
                     <span className="mt-1 flex flex-wrap items-center gap-1">
-                      <ChipNeutro>{lancamento.categoria}</ChipNeutro>
+                      <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
                       {linha.congelada && <BadgeCongelado />}
                     </span>
                   </td>
                   <td className="px-3 py-2.5">
                     {lancamento.formaPagamento ? (
-                      <ChipNeutro>{lancamento.formaPagamento}</ChipNeutro>
+                      <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>
                     ) : (
                       <span className="text-areia-400">
                         <span aria-hidden="true">—</span>

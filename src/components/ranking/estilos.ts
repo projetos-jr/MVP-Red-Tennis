@@ -1,3 +1,4 @@
+import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import type { SituacaoTorneio } from "@/lib/banco/tipos";
 
 /**
@@ -8,7 +9,7 @@ export const ESTILO_SITUACAO_TORNEIO: Record<
   SituacaoTorneio,
   { cor: string; fundo: string; borda: string }
 > = {
-  inscricoes: { cor: "#9A4720", fundo: "#FAE8DA", borda: "#F3CEAF" },
-  em_andamento: { cor: "#15803D", fundo: "#F0FDF4", borda: "#9DE0B4" },
-  encerrado: { cor: "#4F483E", fundo: "#F4F1EC", borda: "#D6CEC2" },
+  inscricoes: TONS.destaque,
+  em_andamento: TONS.positivo,
+  encerrado: TONS.neutro,
 };

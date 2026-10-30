@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { IconeCheck, IconeFinanceiro } from "@/components/ui/Icons";
+import { EtiquetaDeSituacao, EtiquetaNeutra } from "@/components/ui/EtiquetaDeSituacao";
+import { IconeFinanceiro } from "@/components/ui/Icons";
 import type { PagamentoDoAluno, PagamentosDoAluno } from "@/lib/consultas/alunos";
 import { formatarData } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
-import { ESTILO_SITUACAO_LANCAMENTO, estiloDaForma } from "./estilos";
+import { ESTILO_SITUACAO_LANCAMENTO } from "./estilos";
 
 const POR_PAGINA = 10;
 
@@ -144,15 +144,13 @@ function Valor({ pagamento }: { pagamento: PagamentoDoAluno }) {
 }
 
 function Situacao({ pagamento }: { pagamento: PagamentoDoAluno }) {
-  const estilo = ESTILO_SITUACAO_LANCAMENTO[pagamento.situacao];
   const { lancamento } = pagamento;
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
-      <Badge cor={estilo.cor} fundo={estilo.fundo} borda={estilo.borda}>
-        {pagamento.situacao === "pago" && <IconeCheck className="h-3.5 w-3.5" />}
-        {estilo.rotulo}
+      <EtiquetaDeSituacao situacao={pagamento.situacao} className="whitespace-nowrap">
+        {ESTILO_SITUACAO_LANCAMENTO[pagamento.situacao].rotulo}
         {pagamento.diasEmAtraso > 0 && ` · ${pagamento.diasEmAtraso}d`}
-      </Badge>
+      </EtiquetaDeSituacao>
       {lancamento.pagoEm && pagamento.situacao === "pago" && (
         <span className="whitespace-nowrap text-[11px] text-areia-500">
           em {formatarData(lancamento.pagoEm)}
@@ -168,12 +166,9 @@ function Situacao({ pagamento }: { pagamento: PagamentoDoAluno }) {
 function Forma({ pagamento }: { pagamento: PagamentoDoAluno }) {
   const { formaPagamento, valorConvenio, valor } = pagamento.lancamento;
   if (!formaPagamento) return <span className="text-areia-400">—</span>;
-  const estilo = estiloDaForma(formaPagamento);
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
-      <Badge cor={estilo.cor} fundo={estilo.fundo} title={estilo.detalhe}>
-        {formaPagamento}
-      </Badge>
+      <EtiquetaNeutra>{formaPagamento}</EtiquetaNeutra>
       {valorConvenio !== undefined && (
         <span className="text-[11px] text-areia-500">
           Convênio {formatarMoeda(valorConvenio)} + complemento {formatarMoeda(valor - valorConvenio)}

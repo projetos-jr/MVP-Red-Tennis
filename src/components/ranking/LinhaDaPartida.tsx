@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/Badge";
+import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeProximo, IconeTrofeu } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { lerPlacar } from "@/lib/banco/regras/ranking";
@@ -78,23 +79,27 @@ export function LinhaDaPartida({
   const etiquetas = (
     <>
       {torneio ? (
-        <Badge className="max-w-full px-2 py-0.5 text-[10px]">
+        <Badge className="max-w-full px-2 py-0.5 text-[11px]">
           <span className="truncate">
             {torneio.nome}
             {partida.fase ? ` · ${partida.fase}` : ""}
           </span>
         </Badge>
       ) : (
-        <Badge cor={ranking.texto} fundo={ranking.fundo} borda={ranking.borda} className="px-2 py-0.5 text-[10px]">
+        <Badge cor={ranking.texto} fundo={ranking.fundo} borda={ranking.borda} className="px-2 py-0.5 text-[11px]">
           Ranking
         </Badge>
       )}
       {pendente && (
-        <Badge cor="#8A2118" fundo="#FDF3F2" borda="#F6C4BE" className="px-2 py-0.5 text-[10px]">
+        <EtiquetaDeSituacao situacao="em_atraso" pequena>
           Resultado pendente
-        </Badge>
+        </EtiquetaDeSituacao>
       )}
-      {!partida.vencedor && !pendente && <Badge className="px-2 py-0.5 text-[10px]">Marcada</Badge>}
+      {!partida.vencedor && !pendente && (
+        <EtiquetaDeSituacao situacao="em_andamento" pequena>
+          Marcada
+        </EtiquetaDeSituacao>
+      )}
     </>
   );
 
