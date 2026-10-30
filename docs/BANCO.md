@@ -12,12 +12,14 @@ próximo passo.
 | Testes do banco (pgTAP) | `supabase/tests/` |
 | Configuração do Supabase local | `supabase/config.toml` |
 | Gerador dos dados de exemplo | `scripts/gerar-seed.ts` (`npm run banco:seed`) |
+| Funções de cada módulo (o que a tela chama) | seção "No banco (funções)" de cada arquivo em `docs/modulos/` |
 
 As duas primeiras migrações (28/10) criaram a estrutura do MVP antigo e já
 estão aplicadas no projeto `xfludepkrcnwovnckpfc`. A terceira,
 `20261029234500_modelo_novo.sql`, apaga essas tabelas (estavam vazias) e cria
-o modelo novo. Migração aplicada nunca é editada: mudanças vêm sempre numa
-migração nova.
+o modelo novo. As seguintes (`20261030120000` a `20261030120400`) criam as
+funções de cada módulo. Migração aplicada nunca é editada: mudanças vêm sempre
+numa migração nova.
 
 ## O que o banco garante sozinho
 
@@ -67,8 +69,9 @@ alunos inteiros, mas não vê valores (financeiro e consumo).
 
 Os testes do banco ficam em `supabase/tests/` e rodam no CI a cada pull request
 (job `banco`): o CI sobe o Supabase local, aplica todas as migrações num banco
-limpo e roda os testes. Hoje são 35, cobrindo o conflito de quadra, o estoque,
-as matrículas, o financeiro, o que cada perfil vê e grava, e a auditoria.
+limpo e roda os testes. Hoje são 361: as regras das tabelas (conflito de
+quadra, estoque, matrículas, financeiro), o que cada perfil vê e grava, a
+auditoria e cada função de operação (caminho certo e cada recusa importante).
 
 Para rodar na sua máquina (precisa do Docker):
 
@@ -93,7 +96,7 @@ cliente real; antes dos dados reais, tudo é apagado.
 
 Ainda não aplicado. Quando a equipe aprovar o pull request:
 
-1. Aplicar `20261029234500_modelo_novo.sql` no projeto (pelo Claude Code com o
+1. Aplicar as migrações novas (`20261029234500_modelo_novo.sql` em diante) no projeto (pelo Claude Code com o
    conector do Supabase, ou `npx supabase db push`).
 2. Criar os usuários da equipe no painel: Authentication → Users → Add user →
    Create new user, marcando "Auto Confirm User".
@@ -106,11 +109,34 @@ Ainda não aplicado. Quando a equipe aprovar o pull request:
    from auth.users where email = '<email>';
    ```
 
+## Funções das operações
+
+Toda operação que grava em mais de uma tabela, ou cuja regra é crítica, é uma
+função do Postgres que a tela chama com `supabase.rpc(...)`. Tudo ou nada: se
+uma regra for violada, nada é gravado e a tela recebe a mesma mensagem que
+mostra hoje. Padrão de todas (veja `20261030120000_funcoes_base.sql`):
+
+- Rodam com a permissão de quem chamou (`security invoker`): a RLS continua
+  valendo, e a função nunca faz mais do que a pessoa poderia fazer.
+- Conferem a permissão do perfil logo no começo e gravam o nome da operação na
+  auditoria (coluna `auditoria.operacao`, ex.: "Cancelar aula").
+- Nome = nome da operação do front em snake_case (`cancelarOcupacao` →
+  `cancelar_ocupacao`); parâmetros = campos da tela com `p_` (`alunoId` →
+  `p_aluno_id`).
+- "Hoje" é sempre a data de São Paulo (`privado.hoje()`).
+
+Leituras calculadas pelo banco: `saldo_estoque`, `lancamentos_com_situacao`,
+`saldo_reposicao`, `ranking` (e `ranking_em(data)`), `classificacao_do_torneio`.
+Conferido com os dados de exemplo: o saldo de reposição de cada aluno e o
+ranking saem idênticos aos das telas.
+
+Única exceção ao `security invoker`: a rotina que libera reservas sem
+pagamento sozinha (`privado.liberar_reservas_vencidas_automaticamente`), que
+roda a cada 15 minutos pelo `pg_cron`, sem ninguém logado. Ela só age se a
+opção estiver ligada nas Configurações, e ninguém pela API consegue chamá-la.
+
 ## Próximo passo
 
-As operações que gravam em mais de uma tabela de uma vez (lançar consumo,
-cancelar aula gerando créditos, usar reposição, registrar pagamento
-confirmando a reserva, gerar mensalidades, fechar repasse, avançar a chave do
-torneio) viram funções do Postgres numa próxima migração, com os mesmos testes
-de `src/lib/banco/operacoes/*.test.ts`. Depois disso, o front passa a ler e
-gravar no banco (as telas não mudam: só `src/lib/consultas/` e o `executar`).
+Ligar o front ao banco: `src/lib/consultas/` passa a ler do Supabase e o
+`executar` passa a chamar as funções acima (as telas não mudam). Falta também
+a rotina que estende os horários fixos além das semanas geradas (H12).
