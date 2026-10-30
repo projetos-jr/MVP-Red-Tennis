@@ -5,8 +5,11 @@ import { useMemo, useState } from "react";
 import { IconeHistorico } from "@/components/base/Icones";
 import { RegistroDoHistorico } from "@/components/base/historico/RegistroDoHistorico";
 import { moduloDaRota } from "@/components/layout/abas";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import { IconeFiltro } from "@/components/ui/Icons";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import type { RegistroAuditoria, TabelaDoBanco } from "@/lib/banco/tipos";
 import { podeAcessar } from "@/lib/consultas/base";
 import {
@@ -20,7 +23,7 @@ import {
 } from "@/lib/consultas/configuracoes";
 import { useApp } from "@/store/AppStore";
 
-const POR_PAGINA = 50;
+const POR_PAGINA = ITENS_POR_PAGINA;
 
 type Filtro = Required<FiltroDoHistorico>;
 
@@ -61,16 +64,19 @@ export default function PaginaHistorico() {
 
   return (
     <div className="space-y-6">
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Histórico de alterações</h1>
-        <p className="mt-1 text-sm leading-relaxed text-areia-600">
-          Tudo o que foi criado, alterado ou apagado, com quem fez, quando e como era antes. O
-          registro é automático: ninguém edita nem apaga.
-        </p>
-      </div>
+      <CabecalhoDaPagina
+        className="max-w-3xl"
+        titulo="Histórico de alterações"
+        descricao={
+          <p className="leading-relaxed">
+            Tudo o que foi criado, alterado ou apagado, com quem fez, quando e como era antes. O
+            registro é automático: ninguém edita nem apaga.
+          </p>
+        }
+      />
 
       {banco.auditoria.length === 0 ? (
-        <EstadoVazio podeAbrirConfiguracoes={podeAcessar(banco, colaborador, "configuracoes")} />
+        <HistoricoVazio podeAbrirConfiguracoes={podeAcessar(banco, colaborador, "configuracoes")} />
       ) : (
         <>
           <Card>
@@ -84,7 +90,7 @@ export default function PaginaHistorico() {
                     setFiltro(SEM_FILTRO);
                     setLimite(POR_PAGINA);
                   }}
-                  className="ml-auto text-xs font-semibold text-tijolo-700 hover:underline"
+                  className="link-acao ml-auto text-xs"
                 >
                   Limpar filtros
                 </button>
@@ -190,17 +196,11 @@ export default function PaginaHistorico() {
                 ))}
               </ul>
             )}
-            {registros.length > visiveis.length && (
-              <div className="border-t border-areia-200 px-5 py-3 text-center">
-                <button
-                  type="button"
-                  onClick={() => setLimite((atual) => atual + POR_PAGINA)}
-                  className="btn-secundario"
-                >
-                  Mostrar mais {Math.min(POR_PAGINA, registros.length - visiveis.length)}
-                </button>
-              </div>
-            )}
+            <MostrarMais
+              mostrando={visiveis.length}
+              total={registros.length}
+              aoMostrarMais={() => setLimite((atual) => atual + POR_PAGINA)}
+            />
           </Card>
         </>
       )}
@@ -208,29 +208,28 @@ export default function PaginaHistorico() {
   );
 }
 
-function EstadoVazio({ podeAbrirConfiguracoes }: { podeAbrirConfiguracoes: boolean }) {
+function HistoricoVazio({ podeAbrirConfiguracoes }: { podeAbrirConfiguracoes: boolean }) {
   return (
-    <Card className="px-6 py-10 text-center sm:px-12">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-saibro-50 text-saibro-700">
-        <IconeHistorico className="h-6 w-6" />
-      </span>
-      <h2 className="mt-4 text-lg font-semibold text-areia-900">Nenhuma alteração nesta sessão ainda</h2>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-areia-600">
-        Nesta demonstração os dados de exemplo são carregados de novo a cada visita, então o
-        histórico começa vazio. Assim que alguém criar, alterar ou apagar algo (um comentário na
-        ficha de um aluno, uma aula cancelada, um prazo nas Configurações), aparece aqui quem fez,
-        quando e o que mudou. Com o banco de dados de verdade, o histórico fica guardado para sempre.
-      </p>
-      <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-        {podeAbrirConfiguracoes && (
-          <Link href="/configuracoes" className="btn-primario">
-            Abrir Configurações
+    <EstadoVazio
+      icone={<IconeHistorico className="h-6 w-6" />}
+      titulo="Nenhuma alteração nesta sessão ainda"
+      acoes={
+        <>
+          {podeAbrirConfiguracoes && (
+            <Link href="/configuracoes" className="btn-primario">
+              Abrir Configurações
+            </Link>
+          )}
+          <Link href="/dashboard" className="btn-secundario">
+            Voltar ao painel
           </Link>
-        )}
-        <Link href="/dashboard" className="btn-secundario">
-          Voltar ao painel
-        </Link>
-      </div>
-    </Card>
+        </>
+      }
+    >
+      Nesta demonstração os dados de exemplo são carregados de novo a cada visita, então o
+      histórico começa vazio. Assim que alguém criar, alterar ou apagar algo (um comentário na
+      ficha de um aluno, uma aula cancelada, um prazo nas Configurações), aparece aqui quem fez,
+      quando e o que mudou. Com o banco de dados de verdade, o histórico fica guardado para sempre.
+    </EstadoVazio>
   );
 }

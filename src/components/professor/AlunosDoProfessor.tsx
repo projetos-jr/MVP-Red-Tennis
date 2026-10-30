@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeUsuarios } from "@/components/ui/Icons";
 import type { AlunoDoProfessor } from "@/lib/consultas/professores";
 import { ESTILO_SITUACAO_ALUNO } from "@/components/aluno/estilos";
@@ -40,9 +41,11 @@ export function AlunosDoProfessor({
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-1">
-                  <Badge className="px-2 py-0.5 text-[10px]">{principal ? "Principal" : "Em turma"}</Badge>
+                  <EtiquetaDeSituacao tom="neutro" pequena>
+                    {principal ? "Principal" : "Em turma"}
+                  </EtiquetaDeSituacao>
                   {situacao !== "ativo" && (
-                    <Badge cor={estilo.cor} fundo={estilo.fundo} className="px-2 py-0.5 text-[10px]">
+                    <Badge cor={estilo.cor} fundo={estilo.fundo} borda={estilo.borda} className="px-2 py-0.5 text-[11px]">
                       {estilo.rotulo}
                     </Badge>
                   )}

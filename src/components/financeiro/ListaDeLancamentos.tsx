@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import { EtiquetaNeutra } from "@/components/ui/EtiquetaDeSituacao";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import type {
   LinhaLancamento,
   OrdemDaLista,
@@ -11,10 +13,10 @@ import { resumoDaLista } from "@/lib/consultas/financeiro";
 import type { TipoLancamento } from "@/lib/banco/tipos";
 import { formatarData } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
-import { BadgeCongelado, BadgeSituacao, ChipNeutro } from "./Etiquetas";
+import { BadgeCongelado, BadgeSituacao } from "./Etiquetas";
 
 /** Quantos lançamentos aparecem de cada vez (o resto vem em "Mostrar mais"). */
-export const LANCAMENTOS_POR_PAGINA = 40;
+export const LANCAMENTOS_POR_PAGINA = ITENS_POR_PAGINA;
 
 function emAberto(linha: LinhaLancamento): boolean {
   return linha.situacao === "pendente" || linha.situacao === "em_atraso";
@@ -82,7 +84,6 @@ export function ListaDeLancamentos({
 }) {
   const visiveis = linhas.slice(0, limite);
   const { validos, anulados } = resumoDaLista(linhas);
-  const restantes = linhas.length - visiveis.length;
   const rotuloAcao = tipo === "receber" ? "Receber" : "Pagar";
 
   if (linhas.length === 0) {
@@ -120,8 +121,8 @@ export function ListaDeLancamentos({
               <p className="mt-1 text-xs text-areia-500">Vence em {formatarData(lancamento.vencimento)}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <BadgeSituacao linha={linha} />
-                <ChipNeutro>{lancamento.categoria}</ChipNeutro>
-                {lancamento.formaPagamento && <ChipNeutro>{lancamento.formaPagamento}</ChipNeutro>}
+                <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
+                {lancamento.formaPagamento && <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>}
                 {linha.congelada && <BadgeCongelado />}
               </div>
               {emAberto(linha) && (
@@ -197,13 +198,13 @@ export function ListaDeLancamentos({
                       {lancamento.item}
                     </button>
                     <span className="mt-1 flex flex-wrap items-center gap-1">
-                      <ChipNeutro>{lancamento.categoria}</ChipNeutro>
+                      <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
                       {linha.congelada && <BadgeCongelado />}
                     </span>
                   </td>
                   <td className="px-3 py-2.5">
                     {lancamento.formaPagamento ? (
-                      <ChipNeutro>{lancamento.formaPagamento}</ChipNeutro>
+                      <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>
                     ) : (
                       <span className="text-areia-400">
                         <span aria-hidden="true">—</span>
@@ -250,22 +251,19 @@ export function ListaDeLancamentos({
         </table>
       </div>
 
-      <footer className="flex flex-col gap-2 border-t border-areia-200 px-5 py-3 text-xs text-areia-600 sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          <strong className="font-semibold text-areia-800">
-            {validos.quantidade} {validos.quantidade === 1 ? "lançamento" : "lançamentos"}
-          </strong>{" "}
-          · total <strong className="font-semibold text-areia-800">{formatarMoeda(validos.valor)}</strong>
-          {anulados.quantidade > 0 &&
-            ` · ${anulados.quantidade} ${anulados.quantidade === 1 ? "anulado" : "anulados"} (${formatarMoeda(anulados.valor)}) fora do total`}
-          {restantes > 0 && ` · mostrando ${visiveis.length} de ${linhas.length}`}
-        </p>
-        {restantes > 0 && (
-          <button type="button" onClick={aoMostrarMais} className="btn-secundario px-3 py-1.5 text-xs">
-            Mostrar mais {Math.min(LANCAMENTOS_POR_PAGINA, restantes)}
-          </button>
-        )}
-      </footer>
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={linhas.length}
+        passo={LANCAMENTOS_POR_PAGINA}
+        aoMostrarMais={aoMostrarMais}
+      >
+        <strong className="font-semibold text-areia-800">
+          {validos.quantidade} {validos.quantidade === 1 ? "lançamento" : "lançamentos"}
+        </strong>{" "}
+        · total <strong className="font-semibold text-areia-800">{formatarMoeda(validos.valor)}</strong>
+        {anulados.quantidade > 0 &&
+          ` · ${anulados.quantidade} ${anulados.quantidade === 1 ? "anulado" : "anulados"} (${formatarMoeda(anulados.valor)}) fora do total`}
+      </MostrarMais>
     </>
   );
 }

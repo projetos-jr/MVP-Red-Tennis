@@ -17,7 +17,8 @@ import { ConfirmarReativacaoDoCadastro, ModalInativar } from "@/components/aluno
 import { ModalCongelar, ModalReativar } from "@/components/aluno/ModaisCongelamento";
 import { FichaConsumo } from "@/components/consumo/FichaConsumo";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
-import { Card } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
+import { IconeBusca } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import {
   aulasDoAluno,
@@ -69,12 +70,17 @@ export default function PaginaFichaAluno() {
 
   if (!ficha) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Aluno não encontrado.</p>
-        <Link href="/alunos" className="btn-secundario mt-4">
-          Voltar para a lista de alunos
-        </Link>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Aluno não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/alunos" className="btn-secundario">
+            Voltar para a lista de alunos
+          </Link>
+        }
+      />
     );
   }
 

@@ -17,7 +17,7 @@ function Variacao({ variacao }: { variacao: number }) {
   return (
     <span
       className={`flex w-9 shrink-0 items-center justify-end gap-0.5 text-xs font-medium tabular-nums sm:w-12 ${
-        variacao > 0 ? "text-emerald-600" : variacao < 0 ? "text-tijolo-600" : "text-areia-400"
+        variacao > 0 ? "text-emerald-700" : variacao < 0 ? "text-tijolo-600" : "text-areia-400"
       }`}
       title={texto}
     >
@@ -76,7 +76,7 @@ export function ListaRanking({ linhas }: { linhas: LinhaDoRanking[] }) {
               >
                 <span
                   className={`w-6 shrink-0 text-right text-sm font-bold tabular-nums sm:w-7 ${
-                    linha.posicao <= 3 ? "text-saibro-700" : "text-areia-400"
+                    linha.posicao <= 3 ? "text-saibro-700" : "text-areia-500"
                   }`}
                 >
                   {linha.posicao}

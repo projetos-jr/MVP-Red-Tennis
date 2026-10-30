@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EtiquetaDeSituacao, type Situacao } from "@/components/ui/EtiquetaDeSituacao";
 import {
   IconeAgenda,
   IconeAlerta,
@@ -15,6 +17,7 @@ import {
 } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import type { Configuracoes } from "@/lib/banco/tipos";
+import { nivelDoEstoque } from "@/lib/consultas/estoque";
 import type {
   AlunoResumido,
   GrupoDeAtencao,
@@ -25,15 +28,20 @@ import type {
   ReservaSemPagamento,
 } from "@/lib/consultas/painel";
 import { DIAS_SEMANA_CURTO, diaDaSemana, formatarData, formatarDiaMes, somarDias } from "@/lib/date";
-import { ESTILO_CATEGORIA_PRODUTO, formatarMinutos, formatarMoeda } from "@/lib/theme";
+import {
+  ESTILO_CATEGORIA_PRODUTO,
+  ESTILO_NIVEL_ESTOQUE,
+  formatarMinutos,
+  formatarMoeda,
+} from "@/lib/theme";
 
 /** Itens visiveis antes do "Mostrar todos": a contagem do grupo sempre e a da lista inteira. */
 const ITENS_RECOLHIDOS = 3;
 
-const TONS = {
-  alerta: "border-tijolo-200 bg-tijolo-50 text-tijolo-800",
-  atencao: "border-amber-200 bg-amber-50 text-amber-800",
-  neutro: "border-areia-200 bg-areia-50 text-areia-700",
+/** Contagem de cada grupo: vermelha quando ha o que fazer, verde quando nao ha. */
+const CONTAGEM = {
+  comItens: "border-tijolo-200 bg-tijolo-50 text-tijolo-800",
+  vazia: "border-emerald-200 bg-emerald-50 text-emerald-800",
 } as const;
 
 export function plural(quantidade: number, singular: string, formaPlural: string): string {
@@ -48,12 +56,16 @@ function quando(data: string): string {
   return `${DIAS_SEMANA_CURTO[diaDaSemana(data)].toLowerCase()} ${formatarDiaMes(data)}`;
 }
 
-function rotuloDoPrazo(reserva: ReservaSemPagamento): { texto: string; tom: keyof typeof TONS } {
-  if (!reserva.prazo) return { texto: "Sem prazo para pagar", tom: "neutro" };
+/** Mesmas etiquetas das reservas no financeiro: vencida, vence hoje, no prazo. */
+function rotuloDoPrazo(reserva: ReservaSemPagamento): { texto: string; situacao?: Situacao } {
+  if (!reserva.prazo) return { texto: "Sem prazo para pagar" };
   const dia = reserva.prazo.slice(0, 10);
   const hora = reserva.prazo.slice(11, 16);
-  if (reserva.vencida) return { texto: `Prazo vencido ${quando(dia)} às ${hora}`, tom: "alerta" };
-  return { texto: `Pagar até ${quando(dia)} às ${hora}`, tom: dia === HOJE ? "atencao" : "neutro" };
+  if (reserva.vencida) return { texto: `Prazo vencido ${quando(dia)} às ${hora}`, situacao: "em_atraso" };
+  return {
+    texto: `Pagar até ${quando(dia)} às ${hora}`,
+    situacao: dia === HOJE ? "pendente" : "em_andamento",
+  };
 }
 
 function FotoDoAluno({ aluno }: { aluno?: AlunoResumido }) {
@@ -138,7 +150,7 @@ function Grupo({
         </div>
         <span
           className={`chip shrink-0 border tabular-nums ${
-            quantidade > 0 ? TONS.alerta : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            quantidade > 0 ? CONTAGEM.comItens : CONTAGEM.vazia
           }`}
         >
           {quantidade}
@@ -160,7 +172,7 @@ function Grupo({
             type="button"
             onClick={() => setTodos((atual) => !atual)}
             aria-expanded={todos}
-            className="text-xs font-semibold text-areia-700 hover:underline"
+            className="alvo-de-toque text-xs font-semibold text-areia-700 hover:underline"
           >
             {todos ? "Mostrar menos" : `Mostrar todos os ${quantidade}`}
           </button>
@@ -169,7 +181,7 @@ function Grupo({
           <Link
             key={link.href}
             href={link.href}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
+            className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
           >
             {link.rotulo} <IconeSeta className="h-3.5 w-3.5" />
           </Link>
@@ -210,10 +222,9 @@ function GrupoDeReservas({
             detalhe={`${reserva.rotuloQuadra} · ${quando(ocupacao.data)} · ${ocupacao.horaInicio}–${ocupacao.horaFim}`}
             valor={formatarMoeda(reserva.valor)}
             marca={
-              <span className={`chip border px-2 py-0.5 text-[11px] ${TONS[prazo.tom]}`}>
-                {prazo.tom === "alerta" && <IconeAlerta className="h-3 w-3" />}
+              <EtiquetaDeSituacao situacao={prazo.situacao} pequena>
                 {prazo.texto}
-              </span>
+              </EtiquetaDeSituacao>
             }
           />
         );
@@ -242,9 +253,9 @@ function GrupoDeMensalidades({ itens, valorTotal }: { itens: MensalidadeEmAtraso
           detalhe={lancamento.item}
           valor={formatarMoeda(lancamento.valor)}
           marca={
-            <span className={`chip border px-2 py-0.5 text-[11px] ${TONS.alerta}`}>
+            <EtiquetaDeSituacao situacao="em_atraso" pequena>
               Venceu em {formatarData(lancamento.vencimento)} · {plural(diasEmAtraso, "dia", "dias")} de atraso
-            </span>
+            </EtiquetaDeSituacao>
           }
         />
       ))}
@@ -262,6 +273,8 @@ function GrupoDeProdutos({ itens }: { itens: ProdutoAbaixoDoMinimo[] }) {
       vazio="Todos os produtos acima do mínimo."
       itens={itens.map(({ produto, saldo }) => {
         const cor = ESTILO_CATEGORIA_PRODUTO[produto.categoria];
+        // Mesmas cores do estoque: "Esgotado" e "Repor já".
+        const nivel = ESTILO_NIVEL_ESTOQUE[nivelDoEstoque(saldo, produto.estoqueMinimo)];
         return (
           <Item
             key={produto.id}
@@ -277,13 +290,16 @@ function GrupoDeProdutos({ itens }: { itens: ProdutoAbaixoDoMinimo[] }) {
             titulo={produto.nome}
             detalhe={`Saldo ${saldo} · mínimo ${produto.estoqueMinimo} (${produto.unidade})`}
             marca={
-              <span
-                className={`chip border px-2 py-0.5 text-[11px] ${saldo <= 0 ? TONS.alerta : TONS.atencao}`}
+              <Badge
+                cor={nivel.cor}
+                fundo={nivel.fundo}
+                borda={nivel.borda}
+                className="px-2 py-0.5 text-[11px]"
               >
                 {saldo <= 0
                   ? "Esgotado"
                   : `Faltam ${produto.estoqueMinimo - saldo} para o mínimo`}
-              </span>
+              </Badge>
             }
           />
         );
@@ -308,15 +324,11 @@ function GrupoDeReposicoes({ itens }: { itens: ReposicaoAVencer[] }) {
           titulo={aluno.nome}
           detalhe={`${formatarMinutos(minutos)} de reposição para marcar`}
           marca={
-            <span
-              className={`chip border px-2 py-0.5 text-[11px] ${
-                diasParaVencer <= 7 ? TONS.atencao : TONS.neutro
-              }`}
-            >
+            <EtiquetaDeSituacao tom={diasParaVencer <= 7 ? "atencao" : "neutro"} pequena>
               {diasParaVencer === 0
                 ? "Vence hoje"
                 : `Vence em ${plural(diasParaVencer, "dia", "dias")} (${formatarDiaMes(validade)})`}
-            </span>
+            </EtiquetaDeSituacao>
           }
         />
       ))}
@@ -365,11 +377,7 @@ export function PrecisaDeAtencao({
         descricao="O que pede uma ação hoje."
         icone={<IconeAlerta className="h-5 w-5" />}
         acao={
-          <span
-            className={`chip border ${
-              atencao.total > 0 ? TONS.alerta : "border-emerald-200 bg-emerald-50 text-emerald-800"
-            }`}
-          >
+          <span className={`chip border ${atencao.total > 0 ? CONTAGEM.comItens : CONTAGEM.vazia}`}>
             {plural(atencao.total, "item", "itens")}
           </span>
         }

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { IconeAlerta, IconeRelogio } from "@/components/ui/Icons";
+import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
+import { IconeAlerta } from "@/components/ui/Icons";
 import type { ReservaSemPagamento } from "@/lib/consultas/financeiro";
 import { DIAS_SEMANA_CURTO, diaDaSemana, formatarDiaMes } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
@@ -15,25 +15,22 @@ function Prazo({ reserva }: { reserva: ReservaSemPagamento }) {
   const quando = `${formatarDiaMes(prazo)} às ${prazo.slice(11, 16)}`;
   if (reserva.prazoVencido) {
     return (
-      <Badge cor="#8A2118" fundo="#FBE3E0" borda="#EC9A90" className="whitespace-nowrap">
-        <IconeAlerta className="h-3.5 w-3.5" />
+      <EtiquetaDeSituacao situacao="em_atraso" className="whitespace-nowrap">
         Prazo venceu em {quando}
-      </Badge>
+      </EtiquetaDeSituacao>
     );
   }
   if (reserva.prazoHoje) {
     return (
-      <Badge cor="#A16207" fundo="#FEFBEB" borda="#F5D97A" className="whitespace-nowrap">
-        <IconeRelogio className="h-3.5 w-3.5" />
+      <EtiquetaDeSituacao situacao="pendente" className="whitespace-nowrap">
         Prazo termina hoje às {prazo.slice(11, 16)}
-      </Badge>
+      </EtiquetaDeSituacao>
     );
   }
   return (
-    <Badge borda="#E8E3DB" className="whitespace-nowrap">
-      <IconeRelogio className="h-3.5 w-3.5" />
+    <EtiquetaDeSituacao situacao="em_andamento" className="whitespace-nowrap">
       Prazo até {quando}
-    </Badge>
+    </EtiquetaDeSituacao>
   );
 }
 

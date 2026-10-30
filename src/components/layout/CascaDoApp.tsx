@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { Carregando } from "@/components/ui/Carregando";
 import { useApp } from "@/store/AppStore";
 
 const semInscricao = () => () => {};
@@ -29,18 +30,7 @@ export function CascaDoApp({ children }: { children: ReactNode }) {
     if (noNavegador && !logado) router.replace("/");
   }, [noNavegador, logado, router]);
 
-  if (!noNavegador || !logado) {
-    return (
-      <div className="fundo-arena flex min-h-screen items-center justify-center">
-        <p
-          className="animate-pulse text-sm font-medium text-areia-500"
-          role="status"
-        >
-          Carregando…
-        </p>
-      </div>
-    );
-  }
+  if (!noNavegador || !logado) return <Carregando telaInteira />;
 
   return children;
 }

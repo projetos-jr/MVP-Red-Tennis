@@ -13,15 +13,16 @@ import { RepasseDoProfessor } from "@/components/professor/RepasseDoProfessor";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAgenda,
+  IconeBusca,
   IconeEmail,
   IconeFinanceiro,
   IconeRelogio,
   IconeTelefone,
   IconeUsuarios,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { StatCard } from "@/components/ui/StatCard";
 import { HOJE } from "@/lib/banco/constantes";
@@ -54,12 +55,17 @@ export default function PaginaFichaProfessor() {
 
   if (!professor) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Professor não encontrado.</p>
-        <Link href="/professores" className="btn-secundario mt-4">
-          Voltar para a lista de professores
-        </Link>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Professor não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/professores" className="btn-secundario">
+            Voltar para a lista de professores
+          </Link>
+        }
+      />
     );
   }
 
@@ -71,13 +77,7 @@ export default function PaginaFichaProfessor() {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/professores"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Professores
-      </Link>
+      <LinkDeVolta href="/professores">Professores</LinkDeVolta>
 
       <section className="card overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-saibro-600 via-saibro-500 to-saibro-700" />

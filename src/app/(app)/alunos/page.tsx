@@ -11,8 +11,11 @@ import {
 } from "@/components/aluno/estilos";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import { IconeBusca, IconeCheck, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
+import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import { HOJE } from "@/lib/banco/constantes";
 import {
   filtrarAlunos,
@@ -29,7 +32,7 @@ import { useApp } from "@/store/AppStore";
 
 export default function PaginaAlunos() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <ListaDeAlunos />
     </Suspense>
   );
@@ -57,6 +60,8 @@ function ListaDeAlunos() {
     situacaoDaUrl(parametros.get("situacao")),
   );
   const [formularioAberto, setFormularioAberto] = useState(false);
+  // A lista mostra 20 alunos por vez e volta ao começo quando um filtro muda.
+  const [limite, setLimite] = useState(ITENS_POR_PAGINA);
 
   const linhas = useMemo(() => linhasDaListaDeAlunos(banco, HOJE), [banco]);
   const resultado = useMemo(
@@ -86,31 +91,31 @@ function ListaDeAlunos() {
     setPlano("todos");
     setProfessor("todos");
     setSituacao("todas");
+    setLimite(ITENS_POR_PAGINA);
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Alunos</h1>
-          <p className="mt-1 text-sm text-areia-600">
-            {banco.alunos.length} cadastrados ·{" "}
-            {linhas.filter((l) => l.situacao === "ativo").length} com plano ativo
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/professores" className="btn-secundario">
-            <IconeUsuarios className="h-4 w-4" />
-            Professores
-          </Link>
-          {podeEditar && (
-            <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
-              <IconeMais className="h-4 w-4" />
-              Novo aluno
-            </button>
-          )}
-        </div>
-      </div>
+      <CabecalhoDaPagina
+        titulo="Alunos"
+        descricao={`${banco.alunos.length} cadastrados · ${
+          linhas.filter((l) => l.situacao === "ativo").length
+        } com plano ativo`}
+        acoes={
+          <>
+            <Link href="/professores" className="btn-secundario">
+              <IconeUsuarios className="h-4 w-4" />
+              Professores
+            </Link>
+            {podeEditar && (
+              <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
+                <IconeMais className="h-4 w-4" />
+                Novo aluno
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Contadores, que tambem filtram por situacao */}
       <div
@@ -124,7 +129,10 @@ function ListaDeAlunos() {
             situacao={chave}
             quantidade={resultado.contagem[chave]}
             selecionado={situacao === chave}
-            aoClicar={() => setSituacao(situacao === chave ? "todas" : chave)}
+            aoClicar={() => {
+              setSituacao(situacao === chave ? "todas" : chave);
+              setLimite(ITENS_POR_PAGINA);
+            }}
           />
         ))}
       </div>
@@ -136,7 +144,10 @@ function ListaDeAlunos() {
             <input
               type="search"
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               placeholder="Buscar por nome, telefone ou e-mail…"
               className="campo py-2 pl-9"
               aria-label="Buscar aluno por nome, telefone ou e-mail"
@@ -145,7 +156,10 @@ function ListaDeAlunos() {
           <div className="grid grid-cols-2 gap-3 md:contents">
             <select
               value={plano}
-              onChange={(e) => setPlano(e.target.value)}
+              onChange={(e) => {
+                setPlano(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               className="campo py-2"
               aria-label="Filtrar por plano"
             >
@@ -168,7 +182,10 @@ function ListaDeAlunos() {
             </select>
             <select
               value={professor}
-              onChange={(e) => setProfessor(e.target.value)}
+              onChange={(e) => {
+                setProfessor(e.target.value);
+                setLimite(ITENS_POR_PAGINA);
+              }}
               className="campo py-2"
               aria-label="Filtrar por professor principal"
             >
@@ -194,7 +211,7 @@ function ListaDeAlunos() {
             <button
               type="button"
               onClick={limparFiltros}
-              className="font-medium text-saibro-700 hover:underline"
+              className="link-acao"
             >
               Limpar filtros
             </button>
@@ -210,7 +227,7 @@ function ListaDeAlunos() {
         </div>
 
         <ul className="divide-y divide-areia-100">
-          {resultado.linhas.map((linha) => (
+          {resultado.linhas.slice(0, limite).map((linha) => (
             <LinhaDoAluno key={linha.aluno.id} linha={linha} />
           ))}
           {resultado.linhas.length === 0 && (
@@ -222,7 +239,7 @@ function ListaDeAlunos() {
                   <button
                     type="button"
                     onClick={limparFiltros}
-                    className="font-medium text-saibro-700 hover:underline"
+                    className="link-acao"
                   >
                     Limpar filtros
                   </button>
@@ -231,6 +248,11 @@ function ListaDeAlunos() {
             </li>
           )}
         </ul>
+        <MostrarMais
+          mostrando={Math.min(limite, resultado.linhas.length)}
+          total={resultado.linhas.length}
+          aoMostrarMais={() => setLimite((atual) => atual + ITENS_POR_PAGINA)}
+        />
       </Card>
 
       <FormularioAluno
@@ -311,7 +333,7 @@ function LinhaDoAluno({ linha }: { linha: LinhaDaListaDeAlunos }) {
 
         <span className="hidden min-w-0 md:block">
           <span className="block truncate text-sm text-areia-800">
-            {plano?.nome ?? <span className="text-areia-400">Sem plano mensal</span>}
+            {plano?.nome ?? <span className="text-areia-500">Sem plano mensal</span>}
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
             {plano?.tabela === "antiga" && (

@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { IconeImpressora } from "@/components/agenda/Icones";
 import { intervalo, rotuloCurtoDaQuadra } from "@/components/agenda/estilos";
 import { useAgora } from "@/components/agenda/useAgora";
-import { IconeVoltar } from "@/components/ui/Icons";
+import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { Carregando } from "@/components/ui/Carregando";
 import { FAIXAS_HORARIAS, HOJE } from "@/lib/banco/constantes";
 import {
   FILTRO_INICIAL,
@@ -38,7 +38,7 @@ const ESTILO_DE_IMPRESSAO = `
 
 export default function PaginaImprimirAgenda() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <ImpressaoPelaUrl />
     </Suspense>
   );
@@ -84,38 +84,30 @@ function AgendaParaImprimir({ dataDaUrl }: { dataDaUrl: string | null }) {
 
   return (
     <div className="space-y-5">
-      <style>{ESTILO_DE_IMPRESSAO}</style>
+      <LinkDeVolta href={`/agenda?data=${data}&visao=dia`} className="print:hidden">
+        Agenda
+      </LinkDeVolta>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/agenda?data=${data}&visao=dia`}
-            className="btn-secundario px-3 py-2"
-            aria-label="Voltar para a agenda"
-          >
-            <IconeVoltar className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-areia-900">Imprimir a agenda do dia</h1>
-            <p className="text-sm text-areia-600">
-              Uma coluna por quadra, com espaço para marcar a presença à mão.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={data}
-            onChange={(e) => /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) && setData(e.target.value)}
-            className="campo w-auto py-2"
-            aria-label="Data da agenda"
-          />
-          <button type="button" onClick={() => window.print()} className="btn-primario py-2">
-            <IconeImpressora className="h-4 w-4" />
-            Imprimir
-          </button>
-        </div>
-      </div>
+      <CabecalhoDaPagina
+        className="print:hidden"
+        titulo="Imprimir a agenda do dia"
+        descricao="Uma coluna por quadra, com espaço para marcar a presença à mão."
+        acoes={
+          <>
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) && setData(e.target.value)}
+              className="campo w-auto py-2"
+              aria-label="Data da agenda"
+            />
+            <button type="button" onClick={() => window.print()} className="btn-primario py-2">
+              <IconeImpressora className="h-4 w-4" />
+              Imprimir
+            </button>
+          </>
+        }
+      />
 
       <section className="folha-impressao card overflow-x-auto bg-white p-5 text-areia-900">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b-2 border-areia-900 pb-2">
@@ -197,6 +189,9 @@ function AgendaParaImprimir({ dataDaUrl }: { dataDaUrl: string | null }) {
           </div>
         )}
       </section>
+
+      {/* Por último: no começo, o espaçamento entre os blocos empurraria a tela para baixo. */}
+      <style>{ESTILO_DE_IMPRESSAO}</style>
     </div>
   );
 }

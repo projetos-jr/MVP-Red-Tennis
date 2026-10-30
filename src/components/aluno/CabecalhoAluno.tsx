@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import {
   IconeAgenda,
   IconeCongelado,
   IconeEmail,
   IconeTelefone,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import type { ResumoDoAluno } from "@/lib/consultas/alunos";
 import { formatarData, somarDias } from "@/lib/date";
@@ -45,13 +45,7 @@ export function CabecalhoAluno({
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/alunos"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Alunos
-      </Link>
+      <LinkDeVolta href="/alunos">Alunos</LinkDeVolta>
 
       <section className="card overflow-hidden">
         {/* Faixa de saibro no topo do cartao */}

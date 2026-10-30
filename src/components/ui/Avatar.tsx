@@ -12,6 +12,8 @@ interface AvatarProps {
   className?: string;
   /** Anel branco ao redor — util sobre fundos coloridos (pirâmide do torneio). */
   comAnel?: boolean;
+  /** Cor de fundo das iniciais. O professor usa a cor dele na agenda. */
+  cor?: string;
 }
 
 const TAMANHOS: Record<NonNullable<AvatarProps["tamanho"]>, string> = {
@@ -36,6 +38,7 @@ export function Avatar({
   tamanho = "md",
   className = "",
   comAnel = false,
+  cor,
 }: AvatarProps) {
   const [falhou, setFalhou] = useState(false);
 
@@ -73,7 +76,7 @@ export function Avatar({
   return (
     <span
       className={`${classesBase} inline-flex items-center justify-center font-semibold text-white`}
-      style={{ backgroundColor: corAvatar(id) }}
+      style={{ backgroundColor: cor ?? corAvatar(id) }}
       title={nome}
       aria-label={nome}
       role="img"

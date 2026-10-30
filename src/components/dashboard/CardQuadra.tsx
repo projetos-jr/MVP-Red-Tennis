@@ -71,7 +71,7 @@ export function CardQuadra({ quadra, href }: { quadra: QuadraNoPainel; href?: st
           </span>
         </div>
 
-        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-areia-400">
+        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-areia-500">
           {cimento ? "Piso de cimento" : "Piso de saibro"}
         </p>
 

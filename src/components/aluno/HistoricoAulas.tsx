@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { IconeRelogio } from "@/components/ui/Icons";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import { Segmentado } from "@/components/ui/Segmentado";
 import type { SiglaReposicao } from "@/lib/banco/tipos";
 import type { AulaDoAluno } from "@/lib/consultas/alunos";
@@ -141,22 +142,12 @@ export function HistoricoAulas({ aulas, siglas }: { aulas: AulaDoAluno[]; siglas
         </p>
       )}
 
-      {filtradas.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-areia-200 px-5 py-3">
-          <span className="text-xs text-areia-500">
-            Mostrando {visiveis.length} de {filtradas.length}
-          </span>
-          {filtradas.length > limite && (
-            <button
-              type="button"
-              onClick={() => setLimite(limite + POR_PAGINA)}
-              className="btn-secundario px-3 py-1.5 text-xs"
-            >
-              Ver mais aulas
-            </button>
-          )}
-        </div>
-      )}
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={filtradas.length}
+        passo={POR_PAGINA}
+        aoMostrarMais={() => setLimite(limite + POR_PAGINA)}
+      />
 
       <footer className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-areia-200 px-5 py-3">
         <span className="text-xs font-semibold uppercase tracking-wide text-areia-500">Siglas</span>
@@ -228,5 +219,5 @@ function Reposicao({ aula }: { aula: AulaDoAluno }) {
       </span>
     );
   }
-  return <span className="text-areia-300">—</span>;
+  return <span className="text-areia-400">—</span>;
 }

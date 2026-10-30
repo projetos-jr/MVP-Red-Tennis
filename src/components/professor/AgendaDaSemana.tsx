@@ -106,7 +106,7 @@ export function AgendaDaSemana({
                     </div>
                     <div className="min-w-0 flex-1 text-sm text-areia-700">
                       {alunos.length === 0 ? (
-                        <span className="text-areia-400">Sem alunos</span>
+                        <span className="text-areia-500">Sem alunos</span>
                       ) : (
                         alunos.map((aluno, i) => (
                           <span key={aluno.id}>

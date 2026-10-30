@@ -5,9 +5,6 @@ import type {
   TipoOcupacao,
 } from "./banco/tipos";
 
-/** Formas de pagamento com cor propria; formas novas (Configuracoes) ficam neutras. */
-type FormaPagamentoConhecida = "Stone" | "Bradesco" | "Total Pass" | "Dinheiro";
-
 /**
  * Tokens visuais compartilhados.
  * As cores dos tipos de alocacao seguem exatamente a legenda definida com o
@@ -97,55 +94,6 @@ export function estiloDaSigla(codigo: string): { cor: string; fundo: string } {
   return ESTILO_SIGLA[codigo] ?? { cor: "#4F483E", fundo: "#F4F1EC" };
 }
 
-/**
- * Formas de pagamento.
- *
- * `cor` e usada nos chips de texto (precisa de contraste de leitura) e
- * `corGrafico` nas barras do painel de planejamento — sao passos diferentes da
- * mesma familia de matiz, para que a mesma forma de pagamento seja reconhecida
- * na tabela e no grafico. A serie de `corGrafico` foi validada para daltonismo
- * (separacao CVD ≥ 8 em todos os pares) sobre fundo claro.
- */
-export const ESTILO_FORMA_PAGAMENTO: Record<
-  FormaPagamentoConhecida,
-  {
-    label: string;
-    detalhe: string;
-    cor: string;
-    fundo: string;
-    corGrafico: string;
-  }
-> = {
-  Stone: {
-    label: "Stone",
-    detalhe: "Boleto / link de pagamento",
-    cor: "#0F766E",
-    fundo: "#F0FDFA",
-    corGrafico: "#1BAF7A",
-  },
-  Bradesco: {
-    label: "Bradesco",
-    detalhe: "Crédito / débito",
-    cor: "#A32A1C",
-    fundo: "#FDF3F2",
-    corGrafico: "#EB6834",
-  },
-  "Total Pass": {
-    label: "Total Pass",
-    detalhe: "Convênio com complemento",
-    cor: "#1E3A8A",
-    fundo: "#EFF4FF",
-    corGrafico: "#2A78D6",
-  },
-  Dinheiro: {
-    label: "Dinheiro",
-    detalhe: "Espécie / PIX no balcão",
-    cor: "#4A3AA7",
-    fundo: "#F5F3FF",
-    corGrafico: "#4A3AA7",
-  },
-};
-
 export const ESTILO_CATEGORIA: Record<
   CategoriaRanking,
   { label: string; descricao: string; cor: string; fundo: string; borda: string }
@@ -157,17 +105,18 @@ export const ESTILO_CATEGORIA: Record<
     fundo: "#FBE3E0",
     borda: "#EC9A90",
   },
+  // B e C: texto um tom mais escuro que o do MVP, para o contraste passar de 4,5:1.
   B: {
     label: "Categoria B",
     descricao: "Intermediário +",
-    cor: "#9A4720",
+    cor: "#7C391C",
     fundo: "#F3CEAF",
     borda: "#EAAD82",
   },
   C: {
     label: "Categoria C",
     descricao: "Intermediário",
-    cor: "#B95A28",
+    cor: "#9A4720",
     fundo: "#FAE8DA",
     borda: "#F3CEAF",
   },

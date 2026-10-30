@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/PrecisaDeAtencao";
 import { ProximosHorarios } from "@/components/dashboard/ProximosHorarios";
 import { corDaQuadra } from "@/components/dashboard/Quadra3D";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import {
   IconeAgenda,
@@ -53,26 +54,25 @@ export default function PaginaPainel() {
 
   return (
     <div className="space-y-6">
-      {/* Cabecalho */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-areia-600">
+      {/* No celular a agenda já está na barra inferior: o botão fica só no computador. */}
+      <CabecalhoDaPagina
+        acima={
+          <p className="mb-1 text-sm text-areia-600">
             {saudacao(agora)}, {colaborador.nome.split(" ")[0]} 👋
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-areia-900 sm:text-3xl">Visão das quadras</h1>
-          <p className="mt-1 text-sm text-areia-600">
-            {DIAS_SEMANA_LONGO[diaDaSemana(HOJE)]}, {formatarDataExtenso(HOJE)}
-          </p>
-        </div>
-
-        {/* No celular a agenda já está na barra inferior */}
-        {podeAbrirAgenda && (
-          <Link href="/agenda" className="btn-secundario hidden md:inline-flex">
-            <IconeAgenda className="h-4 w-4" />
-            Abrir agenda completa
-          </Link>
-        )}
-      </div>
+        }
+        titulo="Visão das quadras"
+        descricao={`${DIAS_SEMANA_LONGO[diaDaSemana(HOJE)]}, ${formatarDataExtenso(HOJE)}`}
+        acoes={
+          podeAbrirAgenda && (
+            <Link href="/agenda" className="btn-secundario">
+              <IconeAgenda className="h-4 w-4" />
+              Abrir agenda completa
+            </Link>
+          )
+        }
+        esconderAcoesNoCelular
+      />
 
       {/* Indicadores do dia */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -191,7 +191,7 @@ function EscalaOcupacao() {
           </div>
         </div>
       ))}
-      <span className="text-[11px] text-areia-400">livre → lotada</span>
+      <span className="text-[11px] text-areia-500">livre → lotada</span>
     </div>
   );
 }

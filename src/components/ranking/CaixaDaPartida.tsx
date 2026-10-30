@@ -21,7 +21,7 @@ function LinhaDoLado({
       <span
         className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${
           !definido
-            ? "italic text-areia-400"
+            ? "italic text-areia-500"
             : lado.venceu
               ? "font-semibold text-areia-900"
               : "text-areia-700"
@@ -97,7 +97,7 @@ export function CaixaDaPartida({
     >
       <span className="mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wide">
         <span className="text-areia-500">Jogo {caixa.numero}</span>
-        <span className={pronta && !partida.vencedor ? "text-saibro-700" : "text-areia-400"}>
+        <span className={pronta && !partida.vencedor ? "text-saibro-700" : "text-areia-500"}>
           {situacao}
         </span>
       </span>
@@ -114,7 +114,7 @@ export function CaixaDaFolga({ caixa }: { caixa: CaixaDeFolga }) {
     <div className="w-full rounded-xl border border-dashed border-areia-300 bg-areia-50/80 px-3 py-2">
       <span className="mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wide text-areia-500">
         <span>Folga</span>
-        <span className="text-areia-400">Passa direto</span>
+        <span>Passa direto</span>
       </span>
       <div className="flex min-w-0 items-center gap-2">
         <AvataresDoLado alunos={caixa.inscricao?.alunos ?? []} />

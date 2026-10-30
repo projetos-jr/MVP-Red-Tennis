@@ -1,22 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { IconeFinanceiro } from "@/components/ui/Icons";
+import { EtiquetaDeSituacao, type Tom } from "@/components/ui/EtiquetaDeSituacao";
+import { IconeAlerta, IconeCadeado, IconeFinanceiro, IconeRelogio } from "@/components/ui/Icons";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import type { RegraRepasse } from "@/lib/banco/tipos";
 import type { RepasseDoMes } from "@/lib/consultas/professores";
 import { formatarMesAno } from "@/lib/date";
 import { formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { rotuloDaRegraDeRepasse } from "@/components/aluno/estilos";
 
-/** Meses mostrados antes de "Ver meses anteriores": o corrente e os dois ultimos fechados. */
+/** Meses mostrados antes de "Mostrar mais": o corrente e os dois ultimos fechados. */
 const MESES_VISIVEIS = 3;
 
-const SITUACAO: Record<RepasseDoMes["situacao"], { rotulo: string; cor: string; fundo: string }> = {
-  em_andamento: { rotulo: "Mês em andamento", cor: "#0369A1", fundo: "#F0FAFF" },
-  fechado: { rotulo: "Fechado", cor: "#4F483E", fundo: "#F4F1EC" },
-  aberto: { rotulo: "Sem fechamento", cor: "#A16207", fundo: "#FEFBEB" },
+/** Mesmo tom e icone da aba Professores do financeiro ("Mes em andamento", "A fechar"). */
+const SITUACAO: Record<RepasseDoMes["situacao"], { rotulo: string; tom: Tom; icone: typeof IconeRelogio }> = {
+  em_andamento: { rotulo: "Mês em andamento", tom: "neutro", icone: IconeRelogio },
+  fechado: { rotulo: "Fechado", tom: "neutro", icone: IconeCadeado },
+  aberto: { rotulo: "Sem fechamento", tom: "atencao", icone: IconeAlerta },
 };
 
 function nomeDoMes(competencia: string): string {
@@ -49,9 +51,9 @@ export function RepasseDoProfessor({
   repasses: RepasseDoMes[];
   regra: RegraRepasse;
 }) {
-  const [todos, setTodos] = useState(false);
+  const [limite, setLimite] = useState(MESES_VISIVEIS);
   const atual = repasses[0];
-  const visiveis = todos ? repasses : repasses.slice(0, MESES_VISIVEIS);
+  const visiveis = repasses.slice(0, limite);
 
   return (
     <Card>
@@ -97,9 +99,9 @@ export function RepasseDoProfessor({
             <li key={repasse.competencia} className="px-4 py-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-areia-900">{nomeDoMes(repasse.competencia)}</span>
-                <Badge cor={situacao.cor} fundo={situacao.fundo}>
+                <EtiquetaDeSituacao tom={situacao.tom} icone={situacao.icone}>
                   {situacao.rotulo}
-                </Badge>
+                </EtiquetaDeSituacao>
               </div>
               <p className="mt-1 text-xs text-areia-600">
                 {repasse.aulasDadas} aulas · previsto {formatarMoeda(repasse.previsto)} · pago{" "}
@@ -135,7 +137,7 @@ export function RepasseDoProfessor({
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-areia-600">
                     {repasse.aulasDadas}
-                    <span className="block text-[11px] text-areia-400">{formatarMinutos(repasse.minutosDados)}</span>
+                    <span className="block text-[11px] text-areia-500">{formatarMinutos(repasse.minutosDados)}</span>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-areia-800">
                     {formatarMoeda(repasse.previsto)}
@@ -152,9 +154,9 @@ export function RepasseDoProfessor({
                     <Diferenca repasse={repasse} />
                   </td>
                   <td className="px-5 py-2.5">
-                    <Badge cor={situacao.cor} fundo={situacao.fundo}>
+                    <EtiquetaDeSituacao tom={situacao.tom} icone={situacao.icone} className="whitespace-nowrap">
                       {situacao.rotulo}
-                    </Badge>
+                    </EtiquetaDeSituacao>
                   </td>
                 </tr>
               );
@@ -163,15 +165,12 @@ export function RepasseDoProfessor({
         </table>
       </div>
 
-      {repasses.length > MESES_VISIVEIS && (
-        <button
-          type="button"
-          onClick={() => setTodos(!todos)}
-          className="w-full border-t border-areia-200 px-5 py-2.5 text-sm font-medium text-saibro-700 hover:bg-areia-50"
-        >
-          {todos ? "Mostrar só os últimos meses" : "Ver meses anteriores"}
-        </button>
-      )}
+      <MostrarMais
+        mostrando={visiveis.length}
+        total={repasses.length}
+        passo={repasses.length}
+        aoMostrarMais={() => setLimite(repasses.length)}
+      />
 
       <p className="border-t border-areia-200 px-5 py-3 text-xs leading-relaxed text-areia-500">
         {regra.modo === "por_hora"

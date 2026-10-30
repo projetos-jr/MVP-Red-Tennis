@@ -6,12 +6,14 @@ import type {
   SituacaoNaAula,
 } from "@/lib/consultas/alunos";
 import type { RegraRepasse } from "@/lib/banco/tipos";
+import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import { diferencaEmDias } from "@/lib/date";
-import { ESTILO_FORMA_PAGAMENTO, formatarMoeda } from "@/lib/theme";
+import { formatarMoeda } from "@/lib/theme";
 
 /**
  * Rotulos e cores do modulo de alunos e professores. Toda cor vem junto de
- * um rotulo de texto: a cor nunca e o unico indicador.
+ * um rotulo de texto: a cor nunca e o unico indicador. As cores sao os tons
+ * comuns de `components/ui/EtiquetaDeSituacao` (as mesmas dos outros modulos).
  */
 export interface EstiloRotulo {
   rotulo: string;
@@ -20,11 +22,11 @@ export interface EstiloRotulo {
   borda?: string;
 }
 
-const VERDE = { cor: "#15803D", fundo: "#F0FDF4", borda: "#9DE0B4" };
-const AZUL = { cor: "#0369A1", fundo: "#F0FAFF", borda: "#A5DFF7" };
-const AMARELO = { cor: "#A16207", fundo: "#FEFBEB", borda: "#F5D97A" };
-const VERMELHO = { cor: "#8A2118", fundo: "#FBE3E0", borda: "#EC9A90" };
-const NEUTRO = { cor: "#4F483E", fundo: "#F4F1EC", borda: "#E8E3DB" };
+const VERDE = TONS.positivo;
+const AZUL = TONS.info;
+const AMARELO = TONS.atencao;
+const VERMELHO = TONS.alerta;
+const NEUTRO = TONS.neutro;
 
 export const ESTILO_SITUACAO_ALUNO: Record<SituacaoAluno, EstiloRotulo & { descricao: string }> = {
   ativo: { rotulo: "Ativo", descricao: "com plano valendo", ...VERDE },
@@ -69,14 +71,6 @@ export const ESTILO_TABELA: Record<"nova" | "antiga", EstiloRotulo> = {
   nova: { rotulo: "Tabela nova", ...NEUTRO },
   antiga: { rotulo: "Tabela antiga", ...AMARELO },
 };
-
-/** Cores das formas de pagamento do MVP; formas novas (Configuracoes) ficam neutras. */
-export function estiloDaForma(forma: string): { cor: string; fundo: string; detalhe?: string } {
-  const conhecida = (ESTILO_FORMA_PAGAMENTO as Record<string, { cor: string; fundo: string; detalhe: string }>)[
-    forma
-  ];
-  return conhecida ?? { cor: NEUTRO.cor, fundo: NEUTRO.fundo };
-}
 
 /** "R$ 78,00 por hora-aula" ou "30% das mensalidades" (Hipotese H6). */
 export function rotuloDaRegraDeRepasse(regra: RegraRepasse): string {

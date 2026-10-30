@@ -42,7 +42,7 @@ export function SecaoRepasse() {
         {regrasDeRepasse(banco).map((professor) => (
           <li key={professor.id} className="flex items-center gap-3 px-5 py-3">
             <span aria-hidden="true">
-              <Avatar id={professor.id} nome={professor.nome} tamanho="sm" />
+              <Avatar id={professor.id} nome={professor.nome} cor={professor.cor} tamanho="sm" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-areia-900">{professor.nome}</p>
@@ -51,7 +51,7 @@ export function SecaoRepasse() {
             {podeAbrirFicha && (
               <Link
                 href={`/professores/${professor.id}`}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
+                className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
                 aria-label={`Abrir a ficha de ${professor.nome}`}
               >
                 Abrir ficha <IconeSeta className="h-3.5 w-3.5" />

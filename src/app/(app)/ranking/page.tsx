@@ -10,7 +10,10 @@ import { ModalNovaPartida, type ModoDaPartida } from "@/components/ranking/Modal
 import { ModalPartida } from "@/components/ranking/ModalPartida";
 import { ModalTorneio } from "@/components/ranking/ModalTorneio";
 import { PodioRanking } from "@/components/ranking/PodioRanking";
+import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import {
   IconeAgenda,
   IconeBola,
@@ -43,7 +46,7 @@ export default function PaginaRanking() {
   // A aba fica na URL (?aba=partidas), entao a tela le os parametros dentro
   // de um Suspense, como pede o Next.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <ConteudoDoRanking />
     </Suspense>
   );
@@ -58,35 +61,21 @@ function FiltroDeCategoria({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por categoria">
-      <button
-        type="button"
-        onClick={() => aoMudar("todas")}
-        aria-pressed={valor === "todas"}
-        className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-          valor === "todas" ? "bg-saibro-600 text-white" : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-        }`}
-      >
+      <BotaoFiltro ativo={valor === "todas"} aoClicar={() => aoMudar("todas")}>
         Todas
-      </button>
+      </BotaoFiltro>
       {CATEGORIAS.map((c) => {
         const estilo = ESTILO_CATEGORIA[c];
-        const ativo = valor === c;
         return (
-          <button
+          <BotaoFiltro
             key={c}
-            type="button"
-            onClick={() => aoMudar(c)}
-            aria-pressed={ativo}
+            ativo={valor === c}
+            aoClicar={() => aoMudar(c)}
+            cores={estilo}
             title={`${estilo.label} · ${estilo.descricao}`}
-            className="rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              color: ativo ? "#fff" : estilo.cor,
-              backgroundColor: ativo ? estilo.cor : estilo.fundo,
-              borderColor: estilo.borda,
-            }}
           >
             Cat. {c}
-          </button>
+          </BotaoFiltro>
         );
       })}
     </div>
@@ -131,33 +120,26 @@ function ConteudoDoRanking() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Ranking &amp; Torneios</h1>
-          <p className="mt-1 text-sm text-areia-600">
-            {resumo.jogadores} jogadores no ranking · vitória vale {pontosVitoria} pontos e derrota{" "}
-            {pontosDerrota}
-          </p>
-        </div>
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          <button
-            type="button"
-            onClick={() => setNovoTorneio(Date.now())}
-            className="btn-secundario flex-1 sm:flex-none"
-          >
-            <IconeTrofeu className="h-4 w-4" />
-            Novo torneio
-          </button>
-          <button
-            type="button"
-            onClick={() => abrirNovaPartida("resultado")}
-            className="btn-primario flex-1 sm:flex-none"
-          >
-            <IconeMais className="h-4 w-4" />
-            Registrar partida
-          </button>
-        </div>
-      </div>
+      <CabecalhoDaPagina
+        titulo="Ranking & Torneios"
+        descricao={`${resumo.jogadores} jogadores no ranking · vitória vale ${pontosVitoria} pontos e derrota ${pontosDerrota}`}
+        acoes={
+          <>
+            <button type="button" onClick={() => setNovoTorneio(Date.now())} className="btn-secundario">
+              <IconeTrofeu className="h-4 w-4" />
+              Novo torneio
+            </button>
+            <button
+              type="button"
+              onClick={() => abrirNovaPartida("resultado")}
+              className="btn-primario"
+            >
+              <IconeMais className="h-4 w-4" />
+              Registrar partida
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
@@ -271,7 +253,7 @@ function ConteudoDoRanking() {
                   <button
                     type="button"
                     onClick={() => trocarAba("torneios")}
-                    className="btn-fantasma px-2.5 py-1.5 text-xs"
+                    className="link-acao alvo-de-toque text-sm"
                   >
                     Ver todos
                   </button>

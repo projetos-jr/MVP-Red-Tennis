@@ -10,6 +10,8 @@ import {
 } from "@/components/estoque/CartoesLaterais";
 import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/ModaisDoEstoque";
 import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
+import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -82,37 +84,35 @@ export default function PaginaEstoque() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Estoque</h1>
-            <p className="mt-1 text-sm text-areia-600">
-              Bebidas, cervejas, lanches e acessórios vendidos no balcão da arena.
-            </p>
-          </div>
-          <div className="flex w-full gap-2 sm:w-auto">
-            <button
-              type="button"
-              onClick={() =>
-                setAcao({
-                  tipo: "novo",
-                  categoria: filtro.categoria === "todas" ? undefined : filtro.categoria,
-                })
-              }
-              className="btn-secundario flex-1 sm:flex-none"
-            >
-              <IconeMais className="h-4 w-4" />
-              Novo produto
-            </button>
-            <button
-              type="button"
-              onClick={() => setLancandoConsumo(true)}
-              className="btn-primario flex-1 sm:flex-none"
-            >
-              <IconeCopo className="h-4 w-4" />
-              Lançar consumo
-            </button>
-          </div>
-        </div>
+        <CabecalhoDaPagina
+          titulo="Estoque"
+          descricao="Bebidas, cervejas, lanches e acessórios vendidos no balcão da arena."
+          acoes={
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  setAcao({
+                    tipo: "novo",
+                    categoria: filtro.categoria === "todas" ? undefined : filtro.categoria,
+                  })
+                }
+                className="btn-secundario"
+              >
+                <IconeMais className="h-4 w-4" />
+                Novo produto
+              </button>
+              <button
+                type="button"
+                onClick={() => setLancandoConsumo(true)}
+                className="btn-primario"
+              >
+                <IconeCopo className="h-4 w-4" />
+                Lançar consumo
+              </button>
+            </>
+          }
+        />
 
         {/* Indicadores */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -180,24 +180,18 @@ export default function PaginaEstoque() {
 
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Categoria">
                 {(["todas", ...CATEGORIAS_PRODUTO] as const).map((c) => (
-                  <button
+                  <BotaoFiltro
                     key={c}
-                    type="button"
-                    onClick={() => mudarFiltro({ categoria: c })}
-                    aria-pressed={filtro.categoria === c}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      filtro.categoria === c
-                        ? "bg-saibro-600 text-white"
-                        : "bg-areia-100 text-areia-700 hover:bg-areia-200"
-                    }`}
+                    ativo={filtro.categoria === c}
+                    aoClicar={() => mudarFiltro({ categoria: c })}
                   >
                     {c === "todas" ? "Todas" : c}
-                  </button>
+                  </BotaoFiltro>
                 ))}
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
                   <input
                     type="checkbox"
                     checked={filtro.apenasRepor}
@@ -206,7 +200,7 @@ export default function PaginaEstoque() {
                   />
                   Só o que precisa repor
                 </label>
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
+                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
                   <input
                     type="checkbox"
                     checked={filtro.incluirInativos}

@@ -39,7 +39,7 @@ export function Segmentado<T extends string>({
             role="tab"
             aria-selected={ativo}
             onClick={() => aoMudar(opcao.valor)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`alvo-de-toque rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               ativo
                 ? "bg-white text-saibro-800 shadow-sm"
                 : "text-areia-600 hover:text-areia-900"

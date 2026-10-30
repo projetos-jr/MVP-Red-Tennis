@@ -55,8 +55,12 @@ Operações que cruzam módulos seguem convenções combinadas:
 `components/ui/`: `Card`, `Modal` (abre fora da página, prende o foco, Esc
 fecha só a janela de cima), `Campo`, `MensagemDeErro`, `RodapeDoFormulario`,
 `Confirmacao`, avisos (`useAvisos`), `Badge`, `StatCard`, `Segmentado`,
-`Avatar` e os ícones. `components/registro/`: comentários e histórico de
-qualquer registro.
+`Avatar` e os ícones. Para a tela parecer do mesmo sistema que as outras:
+`CabecalhoDaPagina` e `LinkDeVolta`, `EtiquetaDeSituacao` (cores e ícones de
+pago, pendente, em atraso...), `MostrarMais` (listas longas, 20 por vez),
+`EstadoVazio`, `Carregando` e `BotaoFiltro`. Como usar cada um está em
+`docs/revisao-de-consistencia.md`. `components/registro/`: comentários e
+histórico de qualquer registro.
 
 ### Estado da aplicação
 
@@ -113,7 +117,13 @@ sobre o modelo antigo) precisa ser refeito sobre este modelo.
   `src/lib/theme.ts` (cores por tipo de ocupação, siglas, formatadores).
 - A cor nunca é o único indicador: todo estado tem rótulo ou ícone com texto.
 - Campos com rótulo, botões só com ícone com `aria-label`, ações destrutivas
-  com confirmação.
+  com confirmação (botão `btn-perigo`).
+- Texto pequeno com contraste de pelo menos 4,5:1: para texto de apoio use
+  `text-areia-500` ou mais escuro; `text-areia-400` só em ícones, traços e
+  placeholders.
+- Em telas de toque (tablet e celular) botões, campos e filtros têm 44px de
+  altura (`@media (pointer: coarse)` em `globals.css`; para outro elemento
+  clicável, a classe `alvo-de-toque`). O computador com mouse não muda.
 - Nenhuma fonte externa é carregada: o projeto roda offline.
 
 ## Versão para celular e tablet

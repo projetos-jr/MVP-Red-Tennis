@@ -26,7 +26,10 @@ import { RelatorioProfessores } from "@/components/financeiro/RelatorioProfessor
 import { ReservasSemPagamento } from "@/components/financeiro/ReservasSemPagamento";
 import { baixarArquivo } from "@/components/financeiro/utilitarios";
 import { useAvisos } from "@/components/ui/Avisos";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAnterior,
   IconeCadeado,
@@ -84,7 +87,7 @@ export default function PaginaFinanceiro() {
   // A tela lê a URL (?aba=, ?situacao=, ?mes=, ?lancamento=), então fica
   // dentro de Suspense, como o Next pede para quem usa useSearchParams.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <TelaFinanceiro />
     </Suspense>
   );
@@ -146,13 +149,14 @@ function TelaFinanceiro() {
 
   if (!podeVer) {
     return (
-      <Card className="mx-auto max-w-lg px-6 py-10 text-center">
-        <IconeCadeado className="mx-auto h-8 w-8 text-areia-400" />
-        <h1 className="mt-3 text-lg font-semibold text-areia-900">Sem acesso ao financeiro</h1>
-        <p className="mt-1 text-sm text-areia-600">
-          O seu perfil não enxerga esta área (hipótese H9). Fale com o dono da arena.
-        </p>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeCadeado className="h-6 w-6" />}
+        titulo="Sem acesso ao financeiro"
+        tituloDaPagina
+      >
+        O seu perfil não enxerga esta área (hipótese H9). Fale com o dono da arena.
+      </EstadoVazio>
     );
   }
 
@@ -240,10 +244,10 @@ function TelaFinanceiro() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho: título, mês de referência e ações */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Financeiro</h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      <CabecalhoDaPagina
+        titulo="Financeiro"
+        descricao={
+          <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
               onClick={() => trocarMes(somarMesesNaCompetencia(mes, -1))}
@@ -276,28 +280,28 @@ function TelaFinanceiro() {
               </button>
             )}
           </div>
-        </div>
-
-        {/* No celular os botões ficam um embaixo do outro, o principal em cima. */}
-        <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={() => setModal({ tipo: "gerar" })}
-            className="btn-secundario"
-          >
-            <IconeNota className="h-4 w-4" />
-            Gerar mensalidades
-          </button>
-          <button
-            type="button"
-            onClick={() => setModal({ tipo: "novo" })}
-            className="btn-primario"
-          >
-            <IconeMais className="h-4 w-4" />
-            Novo lançamento
-          </button>
-        </div>
-      </div>
+        }
+        acoes={
+          <>
+            <button
+              type="button"
+              onClick={() => setModal({ tipo: "gerar" })}
+              className="btn-secundario whitespace-nowrap"
+            >
+              <IconeNota className="h-4 w-4" />
+              Gerar mensalidades
+            </button>
+            <button
+              type="button"
+              onClick={() => setModal({ tipo: "novo" })}
+              className="btn-primario whitespace-nowrap"
+            >
+              <IconeMais className="h-4 w-4" />
+              Novo lançamento
+            </button>
+          </>
+        }
+      />
 
       <IndicadoresDoMes
         indicadores={indicadores}

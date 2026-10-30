@@ -60,19 +60,44 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
+  /* Desabilitado: cinza neutro e legível. Antes o vermelho ficava a 50% e o
+     botão parecia apagado, quase sumindo da tela. */
   .btn-primario {
-    @apply btn bg-tijolo-600 text-white shadow-sm hover:bg-tijolo-700 active:scale-[0.98];
+    @apply btn bg-tijolo-600 text-white shadow-sm hover:bg-tijolo-700 active:scale-[0.98] disabled:bg-areia-200 disabled:text-areia-600 disabled:opacity-100 disabled:shadow-none;
   }
 
   .btn-secundario {
-    @apply btn border border-areia-300 bg-white text-areia-800 hover:border-saibro-400 hover:bg-saibro-50 hover:text-saibro-800;
+    @apply btn border border-areia-300 bg-white text-areia-800 hover:border-saibro-400 hover:bg-saibro-50 hover:text-saibro-800 disabled:border-areia-200 disabled:bg-areia-50 disabled:text-areia-500 disabled:opacity-100;
   }
 
   .btn-fantasma {
     @apply btn text-areia-600 hover:bg-areia-200/70 hover:text-areia-900;
+  }
+
+  /* Ação que apaga, libera ou desfaz (ex.: "Liberar horário", confirmação perigosa). */
+  .btn-perigo {
+    @apply btn bg-tijolo-700 text-white hover:bg-tijolo-800 disabled:bg-areia-200 disabled:text-areia-600 disabled:opacity-100;
+  }
+
+  /* Link de ação dentro de um texto ou cartão: "Limpar filtros", "Ver todos". */
+  .link-acao {
+    @apply font-semibold text-tijolo-700 underline-offset-2 hover:underline;
+  }
+
+  /* Telas de toque (tablet na quadra e celular): botões, campos e filtros com
+     pelo menos 44px, o tamanho mínimo confortável para o dedo. O computador,
+     com mouse, continua exatamente igual. */
+  /* Só a altura: uma largura mínima fixa tiraria do navegador o mínimo pelo
+     conteúdo, e botões que dividem a largura no celular encolheriam demais. */
+  @media (pointer: coarse) {
+    .btn,
+    .campo,
+    .alvo-de-toque {
+      min-height: 2.75rem;
+    }
   }
 
   .campo {

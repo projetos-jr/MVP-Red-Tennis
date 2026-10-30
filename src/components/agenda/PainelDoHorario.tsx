@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
+import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeAlerta, IconeFechar, IconeMais, IconeRelogio } from "@/components/ui/Icons";
 import { Segmentado } from "@/components/ui/Segmentado";
 import { HOJE } from "@/lib/banco/constantes";
@@ -213,7 +214,7 @@ function ConteudoDoPainel({
               <button
                 type="button"
                 onClick={() => setAcao("liberar")}
-                className="btn mt-2 w-full bg-tijolo-700 py-2 text-white hover:bg-tijolo-800 sm:w-auto"
+                className="btn-perigo mt-2 w-full py-2 sm:w-auto"
               >
                 Liberar horário
               </button>
@@ -426,11 +427,12 @@ function ConteudoDoPainel({
   );
 }
 
+/** Mesmos rotulos do financeiro; a cor e o icone vem da etiqueta comum. */
 const ROTULO_SITUACAO_LANCAMENTO = {
-  pago: { texto: "Pago", classe: "bg-emerald-50 text-emerald-800" },
-  pendente: { texto: "Pendente", classe: "bg-amber-50 text-amber-800" },
-  em_atraso: { texto: "Em atraso", classe: "bg-tijolo-600 text-white" },
-  cancelado: { texto: "Anulado", classe: "bg-areia-200 text-areia-700" },
+  pago: "Pago",
+  pendente: "Pendente",
+  em_atraso: "Em atraso",
+  cancelado: "Anulado",
 } as const;
 
 function SecaoPagamento({ detalhe }: { detalhe: DetalheDaOcupacao }) {
@@ -457,11 +459,9 @@ function SecaoPagamento({ detalhe }: { detalhe: DetalheDaOcupacao }) {
                 <span className="font-semibold tabular-nums text-areia-900">
                   {formatarMoeda(lancamento.valor)}
                 </span>
-                <span
-                  className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${ROTULO_SITUACAO_LANCAMENTO[situacao].classe}`}
-                >
-                  {ROTULO_SITUACAO_LANCAMENTO[situacao].texto}
-                </span>
+                <EtiquetaDeSituacao situacao={situacao} pequena>
+                  {ROTULO_SITUACAO_LANCAMENTO[situacao]}
+                </EtiquetaDeSituacao>
               </span>
             </li>
           ))}

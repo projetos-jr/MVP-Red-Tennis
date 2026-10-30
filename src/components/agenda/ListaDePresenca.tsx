@@ -114,7 +114,7 @@ function LinhaDoAluno({
 
   const botao = grande
     ? "min-h-[56px] flex-1 rounded-xl px-4 text-base font-semibold"
-    : "rounded-lg px-2.5 py-1.5 text-xs font-semibold";
+    : "alvo-de-toque rounded-lg px-2.5 py-1.5 text-xs font-semibold";
 
   return (
     <li className={grande ? "px-4 py-4" : "px-4 py-3"}>

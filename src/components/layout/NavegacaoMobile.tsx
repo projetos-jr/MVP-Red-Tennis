@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/store/AppStore";
-import { abasPermitidas, estaNaArea } from "./abas";
+import { abaAtiva, abasPermitidas } from "./abas";
 
 /**
  * Barra de navegação fixa no rodapé, exibida apenas no celular.
@@ -28,8 +28,9 @@ export function NavegacaoMobile() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="flex items-stretch">
-        {abas.map(({ href, curto, Icone }) => {
-          const ativo = estaNaArea(caminho, href);
+        {abas.map((aba) => {
+          const { href, curto, Icone } = aba;
+          const ativo = abaAtiva(caminho, aba);
           return (
             <li key={href} className="flex-1">
               <Link

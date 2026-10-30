@@ -78,7 +78,7 @@ export function CartaoMaisVendidos({ itens }: { itens: ItemMaisVendido[] }) {
       <ol className="divide-y divide-areia-100">
         {itens.map((item, i) => (
           <li key={item.produtoId} className="flex items-center gap-3 px-4 py-2.5">
-            <span className="w-5 shrink-0 text-right text-sm font-bold text-areia-400">
+            <span className="w-5 shrink-0 text-right text-sm font-bold text-areia-500">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">

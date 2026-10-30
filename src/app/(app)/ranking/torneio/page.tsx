@@ -13,15 +13,18 @@ import { ModalTorneio } from "@/components/ranking/ModalTorneio";
 import { TabelaClassificacao } from "@/components/ranking/TabelaClassificacao";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import { Confirmacao } from "@/components/ui/Confirmacao";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import {
   IconeAlerta,
   IconeBola,
+  IconeBusca,
   IconeCheck,
   IconeTrofeu,
   IconeUsuarios,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { desfazerChaveDoTorneio, gerarChaveDoTorneio } from "@/lib/banco/operacoes/ranking";
 import {
@@ -48,7 +51,7 @@ const ROTULOS_DO_TORNEIO: Record<string, string> = {
 export default function PaginaTorneio() {
   // O torneio vem da URL (?id=t-1); o Next pede um Suspense em volta.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<Carregando />}>
       <ConteudoDoTorneio />
     </Suspense>
   );
@@ -62,7 +65,7 @@ function ListaDeInscricoes({ inscricoes, comGrupo }: { inscricoes: InscricaoNaTe
     <ol className="divide-y divide-areia-100">
       {inscricoes.map(({ inscricao, nome, alunos }, i) => (
         <li key={inscricao.id} className="flex items-center gap-3 px-5 py-2.5">
-          <span className="w-5 shrink-0 text-right text-xs tabular-nums text-areia-400">{i + 1}</span>
+          <span className="w-5 shrink-0 text-right text-xs tabular-nums text-areia-500">{i + 1}</span>
           <AvataresDoLado alunos={alunos} tamanho="sm" />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-areia-900">
             {alunos.length === 1 ? (
@@ -176,12 +179,17 @@ function ConteudoDoTorneio() {
 
   if (!detalhe) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Torneio não encontrado.</p>
-        <Link href="/ranking?aba=torneios" className="btn-secundario mt-4">
-          Voltar para os torneios
-        </Link>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Torneio não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/ranking?aba=torneios" className="btn-secundario">
+            Voltar para os torneios
+          </Link>
+        }
+      />
     );
   }
 
@@ -211,19 +219,13 @@ function ConteudoDoTorneio() {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/ranking?aba=torneios"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Torneios
-      </Link>
+      <LinkDeVolta href="/ranking?aba=torneios">Torneios</LinkDeVolta>
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-4 p-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">{torneio.nome}</h1>
+              <h1 className="text-2xl font-bold text-areia-900">{torneio.nome}</h1>
               <SituacaoDoTorneio situacao={torneio.situacao} />
             </div>
             <p className="mt-1.5 text-sm text-areia-600">

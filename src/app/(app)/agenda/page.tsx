@@ -27,6 +27,7 @@ import { VisaoSemanal } from "@/components/agenda/VisaoSemanal";
 import { plural } from "@/components/agenda/estilos";
 import { useAvisos } from "@/components/ui/Avisos";
 import { Card } from "@/components/ui/Card";
+import { Carregando } from "@/components/ui/Carregando";
 import {
   IconeAgenda,
   IconeAlerta,
@@ -76,7 +77,7 @@ const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function PaginaAgenda() {
   return (
-    <Suspense fallback={<div className="card h-96 animate-pulse" />}>
+    <Suspense fallback={<Carregando />}>
       <AgendaPelaUrl />
     </Suspense>
   );

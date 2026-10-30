@@ -5,16 +5,19 @@ import { useMemo, useState } from "react";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EstadoVazio } from "@/components/ui/EstadoVazio";
+import { MostrarMais } from "@/components/ui/MostrarMais";
 import { StatCard } from "@/components/ui/StatCard";
 import {
   IconeAlerta,
+  IconeBusca,
   IconeEntrada,
   IconeEstoque,
   IconeFinanceiro,
   IconeLixeira,
   IconeSubiu,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { reativarProduto } from "@/lib/banco/operacoes/estoque";
@@ -42,7 +45,7 @@ const ROTULOS_DO_PRODUTO: Record<string, string> = {
   ativo: "Ativo",
 };
 
-/** Quantos movimentos aparecem antes de "Mostrar todos". */
+/** Quantos movimentos aparecem de cada vez (o resto vem em "Mostrar mais"). */
 const MOVIMENTOS_VISIVEIS = 15;
 
 /**
@@ -53,37 +56,36 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   const { banco, colaborador } = useApp();
   const gravar = useGravar();
   const [acao, setAcao] = useState<AcaoDoEstoque | null>(null);
-  const [verTodos, setVerTodos] = useState(false);
+  const [limite, setLimite] = useState(MOVIMENTOS_VISIVEIS);
   const detalhe = useMemo(() => detalheDoProduto(banco, produtoId, HOJE), [banco, produtoId]);
 
   if (!podeAcessar(banco, colaborador, "estoque")) return <SemAcessoAoEstoque />;
 
   if (!detalhe) {
     return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-areia-600">Produto não encontrado.</p>
-        <Link href="/estoque" className="btn-secundario mt-4">
-          Voltar para o estoque
-        </Link>
-      </Card>
+      <EstadoVazio
+        className="mx-auto max-w-lg"
+        icone={<IconeBusca className="h-6 w-6" />}
+        titulo="Produto não encontrado"
+        tituloDaPagina
+        acoes={
+          <Link href="/estoque" className="btn-secundario">
+            Voltar para o estoque
+          </Link>
+        }
+      />
     );
   }
 
   const { produto, saldo, nivel, extrato, vendidos30Dias, perdas30Dias, ultimaEntrada } = detalhe;
   const categoria = ESTILO_CATEGORIA_PRODUTO[produto.categoria];
   const margem = produto.precoVenda - produto.precoCusto;
-  const linhas = verTodos ? extrato : extrato.slice(0, MOVIMENTOS_VISIVEIS);
+  const linhas = extrato.slice(0, limite);
 
   return (
     <>
       <div className="space-y-6">
-        <Link
-          href="/estoque"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-        >
-          <IconeVoltar className="h-4 w-4" />
-          Voltar para o estoque
-        </Link>
+        <LinkDeVolta href="/estoque">Estoque</LinkDeVolta>
 
         {/* Cabeçalho */}
         <section className="card p-5">
@@ -275,19 +277,12 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
                 </li>
               )}
             </ul>
-            {extrato.length > MOVIMENTOS_VISIVEIS && (
-              <div className="border-t border-areia-200 px-5 py-3">
-                <button
-                  type="button"
-                  onClick={() => setVerTodos((atual) => !atual)}
-                  className="btn-fantasma px-3 py-1.5 text-xs"
-                >
-                  {verTodos
-                    ? "Mostrar só os mais recentes"
-                    : `Mostrar todos os ${extrato.length} movimentos`}
-                </button>
-              </div>
-            )}
+            <MostrarMais
+              mostrando={linhas.length}
+              total={extrato.length}
+              passo={MOVIMENTOS_VISIVEIS}
+              aoMostrarMais={() => setLimite((atual) => atual + MOVIMENTOS_VISIVEIS)}
+            />
           </Card>
 
           <div className="min-w-0 space-y-6">

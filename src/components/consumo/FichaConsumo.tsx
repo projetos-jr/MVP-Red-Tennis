@@ -5,8 +5,8 @@ import { ModalConsumo } from "./ModalConsumo";
 import { ModalFecharConta } from "./ModalFecharConta";
 import { diaEHora } from "@/components/estoque/formatos";
 import { IconeRecibo } from "@/components/estoque/Icones";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { EtiquetaDeSituacao, type Situacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeAlerta, IconeCopo, IconeMais } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { podeAcessar } from "@/lib/consultas/base";
@@ -26,15 +26,12 @@ interface FichaConsumoProps {
   nomePessoa: string;
 }
 
-/** Situacao de cada consumo: cor + rotulo escrito (nunca so a cor). */
-const ESTILO_SITUACAO: Record<
-  SituacaoDoConsumo,
-  { rotulo: string; cor: string; fundo: string; borda: string }
-> = {
-  em_aberto: { rotulo: "Em aberto", cor: "#A16207", fundo: "#FEFBEB", borda: "#F5D97A" },
-  em_atraso: { rotulo: "Em atraso", cor: "#8A2118", fundo: "#FBE3E0", borda: "#EC9A90" },
-  pago: { rotulo: "Pago", cor: "#15803D", fundo: "#F0FDF4", borda: "#9DE0B4" },
-  anulado: { rotulo: "Anulado", cor: "#6B6255", fundo: "#F4F1EC", borda: "#D6CEC2" },
+/** Situacao de cada consumo: as mesmas etiquetas do financeiro (cor, icone e rotulo). */
+const ETIQUETA_DA_SITUACAO: Record<SituacaoDoConsumo, { rotulo: string; situacao: Situacao }> = {
+  em_aberto: { rotulo: "Em aberto", situacao: "pendente" },
+  em_atraso: { rotulo: "Em atraso", situacao: "em_atraso" },
+  pago: { rotulo: "Pago", situacao: "pago" },
+  anulado: { rotulo: "Anulado", situacao: "cancelado" },
 };
 
 /** "vence 05/11", "venceu 22/10", "pago 28/10 · Stone"... */
@@ -143,7 +140,7 @@ export function FichaConsumo({ pessoaId, tipoPessoa, nomePessoa }: FichaConsumoP
       <ul className="max-h-80 divide-y divide-areia-100 overflow-y-auto rolagem-suave">
         {lista.map((item) => {
           const { consumo, situacao, valor } = item;
-          const estilo = ESTILO_SITUACAO[situacao];
+          const etiqueta = ETIQUETA_DA_SITUACAO[situacao];
           return (
             <li key={consumo.id} className="flex items-center gap-3 px-5 py-2.5">
               {/* Sem cortar o nome: "Água mineral com gás" e "sem gás" só diferem no fim. */}
@@ -160,14 +157,9 @@ export function FichaConsumo({ pessoaId, tipoPessoa, nomePessoa }: FichaConsumoP
                 </p>
               </div>
 
-              <Badge
-                cor={estilo.cor}
-                fundo={estilo.fundo}
-                borda={estilo.borda}
-                className="shrink-0 text-[10px]"
-              >
-                {estilo.rotulo}
-              </Badge>
+              <EtiquetaDeSituacao situacao={etiqueta.situacao} pequena className="shrink-0">
+                {etiqueta.rotulo}
+              </EtiquetaDeSituacao>
 
               <span
                 className={`w-20 shrink-0 text-right text-sm font-semibold tabular-nums ${
