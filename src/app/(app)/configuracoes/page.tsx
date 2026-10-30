@@ -73,7 +73,7 @@ export default function PaginaConfiguracoes() {
               <li key={secao.id} className="shrink-0">
                 <a
                   href={`#${secao.id}`}
-                  className="block whitespace-nowrap rounded-full border border-areia-200 bg-white px-3.5 py-1.5 text-sm font-medium text-areia-700 hover:border-saibro-300 hover:text-saibro-800 lg:rounded-xl lg:border-transparent lg:bg-transparent lg:px-3 lg:py-2 lg:hover:bg-white"
+                  className="alvo-de-toque flex items-center whitespace-nowrap rounded-full border border-areia-200 bg-white px-3.5 py-1.5 text-sm font-medium text-areia-700 hover:border-saibro-300 hover:text-saibro-800 lg:rounded-xl lg:border-transparent lg:bg-transparent lg:px-3 lg:py-2 lg:hover:bg-white"
                 >
                   {secao.rotulo}
                 </a>

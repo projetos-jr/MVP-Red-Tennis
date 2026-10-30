@@ -83,7 +83,7 @@ export function SeletorDeQuadra({
               title={
                 ocupada ? `Ocupada das ${ocupada.horaInicio} às ${ocupada.horaFim}` : undefined
               }
-              className={`flex flex-col items-start rounded-lg border px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+              className={`alvo-de-toque flex flex-col items-start justify-center rounded-lg border px-3 py-1.5 text-left text-xs font-medium transition-colors ${
                 ativo
                   ? "border-saibro-600 bg-saibro-600 text-white"
                   : "border-areia-200 bg-areia-100 text-areia-700 hover:bg-areia-200"
@@ -125,7 +125,7 @@ export function SeletorDeQuadras({
           type="button"
           aria-pressed={todas}
           onClick={() => aoMudar(todas ? [] : quadras.map((q) => q.id))}
-          className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
+          className={`alvo-de-toque rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
             todas
               ? "border-saibro-600 bg-saibro-600 text-white"
               : "border-areia-200 bg-white text-areia-700 hover:bg-areia-100"
@@ -141,7 +141,7 @@ export function SeletorDeQuadras({
               type="button"
               aria-pressed={ativo}
               onClick={() => aoMudar(ativo ? valor.filter((id) => id !== q.id) : [...valor, q.id])}
-              className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+              className={`alvo-de-toque rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                 ativo
                   ? "border-saibro-300 bg-saibro-100 text-saibro-900"
                   : "border-areia-200 bg-areia-100 text-areia-700 hover:bg-areia-200"
@@ -218,7 +218,7 @@ export function CamposDeHora({
                 disabled={!cabe}
                 aria-pressed={duracao === opcao.minutos}
                 onClick={() => aoMudar(inicio, novoFim)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
+                className={`alvo-de-toque rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 ${
                   duracao === opcao.minutos
                     ? "bg-saibro-600 text-white"
                     : "bg-areia-100 text-areia-700 hover:bg-areia-200"

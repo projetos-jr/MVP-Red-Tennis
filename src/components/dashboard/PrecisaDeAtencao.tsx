@@ -172,7 +172,7 @@ function Grupo({
             type="button"
             onClick={() => setTodos((atual) => !atual)}
             aria-expanded={todos}
-            className="text-xs font-semibold text-areia-700 hover:underline"
+            className="alvo-de-toque text-xs font-semibold text-areia-700 hover:underline"
           >
             {todos ? "Mostrar menos" : `Mostrar todos os ${quantidade}`}
           </button>
@@ -181,7 +181,7 @@ function Grupo({
           <Link
             key={link.href}
             href={link.href}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
+            className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
           >
             {link.rotulo} <IconeSeta className="h-3.5 w-3.5" />
           </Link>

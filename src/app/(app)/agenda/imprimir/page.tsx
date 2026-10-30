@@ -84,8 +84,6 @@ function AgendaParaImprimir({ dataDaUrl }: { dataDaUrl: string | null }) {
 
   return (
     <div className="space-y-5">
-      <style>{ESTILO_DE_IMPRESSAO}</style>
-
       <LinkDeVolta href={`/agenda?data=${data}&visao=dia`} className="print:hidden">
         Agenda
       </LinkDeVolta>
@@ -191,6 +189,9 @@ function AgendaParaImprimir({ dataDaUrl }: { dataDaUrl: string | null }) {
           </div>
         )}
       </section>
+
+      {/* Por último: no começo, o espaçamento entre os blocos empurraria a tela para baixo. */}
+      <style>{ESTILO_DE_IMPRESSAO}</style>
     </div>
   );
 }

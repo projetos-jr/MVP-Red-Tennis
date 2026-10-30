@@ -180,6 +180,7 @@ function ConteudoDoTorneio() {
   if (!detalhe) {
     return (
       <EstadoVazio
+        className="mx-auto max-w-lg"
         icone={<IconeBusca className="h-6 w-6" />}
         titulo="Torneio não encontrado"
         tituloDaPagina

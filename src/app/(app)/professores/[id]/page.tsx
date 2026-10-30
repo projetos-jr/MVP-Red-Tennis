@@ -56,6 +56,7 @@ export default function PaginaFichaProfessor() {
   if (!professor) {
     return (
       <EstadoVazio
+        className="mx-auto max-w-lg"
         icone={<IconeBusca className="h-6 w-6" />}
         titulo="Professor não encontrado"
         tituloDaPagina

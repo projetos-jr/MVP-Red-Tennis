@@ -71,6 +71,7 @@ export default function PaginaFichaAluno() {
   if (!ficha) {
     return (
       <EstadoVazio
+        className="mx-auto max-w-lg"
         icone={<IconeBusca className="h-6 w-6" />}
         titulo="Aluno não encontrado"
         tituloDaPagina

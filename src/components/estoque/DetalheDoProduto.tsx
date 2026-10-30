@@ -64,6 +64,7 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   if (!detalhe) {
     return (
       <EstadoVazio
+        className="mx-auto max-w-lg"
         icone={<IconeBusca className="h-6 w-6" />}
         titulo="Produto não encontrado"
         tituloDaPagina

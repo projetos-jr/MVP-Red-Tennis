@@ -253,7 +253,7 @@ function ConteudoDoRanking() {
                   <button
                     type="button"
                     onClick={() => trocarAba("torneios")}
-                    className="link-acao text-sm"
+                    className="link-acao alvo-de-toque text-sm"
                   >
                     Ver todos
                   </button>

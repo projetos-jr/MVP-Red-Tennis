@@ -53,7 +53,7 @@ export function ExtratoReposicao({
           <p className="mt-1 text-3xl font-bold text-saibro-800">
             {saldo > 0 ? formatarMinutos(saldo) : "0min"}
           </p>
-          <p className="mt-1 text-xs text-saibro-700/80">
+          <p className="mt-1 text-xs text-saibro-700">
             {saldo === 1 ? "1 minuto" : `${saldo} minutos`} para marcar reposição
           </p>
         </div>
