@@ -26,7 +26,7 @@ digitada: sai das datas.
   item; sem ligar para acentos), filtros por situação (todas, em aberto,
   pendentes, em atraso, pagos, anulados), categoria, forma de pagamento e
   período (só o mês, até o mês, todos os meses); ordem por vencimento (clique
-  no cabeçalho para inverter); 40 linhas por vez com "Mostrar mais"; no
+  no cabeçalho para inverter); 20 linhas por vez com "Mostrar mais"; no
   celular, um cartão por lançamento. O rodapé mostra a quantidade e o total
   (anulados ficam fora do total).
   - **Período**: vale a data do pagamento; o que ainda não foi pago entra

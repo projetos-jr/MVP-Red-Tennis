@@ -193,7 +193,7 @@ Use o computador. Tudo volta ao início ao recarregar a página.
 17. Congele de novo começando hoje, por 40 dias. Depois clique em **Reativar
     plano** e ponha a data de volta daqui a 14 dias: a tela mostra quantas
     aulas voltam e quantas, antes da volta, continuam suspensas. Confirme.
-18. No **Histórico de aulas**, clique em **Ver mais aulas** e no filtro
+18. No **Histórico de aulas**, clique em **Mostrar mais 12** e no filtro
     **Faltas**. Cada falta mostra a sigla (24h, TIP...) e os minutos de
     crédito.
 19. No **Histórico de alterações**, clique em **Matrícula**: aparecem os
