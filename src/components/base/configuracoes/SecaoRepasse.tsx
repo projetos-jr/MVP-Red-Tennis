@@ -42,7 +42,7 @@ export function SecaoRepasse() {
         {regrasDeRepasse(banco).map((professor) => (
           <li key={professor.id} className="flex items-center gap-3 px-5 py-3">
             <span aria-hidden="true">
-              <Avatar id={professor.id} nome={professor.nome} tamanho="sm" />
+              <Avatar id={professor.id} nome={professor.nome} cor={professor.cor} tamanho="sm" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-areia-900">{professor.nome}</p>

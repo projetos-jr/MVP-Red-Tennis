@@ -218,7 +218,7 @@ export function FiltrosDaLista({
           <button
             type="button"
             onClick={aoLimpar}
-            className="font-semibold text-areia-700 underline-offset-2 hover:text-areia-900 hover:underline"
+            className="link-acao"
           >
             Limpar filtros
           </button>

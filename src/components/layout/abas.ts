@@ -19,13 +19,22 @@ export interface Area {
   Icone: ComponentType<SVGProps<SVGSVGElement>>;
   /** Permissão exigida (Hipótese H9, editável nas Configurações). */
   modulo: ModuloSistema;
+  /** Outras telas que ficam "dentro" desta aba (a aba aparece marcada nelas). */
+  inclui?: string[];
 }
 
 /** Seções principais do sistema, compartilhadas pela topbar e pela barra do celular. */
 export const ABAS: Area[] = [
   { href: "/dashboard", rotulo: "Painel", curto: "Painel", Icone: IconeQuadras, modulo: "painel" },
   { href: "/agenda", rotulo: "Agenda", curto: "Agenda", Icone: IconeAgenda, modulo: "agenda" },
-  { href: "/alunos", rotulo: "Alunos", curto: "Alunos", Icone: IconeUsuarios, modulo: "alunos" },
+  {
+    href: "/alunos",
+    rotulo: "Alunos",
+    curto: "Alunos",
+    Icone: IconeUsuarios,
+    modulo: "alunos",
+    inclui: ["/professores"],
+  },
   { href: "/financeiro", rotulo: "Financeiro", curto: "Caixa", Icone: IconeFinanceiro, modulo: "financeiro" },
   { href: "/estoque", rotulo: "Estoque", curto: "Estoque", Icone: IconeEstoque, modulo: "estoque" },
   { href: "/ranking", rotulo: "Ranking / Torneio", curto: "Ranking", Icone: IconeTrofeu, modulo: "ranking" },
@@ -68,6 +77,11 @@ const MODULO_DA_ROTA: Array<[string, ModuloSistema]> = [
 /** A página atual pertence à área? ("/alunos/a01" pertence a "/alunos".) */
 export function estaNaArea(caminho: string, href: string): boolean {
   return caminho === href || caminho.startsWith(`${href}/`);
+}
+
+/** A aba fica marcada na própria área e nas telas que ela inclui (Professores fica em Alunos). */
+export function abaAtiva(caminho: string, area: Area): boolean {
+  return [area.href, ...(area.inclui ?? [])].some((href) => estaNaArea(caminho, href));
 }
 
 export function moduloDaRota(caminho: string): ModuloSistema | undefined {

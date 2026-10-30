@@ -90,7 +90,7 @@ export default function PaginaHistorico() {
                     setFiltro(SEM_FILTRO);
                     setLimite(POR_PAGINA);
                   }}
-                  className="ml-auto text-xs font-semibold text-tijolo-700 hover:underline"
+                  className="link-acao ml-auto text-xs"
                 >
                   Limpar filtros
                 </button>

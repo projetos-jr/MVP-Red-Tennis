@@ -61,7 +61,7 @@ export function ProximosHorarios({
         icone={<IconeRelogio className="h-5 w-5" />}
         acao={
           linkDaAgenda && (
-            <Link href={linkDaAgenda} className="text-sm font-medium text-tijolo-700 hover:underline">
+            <Link href={linkDaAgenda} className="link-acao text-sm">
               Ver agenda
             </Link>
           )

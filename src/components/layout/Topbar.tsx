@@ -8,7 +8,7 @@ import { useApp } from "@/store/AppStore";
 import { BuscaRapida } from "./BuscaRapida";
 import { Logo } from "./Logo";
 import { MenuDoUsuario } from "./MenuDoUsuario";
-import { abasPermitidas, areaInicial, estaNaArea } from "./abas";
+import { abaAtiva, abasPermitidas, areaInicial } from "./abas";
 
 /**
  * Barra do topo: marca, busca rapida de aluno, usuario logado e as abas que
@@ -46,8 +46,9 @@ export function Topbar() {
       {/* Abas de navegacao — no celular a navegacao fica na barra inferior */}
       <nav aria-label="Seções do sistema" className="hidden w-full px-2 sm:px-4 md:block 2xl:px-8">
         <ul className="flex items-center gap-1 overflow-x-auto rolagem-suave">
-          {abas.map(({ href, rotulo, Icone }) => {
-            const ativo = estaNaArea(caminho, href);
+          {abas.map((aba) => {
+            const { href, rotulo, Icone } = aba;
+            const ativo = abaAtiva(caminho, aba);
             return (
               <li key={href}>
                 <Link

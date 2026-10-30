@@ -211,7 +211,7 @@ function ListaDeAlunos() {
             <button
               type="button"
               onClick={limparFiltros}
-              className="font-medium text-saibro-700 hover:underline"
+              className="link-acao"
             >
               Limpar filtros
             </button>
@@ -239,7 +239,7 @@ function ListaDeAlunos() {
                   <button
                     type="button"
                     onClick={limparFiltros}
-                    className="font-medium text-saibro-700 hover:underline"
+                    className="link-acao"
                   >
                     Limpar filtros
                   </button>
