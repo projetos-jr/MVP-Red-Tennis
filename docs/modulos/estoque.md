@@ -193,3 +193,41 @@ quem tem "estoque" em `configuracoes.permissoes`.
 
 Testes: `src/lib/banco/operacoes/estoque.test.ts` tem os casos que devem virar
 testes do banco (pgTAP).
+
+## No banco (funções)
+
+As operações do estoque já existem como funções do Postgres
+(`supabase/migrations/20261030120300_funcoes_financeiro_estoque.sql`). A tela
+vai chamá-las com `supabase.rpc("nome", { p_...: ... })`. Cada função é "tudo
+ou nada" e devolve a mesma mensagem que a tela mostra hoje. Elas rodam com a
+permissão de quem está logado (a RLS continua valendo) e gravam o nome da
+operação na auditoria. Os nomes desta seção valem no lugar dos nomes
+provisórios da seção "Notas para a migração".
+
+| Operação da tela | Função no banco (parâmetros) | Devolve |
+| --- | --- | --- |
+| Cadastrar produto | `cadastrar_produto(p_nome, p_categoria, p_unidade, p_preco_custo, p_preco_venda, p_estoque_minimo)` | id do produto |
+| Editar produto | `editar_produto(p_id, p_nome, p_categoria, p_unidade, p_preco_custo, p_preco_venda, p_estoque_minimo)` | id do produto |
+| Inativar / reativar produto | `inativar_produto(p_id)` / `reativar_produto(p_id)` | id do produto |
+| Registrar entrada de mercadoria | `registrar_entrada(p_produto_id, p_quantidade, p_observacao, p_conta_a_pagar)` — `p_conta_a_pagar` é opcional: `{ "favorecido", "valor", "vencimento" }` | `{ movimento_id, lancamento_id }` |
+| Registrar perda | `registrar_perda(p_produto_id, p_quantidade, p_motivo)` | id do movimento |
+| Ajustar inventário | `ajustar_inventario(p_produto_id, p_saldo_contado, p_observacao)` | `{ movimento_id, diferenca }` |
+| Lançar consumo | `lancar_consumo(p_pessoa_id, p_pessoa_tipo, p_produto_id, p_quantidade)` — grava consumo, baixa no estoque e conta a receber juntos; trava o produto para duas vendas ao mesmo tempo não passarem do saldo | id do consumo |
+| Fechar conta de consumo | `fechar_conta_de_consumo(p_pessoa_id, p_pago_em, p_forma_pagamento)` | `{ lancamentos_pagos, total }` |
+
+Quem pode: o módulo **estoque**. Lançar consumo e fechar a conta mexem também
+nas contas a receber, então exigem **financeiro**; a entrada com conta a pagar
+ao fornecedor exige **financeiro_pagar** (a recepção registra a entrada, mas a
+conta a pagar fica com o dono). Sem permissão, a mensagem é "Seu perfil não
+tem permissão para esta operação.".
+
+Diferenças em relação ao front de exemplo:
+
+- Produto com preço de venda zero (cortesia) gera o consumo e a baixa no
+  estoque, mas não gera conta a receber (o banco não aceita lançamento de
+  valor zero).
+- O nome repetido é comparado sem acentos e sem diferença de maiúsculas
+  dentro da função (o índice do banco só ignora maiúsculas).
+
+Como testar: `supabase test db` (arquivo
+`supabase/tests/60_financeiro_estoque.test.sql`).
