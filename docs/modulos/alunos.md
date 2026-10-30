@@ -250,3 +250,68 @@ Use o computador. Tudo volta ao início ao recarregar a página.
   (a regra é `startsWith("/alunos")`). O `HistoricoDoRegistro` mostra valores
   crus (datas ISO, ids de professor e plano); um formatador por campo deixaria
   o histórico mais legível.
+
+## No banco (funções)
+
+Migração `supabase/migrations/20261030120200_funcoes_alunos.sql`; testes em
+`supabase/tests/50_alunos.test.sql`. Esta seção substitui a tabela "Notas para
+a migração ao Supabase" acima onde as duas divergirem.
+
+A tela chama cada função com `supabase.rpc("nome", { p_campo: valor })`. Os
+parâmetros têm o nome do campo da tela em snake_case com `p_` na frente
+(`alunoId` → `p_aluno_id`). As mensagens de recusa são as mesmas da tela, com
+uma exceção: quem não tem permissão recebe "Seu perfil não tem permissão para
+esta operação." (código 42501), igual em todo o sistema.
+
+| Operação da tela | No banco | Retorno |
+| --- | --- | --- |
+| `cadastrarAluno` | grava direto em `alunos` (insert) | — |
+| `editarAluno` | grava direto em `alunos` (update) | — |
+| `reativarCadastro` | grava direto em `alunos` (`ativo = true`) | — |
+| `corrigirMatricula` | grava direto em `matriculas` (`valor_mensal`, `dia_vencimento`; os checks garantem valor > 0 e dia de 1 a 28) | — |
+| `criarMatricula` | `criar_matricula(p_aluno_id, p_plano_id, p_valor_mensal, p_dia_vencimento, p_inicio)` | id da matrícula |
+| `trocarPlano` | `trocar_plano(p_matricula_id, p_plano_id, p_valor_mensal, p_dia_vencimento, p_inicio)` | id da matrícula nova |
+| `encerrarMatricula` | `encerrar_matricula(p_matricula_id, p_ultimo_dia)` | id da matrícula |
+| `cancelarMatriculaAgendada` | `cancelar_matricula_agendada(p_matricula_id)` | id da matrícula que voltou a valer (ou vazio) |
+| `congelarPlano` | `congelar_plano(p_aluno_id, p_inicio, p_fim_previsto, p_motivo)` | `{ congelamento_id, aulas_suspensas }` (quantas aulas foram suspensas) |
+| `reativarPlano` | `reativar_plano(p_congelamento_id, p_data_volta)` | `{ voltaram, nao_voltaram: [{ ocupacao_id, data, motivo }] }` |
+| `inativarAluno` | `inativar_aluno(p_aluno_id, p_ultimo_dia, p_motivo)` | id do aluno |
+| `cadastrarProfessor` | grava direto em `professores` (só o dono, pela RLS) | — |
+| `editarProfessor` | grava direto em `professores` (dono e recepção; só o dono muda a regra de repasse) | — |
+
+O que cada função garante, em linguagem simples:
+
+- **Matrícula:** aluno ativo, plano ativo, valor maior que zero, vencimento de
+  1 a 28, início a até um ano de hoje e nunca duas matrículas no mesmo dia (a
+  regra também é garantida pela própria tabela).
+- **Congelar, reativar e inativar** também mexem na agenda (cancelam aulas,
+  tiram o aluno da turma, terminam horários fixos). Por isso exigem permissão
+  de gravar em **Alunos e na Agenda**. A suspensão e a devolução das aulas
+  ficam dentro da própria função: nada é gravado pela metade.
+- **Reativar** confere, aula por aula, se a quadra continua livre (e o
+  professor, se a opção "impedir professor em duas aulas" estiver ligada). As
+  que não podem voltar vêm na lista `nao_voltaram`, com o motivo.
+
+Mudanças no esquema feitas nesta migração:
+
+- `congelamentos`: o "fim real" agora pode ser a véspera do início. É assim
+  que a tela marca um congelamento **anulado** (cancelado antes de começar,
+  ou marcado para depois da saída do aluno). Antes o banco recusava.
+- `professores`: a recepção passou a poder corrigir o cadastro do professor
+  (contato, cor, especialidade), como a tela já fazia (H9). Um gatilho recusa
+  quando alguém que não é o dono tenta mudar a regra de repasse ("Só o dono
+  cadastra professores e altera a regra de repasse.").
+
+Diferenças em relação à tela (pequenas):
+
+- Na descrição de uma aula que ocupa a quadra ("Locação Avulsa · Ana e
+  Bruno"), os nomes saem em ordem alfabética.
+- Nas gravações diretas (cadastro de aluno e professor, correção de
+  matrícula), a limpeza do nome, o formato do telefone e do e-mail e a
+  validação do professor principal continuam na tela; o banco garante só o que
+  as constraints garantem (nome não vazio, nome de professor sem repetir etc.).
+
+Como testar: com o Postgres local rodando, rode os testes do banco
+(`supabase test db`) e confira que `50_alunos.test.sql` passa inteiro (97
+verificações: congelar, reativar, anular, trocar e desmarcar plano, inativar,
+permissões e auditoria).

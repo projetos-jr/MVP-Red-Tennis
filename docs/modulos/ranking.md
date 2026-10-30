@@ -300,3 +300,107 @@ inicial ao recarregar a página.
 
 Os testes de `torneios.test.ts` e `ranking.test.ts` descrevem os casos que
 viram testes do banco (pgTAP).
+
+## No banco (funções)
+
+Migração `supabase/migrations/20261030120400_funcoes_ranking.sql`, testes em
+`supabase/tests/70_ranking.test.sql`. Cada operação da tela virou uma função do
+Postgres, chamada com `supabase.rpc("nome", { p_...: ... })`. Todas rodam com as
+permissões de quem chamou (a RLS continua valendo), começam conferindo o perfil
+e gravam o nome da operação na auditoria. Se uma regra for violada, nada é
+gravado e a tela recebe a mesma mensagem de hoje.
+
+Nenhuma operação do módulo ficou como gravação direta na tabela: todas leem e
+depois gravam (jogadores, placar, chave), ou gravam em mais de uma tabela.
+
+| Operação da tela | Função no banco (parâmetros) | Devolve |
+| --- | --- | --- |
+| `registrarPartida` | `registrar_partida(p_jogador_a, p_jogador_b, p_data, p_placar, p_vencedor, p_wo)` | id da partida |
+| `marcarPartida` | `marcar_partida(p_jogador_a, p_jogador_b, p_data, p_reserva)`; `p_reserva` é `{"quadraId", "horaInicio", "horaFim"}` ou vazio | id da partida |
+| `registrarResultadoDePartida` | `registrar_resultado_de_partida(p_id, p_placar, p_vencedor, p_wo, p_data)` | id da partida |
+| `corrigirResultadoDePartida` | `corrigir_resultado_de_partida(p_id, p_placar, p_vencedor, p_wo, p_data)` | id da partida |
+| `excluirPartida` | `excluir_partida(p_id)` (cancela a reserva futura junto) | id da partida |
+| `criarTorneio` | `criar_torneio(p_nome, p_data, p_formato, p_duplas, p_inscricoes, p_categoria)`; `p_inscricoes` é `[{"alunosIds": [...], "cabecaDeChave": 1}]` | id do torneio |
+| `editarTorneio` | `editar_torneio(p_id, p_nome, p_data, p_formato, p_duplas, p_categoria, p_inscricoes)`; `p_inscricoes` vazio = não mexe; com `id` = inscrição mantida | id do torneio |
+| `gerarChaveDoTorneio` | `gerar_chave_do_torneio(p_id, p_sorteio)`; `p_sorteio` (opcional) = ids das inscrições na ordem sorteada | id do torneio |
+| `desfazerChaveDoTorneio` | `desfazer_chave_do_torneio(p_id)` | id do torneio |
+| `registrarResultadoDeTorneio` | `registrar_resultado_de_torneio(p_partida_id, p_placar, p_vencedor, p_wo, p_data)` | `{"torneioId", "situacao"}` |
+| `corrigirResultadoDeTorneio` | `corrigir_resultado_de_torneio(p_partida_id, p_placar, p_vencedor, p_wo, p_data)` | `{"torneioId", "situacao"}` |
+| `apagarResultadoDeTorneio` | `apagar_resultado_de_torneio(p_partida_id)` | `{"torneioId", "situacao"}` |
+
+Leituras (não gravam nada):
+
+| Leitura da tela | No banco |
+| --- | --- |
+| `calcularRanking(banco)` | view `ranking` (`aluno_id`, `posicao`, `pontos`, `vitorias`, `derrotas`, `partidas`) |
+| `calcularRanking(banco, ate)` (coluna "7 dias") | função `ranking_em(p_ate)`, mesmas colunas |
+| `classificar` (tabela dos grupos e do todos contra todos) | função `classificacao_do_torneio(p_torneio_id)`: grupo, posição, jogos, vitórias, derrotas, sets, games e o critério que desfez o empate |
+
+**Por que o ranking virou view + função, e não uma operação.** A pontuação é
+só leitura: ninguém digita pontos, eles saem das partidas com resultado e das
+Configurações (H7). Uma view com as permissões de quem consulta
+(`security_invoker`) basta para o ranking de hoje. Como a tela também precisa
+do ranking de 7 dias atrás (para a coluna de variação), e uma view não recebe
+parâmetro, o cálculo fica na função `ranking_em(data)` e a view `ranking` só a
+chama sem data. O filtro por categoria continua na tela (as posições da
+categoria são renumeradas lá).
+
+**O que o banco garante agora (e não só a tela).**
+
+- Placar coerente com o vencedor (mesmas recusas da tela) e "W.O." no W.O.
+- Jogadores ativos e inscritos no ranking; reserva só nas quadras 1 a 4, das
+  07h às 22h, sem conflito (a mensagem diz quem ocupa a quadra).
+- A chave dos três formatos é gerada pelo banco, com a mesma estrutura da tela:
+  cabeças de chave nas mesmas vagas, folgas para os primeiros cabeças, mesmos
+  nomes de fase, rodada e ordem, e cada partida apontando para a seguinte.
+  Isso foi conferido comparando o banco com o front em 93 chaves (eliminatória
+  de 2 a 64 inscrições, todos contra todos de 3 a 10, grupos de 6 a 24 com todos
+  os resultados lançados): resultado idêntico, inclusive a classificação e o
+  critério de desempate.
+- O vencedor avança sozinho, no lado certo; correção e "apagar resultado" só
+  enquanto a partida seguinte não foi jogada (nos grupos, enquanto a
+  eliminatória não começou).
+- No formato de grupos, o último jogo dos grupos monta a eliminatória
+  (1A × 2B, 2A × 1B...). Se um resultado de grupo mudar antes de a eliminatória
+  começar, ela é remontada (ou fica igual, se nada mudou); se um resultado de
+  grupo for apagado, ela sai.
+- Situação do torneio: em andamento ao gerar a chave, encerrado quando a final
+  é decidida (ou todos os jogos do todos contra todos), de volta a em andamento
+  se o resultado da final for apagado.
+- Duas pessoas mexendo na mesma chave ao mesmo tempo: o torneio fica travado
+  durante cada gravação, então uma espera a outra.
+
+**Sorteio da chave.** A tela sorteia quem não é cabeça de chave com uma
+"semente" própria (o mesmo sorteio se repete com a mesma semente), coisa que o
+banco não reproduz de forma idêntica. Por isso `gerar_chave_do_torneio` aceita
+`p_sorteio`: a lista de ids das inscrições na ordem sorteada pela tela (os
+cabeças de chave podem vir na lista ou não; ficam sempre nas suas vagas). Com
+essa lista, a chave do banco é exatamente a que a tela mostraria. Sem ela, o
+banco sorteia sozinho (`random()`).
+
+**Mudança no schema.** `torneio_inscritos` ganhou a coluna `ordem_inscricao`
+(número crescente, preenchido sozinho). O último critério de desempate é
+"cabeça de chave e ordem de inscrição", e no banco não havia como saber a ordem
+em que as inscrições foram feitas (os ids são aleatórios). Na tela, essa ordem
+é a posição na lista; ao ler do banco, ordene por `ordem_inscricao`.
+
+**Diferenças em relação à tela de hoje.**
+
+- Perfil sem permissão recebe "Seu perfil não tem permissão para esta
+  operação." (mensagem comum a todos os módulos), em vez de "Seu perfil não tem
+  acesso ao ranking e aos torneios.".
+- Marcar partida **com reserva de quadra** e excluir partida com reserva futura
+  também exigem permissão de gravar na agenda, porque gravam na agenda. Hoje,
+  dono e recepção têm as duas.
+- Na mensagem de conflito de quadra, os nomes dos alunos saem em ordem
+  alfabética (na tela, na ordem em que foram incluídos).
+- Os ids das partidas da chave seguem o mesmo padrão (`...-r1-2`,
+  `...-gA-r1-1`), com um começo diferente (`pt-` + código aleatório).
+- Datas vão como data (`"2026-11-10"`); um texto que não é data é recusado pelo
+  banco antes da função.
+- O desempate do ranking geral por nome usa a ordenação do banco, que pode
+  diferir da tela em nomes com acento.
+
+**Para perguntar à arena (não muda nada agora).** Ao registrar o resultado de
+uma partida de ranking com reserva, a reserva deveria virar "realizada" na
+agenda? Hoje nem a tela nem o banco fazem isso.

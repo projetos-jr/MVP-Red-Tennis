@@ -228,3 +228,35 @@ Os exemplos entre parênteses são de 29/10/2026.
   terminado fica **sem fechamento de repasse** (para demonstrar o botão), há
   contas a pagar do mês seguinte e uma atrasada, e as mensalidades do mês
   seguinte não existem (para demonstrar "Gerar mensalidades").
+
+## No banco (funções)
+
+As operações do financeiro já existem como funções do Postgres
+(`supabase/migrations/20261030120300_funcoes_financeiro_estoque.sql`). A tela
+vai chamá-las com `supabase.rpc("nome", { p_...: ... })`. Cada função é "tudo
+ou nada": se uma regra falha, nada é gravado, e a mensagem é a mesma que a
+tela mostra hoje. Elas rodam com a permissão de quem está logado (a RLS
+continua valendo) e gravam o nome da operação na auditoria. Os nomes desta
+seção valem no lugar dos nomes provisórios da seção "Notas para a migração".
+
+| Operação da tela | Função no banco (parâmetros) | Devolve |
+| --- | --- | --- |
+| Novo lançamento (`criarLancamento`) | `criar_lancamento(p_tipo, p_categoria, p_item, p_valor, p_vencimento, p_pessoa_id, p_nome_pagante, p_forma_pagamento, p_comprovante, p_pago_em, p_valor_convenio, p_competencia)` — do 6º em diante são opcionais | id do lançamento |
+| Registrar pagamento (`registrarPagamento`) | `registrar_pagamento(p_id, p_pago_em, p_forma_pagamento, p_valor_convenio, p_comprovante, p_nome_pagante)` — se a cobrança é de uma reserva "aguardando pagamento", a reserva fica confirmada na mesma operação | `{ id, reserva_confirmada }` |
+| Anular lançamento (`anularLancamento`) | `anular_lancamento(p_id, p_motivo)` | id do lançamento |
+| Gerar mensalidades (`gerarMensalidades`) | `gerar_mensalidades(p_competencia)` — mês no formato `"2026-11"` | `{ criadas, ja_geradas }` |
+| Fechar repasse do mês (`fecharRepasseDoMes`) | `fechar_repasse_do_mes(p_competencia, p_vencimento)` | `{ repasses_fechados, contas_a_pagar }` |
+
+Quem pode: contas a receber exigem o módulo **financeiro**; contas a pagar e
+repasses, **financeiro_pagar** (a recepção não tem). Confirmar uma reserva ao
+receber exige também **agenda**. Sem permissão, a mensagem é "Seu perfil não
+tem permissão para esta operação." (no front de exemplo, a mensagem ainda é
+"Seu perfil não tem acesso…").
+
+Mudança no banco feita junto: o índice que impede duas mensalidades do mesmo
+mês para a mesma matrícula agora ignora as anuladas, para valer o que a tela
+orienta ("Para cobrar de novo, anule a anterior"). "Gerar mensalidades"
+continua pulando o mês que tem uma mensalidade anulada.
+
+Como testar: `supabase test db` (arquivo
+`supabase/tests/60_financeiro_estoque.test.sql`).
