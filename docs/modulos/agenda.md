@@ -299,3 +299,92 @@ sequência, navegando pelos botões da própria agenda (sem recarregar).
 
 As consultas (`consultas/agenda.ts`) passam a buscar do banco por período
 (`where data between …`), e as telas não mudam.
+
+## No banco (funções)
+
+Versão de 30/10/2026. As operações da agenda já existem como **funções do
+banco** (migração `supabase/migrations/20261030120100_funcoes_agenda.sql`).
+Quando o front for ligado ao Supabase, cada botão chama a função com
+`supabase.rpc("nome_da_funcao", { p_campo: valor })`: os campos são os mesmos
+dos `dados` da operação, em snake_case e com `p_` na frente (`alunosIds` →
+`p_alunos_ids`). Datas vão como `"AAAA-MM-DD"` e horas como `"HH:MM"`.
+
+Cada função é "tudo ou nada": se uma regra for violada, nada é gravado e a
+tela recebe **a mesma mensagem** que mostra hoje. Todas rodam com as
+permissões de quem está logado (a RLS continua valendo; professor recebe "Seu
+perfil não tem permissão para esta operação.") e gravam o nome da operação no
+Histórico (auditoria).
+
+| Operação da tela | Função no banco | O que devolve |
+| --- | --- | --- |
+| `criarHorarioAvulso` | `criar_horario_avulso(p_quadra_id, p_data, p_hora_inicio, p_hora_fim, p_tipo, p_alunos_ids, p_professor_id?, p_descricao?)` | id da ocupação |
+| `criarHorarioFixo` | `criar_horario_fixo(p_quadra_id, p_data_inicio, p_hora_inicio, p_hora_fim, p_tipo, p_alunos_ids, p_professor_id?, p_fim?, p_datas_puladas?)` | `{ horario_fixo_id, aulas }` |
+| `marcarAulaDeReposicao` | `marcar_aula_de_reposicao(p_aluno_id, p_quadra_id, p_data, p_hora_inicio, p_hora_fim, p_tipo, p_professor_id?)` | id da ocupação |
+| `incluirAluno` | `incluir_aluno(p_ocupacao_id, p_aluno_id)` | id da participação |
+| `usarReposicao` | `usar_reposicao(p_ocupacao_id, p_aluno_id)` | `{ minutos, saldo }` (saldo que sobra) |
+| `removerAluno` | `remover_aluno(p_ocupacao_id, p_aluno_id)` | `{ minutos_devolvidos }` |
+| `marcarPresenca` | `marcar_presenca(p_ocupacao_id, p_aluno_id, p_presenca, p_sigla?)` | `{ minutos_de_credito, aula_cancelada }` |
+| `cancelarOcupacao` | `cancelar_ocupacao(p_id, p_motivo)` | `{ aulas, alunos, minutos, creditos }` |
+| `remarcarOcupacao` | `remarcar_ocupacao(p_id, p_quadra_id, p_data, p_hora_inicio, p_hora_fim)` | id da ocupação |
+| `encerrarHorarioFixo` | `encerrar_horario_fixo(p_horario_fixo_id, p_fim)` | `{ aulas_removidas }` |
+| `bloquearQuadra` | `bloquear_quadra(p_quadras_ids, p_data, p_hora_inicio, p_hora_fim, p_descricao)` | `{ bloqueios, aulas, alunos, minutos, creditos }` |
+| `cancelarPorChuva` | `cancelar_por_chuva(p_data, p_quadras_ids, p_hora_inicio?, p_hora_fim?)` | `{ aulas, alunos, minutos, creditos }` |
+| `liberarReserva` | `liberar_reserva(p_id)` | id da ocupação |
+| `liberarReservasVencidas` | `liberar_reservas_vencidas()` | quantas reservas foram liberadas |
+| Saldo de reposição (ficha, agenda) | view `saldo_reposicao` (uma linha por aluno: `aluno_id`, `saldo`, `proximo_vencimento`, `minutos_a_vencer`) | leitura: `supabase.from("saldo_reposicao").select().eq("aluno_id", id)` |
+
+`?` = opcional. Em `creditos` vem uma lista `{ aluno_id, ocupacao_id, minutos }`
+com os créditos de reposição criados; `minutos` é a soma deles.
+
+Nenhuma operação da agenda ficou como gravação direta na tabela: todas têm
+alguma regra que as constraints não garantem sozinhas (aula cancelada, aluno
+inativo, saldo, crédito já usado…). Comentários continuam gravando direto em
+`comentarios`.
+
+**Como as regras ficaram no banco**
+
+- **Conflito de quadra**: a constraint de exclusão de `ocupacoes` garante a
+  regra mesmo com dois balcões ao mesmo tempo. As funções conferem antes só
+  para devolver a mensagem que diz quem ocupa ("Quadra 1 já está ocupada em
+  12/11 das 10:00 às 11:00 (Individual · Ana)").
+- **Professor em duas aulas (H10)**: não há constraint; com
+  `bloquear_professor_em_duas_aulas` ligado, as funções recusam e travam o
+  professor durante a gravação (dois balcões não marcam o mesmo professor ao
+  mesmo tempo).
+- **Saldo de reposição**: sempre calculado do extrato (`reposicoes`), com a
+  mesma regra do front: crédito vencido não conta, cada uso consome primeiro o
+  crédito que vence antes, e o saldo nunca fica negativo (retirar um crédito já
+  usado é recusado). O extrato do aluno fica travado durante a gravação, para
+  dois balcões não gastarem o mesmo saldo.
+- **Reservas sem pagamento (H5)**: além de "Liberar horário" e de
+  `liberar_reservas_vencidas` (que a agenda chama ao abrir quando a opção está
+  ligada), há uma **rotina automática a cada 15 minutos** (pg_cron, só no
+  Supabase). Ela só libera algo se `liberar_reserva_automaticamente` estiver
+  ligado nas Configurações. Como roda sem ninguém logado, fica numa função
+  interna (`privado.liberar_reservas_vencidas_automaticamente`) que ninguém
+  pode chamar pelo site; no Histórico ela aparece sem usuário, como "Liberar
+  reservas vencidas (automático)".
+
+**Diferenças em relação ao front (pequenas)**
+
+- Na descrição de quem ocupa a quadra, os nomes dos alunos vêm em ordem
+  alfabética (no front, na ordem em que entraram na aula).
+- Quem não tem permissão de gravar na agenda recebe "Seu perfil não tem
+  permissão para esta operação." (no front: "O seu perfil só pode consultar a
+  agenda…").
+- Data inexistente (ex.: 30/02) é recusada pelo próprio Postgres antes da
+  função, com erro técnico de data; a tela já não deixa escolher.
+- Reserva aguardando pagamento sem prazo (não acontece pelas funções) recusa
+  "Liberar horário" com "Esta reserva não tem prazo de pagamento."
+- Encerrar horário fixo apaga as aulas; a cobrança anulada delas perde o
+  vínculo com a aula (o histórico guarda tudo).
+- Quem enxerga a agenda mas não o financeiro não consegue marcar locação
+  avulsa (a cobrança é recusada pela RLS) e, ao cancelar, a cobrança não é
+  anulada. Com as permissões atuais (H9), dono e recepção têm os dois.
+
+**Ainda não feito**: a rotina que estende os horários fixos além das 12
+semanas (H12).
+
+**Como testar**: `supabase test db` (arquivo
+`supabase/tests/40_agenda.test.sql`, 88 testes: caminho feliz e cada recusa
+importante, permissão do professor e auditoria).
