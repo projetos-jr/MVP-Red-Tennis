@@ -11,6 +11,7 @@ import {
 import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/ModaisDoEstoque";
 import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
 import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -83,37 +84,35 @@ export default function PaginaEstoque() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Estoque</h1>
-            <p className="mt-1 text-sm text-areia-600">
-              Bebidas, cervejas, lanches e acessórios vendidos no balcão da arena.
-            </p>
-          </div>
-          <div className="flex w-full gap-2 sm:w-auto">
-            <button
-              type="button"
-              onClick={() =>
-                setAcao({
-                  tipo: "novo",
-                  categoria: filtro.categoria === "todas" ? undefined : filtro.categoria,
-                })
-              }
-              className="btn-secundario flex-1 sm:flex-none"
-            >
-              <IconeMais className="h-4 w-4" />
-              Novo produto
-            </button>
-            <button
-              type="button"
-              onClick={() => setLancandoConsumo(true)}
-              className="btn-primario flex-1 sm:flex-none"
-            >
-              <IconeCopo className="h-4 w-4" />
-              Lançar consumo
-            </button>
-          </div>
-        </div>
+        <CabecalhoDaPagina
+          titulo="Estoque"
+          descricao="Bebidas, cervejas, lanches e acessórios vendidos no balcão da arena."
+          acoes={
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  setAcao({
+                    tipo: "novo",
+                    categoria: filtro.categoria === "todas" ? undefined : filtro.categoria,
+                  })
+                }
+                className="btn-secundario"
+              >
+                <IconeMais className="h-4 w-4" />
+                Novo produto
+              </button>
+              <button
+                type="button"
+                onClick={() => setLancandoConsumo(true)}
+                className="btn-primario"
+              >
+                <IconeCopo className="h-4 w-4" />
+                Lançar consumo
+              </button>
+            </>
+          }
+        />
 
         {/* Indicadores */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

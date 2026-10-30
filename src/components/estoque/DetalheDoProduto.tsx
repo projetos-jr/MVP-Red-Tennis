@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { MostrarMais } from "@/components/ui/MostrarMais";
 import { StatCard } from "@/components/ui/StatCard";
@@ -15,7 +16,6 @@ import {
   IconeFinanceiro,
   IconeLixeira,
   IconeSubiu,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { reativarProduto } from "@/lib/banco/operacoes/estoque";
@@ -78,13 +78,7 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
   return (
     <>
       <div className="space-y-6">
-        <Link
-          href="/estoque"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-        >
-          <IconeVoltar className="h-4 w-4" />
-          Voltar para o estoque
-        </Link>
+        <LinkDeVolta href="/estoque">Estoque</LinkDeVolta>
 
         {/* Cabeçalho */}
         <section className="card p-5">

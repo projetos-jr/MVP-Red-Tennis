@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { IconeHistorico } from "@/components/base/Icones";
 import { RegistroDoHistorico } from "@/components/base/historico/RegistroDoHistorico";
 import { moduloDaRota } from "@/components/layout/abas";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
 import { IconeFiltro } from "@/components/ui/Icons";
 import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
@@ -62,13 +63,16 @@ export default function PaginaHistorico() {
 
   return (
     <div className="space-y-6">
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Histórico de alterações</h1>
-        <p className="mt-1 text-sm leading-relaxed text-areia-600">
-          Tudo o que foi criado, alterado ou apagado, com quem fez, quando e como era antes. O
-          registro é automático: ninguém edita nem apaga.
-        </p>
-      </div>
+      <CabecalhoDaPagina
+        className="max-w-3xl"
+        titulo="Histórico de alterações"
+        descricao={
+          <p className="leading-relaxed">
+            Tudo o que foi criado, alterado ou apagado, com quem fez, quando e como era antes. O
+            registro é automático: ninguém edita nem apaga.
+          </p>
+        }
+      />
 
       {banco.auditoria.length === 0 ? (
         <EstadoVazio podeAbrirConfiguracoes={podeAcessar(banco, colaborador, "configuracoes")} />

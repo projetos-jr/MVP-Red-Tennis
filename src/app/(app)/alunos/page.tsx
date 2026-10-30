@@ -11,6 +11,7 @@ import {
 } from "@/components/aluno/estilos";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
 import { IconeBusca, IconeCheck, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
 import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
@@ -94,27 +95,26 @@ function ListaDeAlunos() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Alunos</h1>
-          <p className="mt-1 text-sm text-areia-600">
-            {banco.alunos.length} cadastrados ·{" "}
-            {linhas.filter((l) => l.situacao === "ativo").length} com plano ativo
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/professores" className="btn-secundario">
-            <IconeUsuarios className="h-4 w-4" />
-            Professores
-          </Link>
-          {podeEditar && (
-            <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
-              <IconeMais className="h-4 w-4" />
-              Novo aluno
-            </button>
-          )}
-        </div>
-      </div>
+      <CabecalhoDaPagina
+        titulo="Alunos"
+        descricao={`${banco.alunos.length} cadastrados · ${
+          linhas.filter((l) => l.situacao === "ativo").length
+        } com plano ativo`}
+        acoes={
+          <>
+            <Link href="/professores" className="btn-secundario">
+              <IconeUsuarios className="h-4 w-4" />
+              Professores
+            </Link>
+            {podeEditar && (
+              <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
+                <IconeMais className="h-4 w-4" />
+                Novo aluno
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Contadores, que tambem filtram por situacao */}
       <div

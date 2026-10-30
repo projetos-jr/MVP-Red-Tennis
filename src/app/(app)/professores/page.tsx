@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { rotuloDaRegraDeRepasse } from "@/components/aluno/estilos";
 import { FormularioProfessor } from "@/components/professor/FormularioProfessor";
 import { Badge } from "@/components/ui/Badge";
-import { IconeMais, IconeSeta, IconeTelefone, IconeVoltar } from "@/components/ui/Icons";
+import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { IconeMais, IconeSeta, IconeTelefone } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { podeAlterarRepasse } from "@/lib/consultas/alunos";
 import { listarProfessores, type LinhaDaListaDeProfessores } from "@/lib/consultas/professores";
@@ -26,33 +27,29 @@ export default function PaginaProfessores() {
 
   return (
     <div className="space-y-5">
-      <Link
-        href="/alunos"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Alunos
-      </Link>
+      <LinkDeVolta href="/alunos">Alunos</LinkDeVolta>
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Professores</h1>
-          <p className="mt-1 text-sm text-areia-600">
+      <CabecalhoDaPagina
+        titulo="Professores"
+        descricao={
+          <>
             {linhas.length} cadastrados · repasse previsto em {formatarMesAno(HOJE)}:{" "}
             <strong className="font-semibold text-areia-800">{formatarMoeda(totalDoMes)}</strong> até hoje
-          </p>
-        </div>
-        {podeCadastrar ? (
-          <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
-            <IconeMais className="h-4 w-4" />
-            Novo professor
-          </button>
-        ) : (
-          <p className="max-w-xs text-xs text-areia-500">
-            Só o dono cadastra professores, porque a regra de repasse define pagamentos.
-          </p>
-        )}
-      </div>
+          </>
+        }
+        acoes={
+          podeCadastrar ? (
+            <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
+              <IconeMais className="h-4 w-4" />
+              Novo professor
+            </button>
+          ) : (
+            <p className="max-w-xs text-xs text-areia-500">
+              Só o dono cadastra professores, porque a regra de repasse define pagamentos.
+            </p>
+          )
+        }
+      />
 
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {linhas.map((linha) => (

@@ -9,6 +9,7 @@ import { SecaoRanking } from "@/components/base/configuracoes/SecaoRanking";
 import { SecaoRepasse } from "@/components/base/configuracoes/SecaoRepasse";
 import { SecaoReposicao } from "@/components/base/configuracoes/SecaoReposicao";
 import { SecaoReservasEAgenda } from "@/components/base/configuracoes/SecaoReservasEAgenda";
+import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { podeAcessar } from "@/lib/consultas/base";
 import { useApp } from "@/store/AppStore";
 
@@ -34,14 +35,17 @@ export default function PaginaConfiguracoes() {
 
   return (
     <div className="space-y-6">
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">Configurações</h1>
-        <p className="mt-1 text-sm leading-relaxed text-areia-600">
-          Regras que a arena ainda está confirmando, catálogo de planos e quem vê cada área. Os selos{" "}
-          <span className="font-semibold text-saibro-800">H1 a H13</span> indicam a hipótese usada até
-          a arena responder: quando a resposta chegar, basta trocar o valor aqui, sem programar.
-        </p>
-      </div>
+      <CabecalhoDaPagina
+        className="max-w-3xl"
+        titulo="Configurações"
+        descricao={
+          <p className="leading-relaxed">
+            Regras que a arena ainda está confirmando, catálogo de planos e quem vê cada área. Os selos{" "}
+            <span className="font-semibold text-saibro-800">H1 a H13</span> indicam a hipótese usada até
+            a arena responder: quando a resposta chegar, basta trocar o valor aqui, sem programar.
+          </p>
+        }
+      />
 
       <p className="flex items-start gap-2.5 rounded-2xl border border-saibro-200 bg-saibro-50/70 px-4 py-3 text-sm text-saibro-900">
         <IconeInfo className="mt-0.5 h-4 w-4 shrink-0" />

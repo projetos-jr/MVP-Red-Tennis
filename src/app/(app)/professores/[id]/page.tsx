@@ -13,6 +13,7 @@ import { RepasseDoProfessor } from "@/components/professor/RepasseDoProfessor";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
 import {
   IconeAgenda,
@@ -21,7 +22,6 @@ import {
   IconeRelogio,
   IconeTelefone,
   IconeUsuarios,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { StatCard } from "@/components/ui/StatCard";
 import { HOJE } from "@/lib/banco/constantes";
@@ -71,13 +71,7 @@ export default function PaginaFichaProfessor() {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/professores"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Professores
-      </Link>
+      <LinkDeVolta href="/professores">Professores</LinkDeVolta>
 
       <section className="card overflow-hidden">
         <div className="h-20 bg-gradient-to-r from-saibro-600 via-saibro-500 to-saibro-700" />

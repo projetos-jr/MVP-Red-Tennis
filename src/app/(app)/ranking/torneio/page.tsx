@@ -13,6 +13,7 @@ import { ModalTorneio } from "@/components/ranking/ModalTorneio";
 import { TabelaClassificacao } from "@/components/ranking/TabelaClassificacao";
 import { ComentariosDoRegistro } from "@/components/registro/ComentariosDoRegistro";
 import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
+import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Confirmacao } from "@/components/ui/Confirmacao";
 import {
@@ -21,7 +22,6 @@ import {
   IconeCheck,
   IconeTrofeu,
   IconeUsuarios,
-  IconeVoltar,
 } from "@/components/ui/Icons";
 import { desfazerChaveDoTorneio, gerarChaveDoTorneio } from "@/lib/banco/operacoes/ranking";
 import {
@@ -211,19 +211,13 @@ function ConteudoDoTorneio() {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/ranking?aba=torneios"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 hover:text-tijolo-700"
-      >
-        <IconeVoltar className="h-4 w-4" />
-        Torneios
-      </Link>
+      <LinkDeVolta href="/ranking?aba=torneios">Torneios</LinkDeVolta>
 
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-4 p-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">{torneio.nome}</h1>
+              <h1 className="text-2xl font-bold text-areia-900">{torneio.nome}</h1>
               <SituacaoDoTorneio situacao={torneio.situacao} />
             </div>
             <p className="mt-1.5 text-sm text-areia-600">

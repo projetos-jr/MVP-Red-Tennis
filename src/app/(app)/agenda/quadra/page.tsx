@@ -7,7 +7,8 @@ import { ListaDePresenca } from "@/components/agenda/ListaDePresenca";
 import { Marcadores } from "@/components/agenda/Marcadores";
 import { FUNDO_BLOQUEIO, ROTULO_SITUACAO, intervalo, plural } from "@/components/agenda/estilos";
 import { useAgora } from "@/components/agenda/useAgora";
-import { IconeAnterior, IconeProximo, IconeVoltar } from "@/components/ui/Icons";
+import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
+import { IconeAnterior, IconeProximo } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import {
   FILTRO_INICIAL,
@@ -73,50 +74,45 @@ function ModoQuadra({
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/agenda"
-            className="btn-secundario px-3 py-2.5"
-            aria-label="Voltar para a agenda"
-          >
-            <IconeVoltar className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-areia-900">Modo quadra</h1>
-            <p className="text-sm text-areia-600">
-              {DIAS_SEMANA_LONGO[diaDaSemana(data)]}, {formatarData(data)}
-              {data === HOJE && " · hoje"}
-              {quadra && ` · ${plural(aulas, "horário", "horários")}`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setData((atual) => somarDias(atual, -1))}
-            className="btn-secundario min-h-[48px] px-3"
-            aria-label="Dia anterior"
-          >
-            <IconeAnterior className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setData(HOJE)}
-            className="btn-secundario min-h-[48px] px-4 text-base"
-          >
-            Hoje
-          </button>
-          <button
-            type="button"
-            onClick={() => setData((atual) => somarDias(atual, 1))}
-            className="btn-secundario min-h-[48px] px-3"
-            aria-label="Próximo dia"
-          >
-            <IconeProximo className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+      <LinkDeVolta href="/agenda">Agenda</LinkDeVolta>
+
+      <CabecalhoDaPagina
+        titulo="Modo quadra"
+        descricao={
+          <>
+            {DIAS_SEMANA_LONGO[diaDaSemana(data)]}, {formatarData(data)}
+            {data === HOJE && " · hoje"}
+            {quadra && ` · ${plural(aulas, "horário", "horários")}`}
+          </>
+        }
+        acoes={
+          <>
+            <button
+              type="button"
+              onClick={() => setData((atual) => somarDias(atual, -1))}
+              className="btn-secundario min-h-[48px] px-3"
+              aria-label="Dia anterior"
+            >
+              <IconeAnterior className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setData(HOJE)}
+              className="btn-secundario min-h-[48px] px-4 text-base"
+            >
+              Hoje
+            </button>
+            <button
+              type="button"
+              onClick={() => setData((atual) => somarDias(atual, 1))}
+              className="btn-secundario min-h-[48px] px-3"
+              aria-label="Próximo dia"
+            >
+              <IconeProximo className="h-5 w-5" />
+            </button>
+          </>
+        }
+      />
 
       <nav aria-label="Escolher quadra" className="flex flex-wrap gap-2">
         {quadras.map((q) => (
