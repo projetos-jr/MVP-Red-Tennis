@@ -8,7 +8,7 @@
  * Nunca rode isto apontando para o projeto de teste ou de producao.
  *
  *   SUPABASE_TESTE_URL=http://127.0.0.1:54321 \
- *   SUPABASE_TESTE_CHAVE_SECRETA=<SECRET_KEY de `npx supabase status -o env`> \
+ *   SUPABASE_TESTE_CHAVE_SECRETA=<SERVICE_ROLE_KEY de `npx supabase status -o env`> \
  *   node scripts/integracao/preparar.mjs
  */
 
