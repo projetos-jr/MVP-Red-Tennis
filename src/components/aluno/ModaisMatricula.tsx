@@ -89,15 +89,15 @@ function ConteudoMatricula({ aoFechar, alunoId, atual }: ModalMatriculaProps) {
     if (escolhido) setValor(valorParaCampo(escolhido.valorMensal));
   }
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     setTentouSalvar(true);
     if (Object.keys(validar()).length > 0) return;
 
     const dados = { planoId, valorMensal: valorDigitado, diaVencimento: Number(dia), inicio };
     const gravou = atual
-      ? gravar(trocarPlano, { ...dados, matriculaId: atual.matricula.id }, "Plano trocado.")
-      : gravar(criarMatricula, { ...dados, alunoId }, "Matrícula criada.");
+      ? await gravar(trocarPlano, { ...dados, matriculaId: atual.matricula.id }, "Plano trocado.")
+      : await gravar(criarMatricula, { ...dados, alunoId }, "Matrícula criada.");
     if (gravou) aoFechar();
   }
 
@@ -239,11 +239,11 @@ function ConteudoCorrecao({ aoFechar, atual }: { aoFechar: () => void; atual: Ma
   const erro =
     tentouSalvar && !(valorMensal > 0) ? "Informe o valor combinado (maior que zero)." : undefined;
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     setTentouSalvar(true);
     if (!(valorMensal > 0)) return;
-    const gravou = gravar(
+    const gravou = await gravar(
       corrigirMatricula,
       { matriculaId: atual.matricula.id, valorMensal, diaVencimento: Number(dia) },
       "Matrícula corrigida.",
@@ -316,8 +316,8 @@ export function ConfirmarEncerramento({
         </>
       }
       aoCancelar={aoFechar}
-      aoConfirmar={() => {
-        if (gravar(encerrarMatricula, { matriculaId: atual.matricula.id, ultimoDia }, "Matrícula encerrada.")) {
+      aoConfirmar={async () => {
+        if (await gravar(encerrarMatricula, { matriculaId: atual.matricula.id, ultimoDia }, "Matrícula encerrada.")) {
           aoFechar();
         }
       }}
@@ -368,9 +368,9 @@ export function ConfirmarCancelamentoDaAgendada({
         </>
       }
       aoCancelar={aoFechar}
-      aoConfirmar={() => {
+      aoConfirmar={async () => {
         if (
-          gravar(
+          await gravar(
             cancelarMatriculaAgendada,
             { matriculaId: agendada.matricula.id },
             "Matrícula agendada desmarcada.",

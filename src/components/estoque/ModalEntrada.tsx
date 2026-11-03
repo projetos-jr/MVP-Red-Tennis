@@ -10,6 +10,7 @@ import {
   type ProdutoComSaldo,
 } from "@/lib/consultas/estoque";
 import { formatarMoeda } from "@/lib/theme";
+import { podeAcessar } from "@/lib/consultas/base";
 import { useApp } from "@/store/AppStore";
 import { useGravar } from "@/store/useGravar";
 import { CampoQuantidade } from "./CampoQuantidade";
@@ -32,7 +33,10 @@ export function ModalEntrada({
   quantidadeSugerida?: number;
   aoFechar: () => void;
 }) {
-  const { banco } = useApp();
+  const { banco, colaborador } = useApp();
+  // H9: so quem ve as contas a pagar pode lancar a do fornecedor (o banco recusa
+  // os demais perfis).
+  const lancaContaAPagar = podeAcessar(banco, colaborador, "financeiro_pagar");
   const gravar = useGravar();
   const { produto, saldo } = item;
 
@@ -55,7 +59,7 @@ export function ModalEntrada({
   const custoEstimado = quantidadeValida ? produto.precoCusto * numero : 0;
   const valorDaConta = valorDigitado ?? (quantidadeValida ? valorParaCampo(custoEstimado) : "");
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const novos: Erros = {};
     if (!quantidadeValida) novos.quantidade = "Informe quantas unidades chegaram.";
@@ -68,7 +72,7 @@ export function ModalEntrada({
     setErros(novos);
     if (Object.keys(novos).length > 0) return;
 
-    const gravou = gravar(
+    const gravou = await gravar(
       registrarEntrada,
       {
         produtoId: produto.id,
@@ -114,73 +118,75 @@ export function ModalEntrada({
             />
           </Campo>
 
-          <div className="rounded-xl border border-areia-200">
-            <label className="flex cursor-pointer items-start gap-3 px-3.5 py-3">
-              <input
-                type="checkbox"
-                checked={comConta}
-                onChange={(e) => setComConta(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
-              />
-              <span className="text-sm">
-                <span className="font-medium text-areia-900">
-                  Lançar conta a pagar ao fornecedor
+          {lancaContaAPagar && (
+            <div className="rounded-xl border border-areia-200">
+              <label className="flex cursor-pointer items-start gap-3 px-3.5 py-3">
+                <input
+                  type="checkbox"
+                  checked={comConta}
+                  onChange={(e) => setComConta(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-areia-900">
+                    Lançar conta a pagar ao fornecedor
+                  </span>
+                  <span className="block text-xs text-areia-500">
+                    Aparece no Financeiro, em &ldquo;A pagar&rdquo;, junto com a entrada.
+                  </span>
                 </span>
-                <span className="block text-xs text-areia-500">
-                  Aparece no Financeiro, em &ldquo;A pagar&rdquo;, junto com a entrada.
-                </span>
-              </span>
-            </label>
+              </label>
 
-            {comConta && (
-              <div className="space-y-4 border-t border-areia-200 px-3.5 py-3.5">
-                <Campo rotulo="Fornecedor (favorecido)" obrigatorio erro={erros.favorecido}>
-                  <input
-                    value={favorecido}
-                    onChange={(e) => setFavorecido(e.target.value)}
-                    list="fornecedores-conhecidos"
-                    placeholder="Ex.: Distribuidora de bebidas"
-                    className="campo"
-                    maxLength={80}
-                  />
-                </Campo>
-                <datalist id="fornecedores-conhecidos">
-                  {fornecedores.map((nome) => (
-                    <option key={nome} value={nome} />
-                  ))}
-                </datalist>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Campo
-                    rotulo="Valor (R$)"
-                    obrigatorio
-                    erro={erros.valor}
-                    ajuda={
-                      valorDigitado === null
-                        ? "Custo × quantidade. Pode alterar."
-                        : `Custo × quantidade: ${formatarMoeda(custoEstimado)}`
-                    }
-                  >
+              {comConta && (
+                <div className="space-y-4 border-t border-areia-200 px-3.5 py-3.5">
+                  <Campo rotulo="Fornecedor (favorecido)" obrigatorio erro={erros.favorecido}>
                     <input
-                      value={valorDaConta}
-                      onChange={(e) => setValorDigitado(e.target.value)}
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      className="campo tabular-nums"
-                    />
-                  </Campo>
-                  <Campo rotulo="Vencimento" obrigatorio erro={erros.vencimento}>
-                    <input
-                      type="date"
-                      value={vencimento}
-                      onChange={(e) => setVencimento(e.target.value)}
+                      value={favorecido}
+                      onChange={(e) => setFavorecido(e.target.value)}
+                      list="fornecedores-conhecidos"
+                      placeholder="Ex.: Distribuidora de bebidas"
                       className="campo"
+                      maxLength={80}
                     />
                   </Campo>
+                  <datalist id="fornecedores-conhecidos">
+                    {fornecedores.map((nome) => (
+                      <option key={nome} value={nome} />
+                    ))}
+                  </datalist>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Campo
+                      rotulo="Valor (R$)"
+                      obrigatorio
+                      erro={erros.valor}
+                      ajuda={
+                        valorDigitado === null
+                          ? "Custo × quantidade. Pode alterar."
+                          : `Custo × quantidade: ${formatarMoeda(custoEstimado)}`
+                      }
+                    >
+                      <input
+                        value={valorDaConta}
+                        onChange={(e) => setValorDigitado(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        className="campo tabular-nums"
+                      />
+                    </Campo>
+                    <Campo rotulo="Vencimento" obrigatorio erro={erros.vencimento}>
+                      <input
+                        type="date"
+                        value={vencimento}
+                        onChange={(e) => setVencimento(e.target.value)}
+                        className="campo"
+                      />
+                    </Campo>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <ResumoDoSaldo
             saldoAtual={saldo}

@@ -7,5 +7,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    // Testes com o Supabase de verdade: `npm run test:integracao`.
+    exclude: ["src/**/*.integracao.test.ts", "node_modules/**"],
   },
 });

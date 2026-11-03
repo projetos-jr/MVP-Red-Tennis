@@ -201,13 +201,13 @@ function ConteudoDoTorneio() {
   const unidade = torneio.duplas ? "duplas" : "inscritos";
   const faltamNosGrupos = detalhe.grupos.reduce((soma, g) => soma + g.restantes, 0);
 
-  function gerar() {
-    if (gravar(gerarChaveDoTorneio, { id: torneio.id }, "Chave gerada. Bom torneio!")) setGerando(false);
+  async function gerar() {
+    if (await gravar(gerarChaveDoTorneio, { id: torneio.id }, "Chave gerada. Bom torneio!")) setGerando(false);
   }
 
-  function desfazer() {
+  async function desfazer() {
     if (
-      gravar(
+      await gravar(
         desfazerChaveDoTorneio,
         { id: torneio.id },
         "Chave desfeita. As inscrições estão abertas de novo.",

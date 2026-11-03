@@ -32,3 +32,29 @@ jobs:
           version: 2.122.0
       - run: supabase start -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - run: supabase test db
+
+  # Telas + banco: sobe o Supabase local completo (banco, login e API), carrega
+  # os dados de exemplo, cria os usuarios de teste e roda os testes de
+  # integracao (as operacoes das telas gravando no banco de verdade).
+  integracao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run banco:seed
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Endereco e chaves do Supabase local (padrao, nao valem em projeto real)
+        run: |
+          eval "$(supabase status -o env)"
+          echo "SUPABASE_TESTE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_TESTE_CHAVE=$PUBLISHABLE_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_TESTE_CHAVE_SECRETA=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+      - run: node scripts/integracao/preparar.mjs
+      - run: npm run test:integracao

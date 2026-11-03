@@ -68,7 +68,7 @@ function ConteudoCongelar({ aoFechar, aluno }: { aoFechar: () => void; aluno: Al
   }
   const erros = tentouSalvar ? validar() : {};
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     setTentouSalvar(true);
     if (Object.keys(validar()).length > 0) return;
@@ -77,7 +77,7 @@ function ConteudoCongelar({ aoFechar, aluno }: { aoFechar: () => void; aluno: Al
       previa.suspensas.length > 0
         ? `Plano congelado. ${plural(previa.suspensas.length, "aula suspensa", "aulas suspensas")}.`
         : "Plano congelado.";
-    if (gravar(congelarPlano, { alunoId: aluno.id, inicio, fimPrevisto, motivo }, mensagem)) {
+    if (await gravar(congelarPlano, { alunoId: aluno.id, inicio, fimPrevisto, motivo }, mensagem)) {
       aoFechar();
     }
   }
@@ -247,7 +247,7 @@ function ConteudoReativar({
   );
   const semRegistroDeAulas = congelamento.aulasSuspensas === undefined;
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     if (!dataVolta) return;
     const voltam = previa?.voltam.length ?? 0;
@@ -256,7 +256,7 @@ function ConteudoReativar({
       : previa?.cancela
         ? "Congelamento cancelado."
         : `Plano reativado.${voltam > 0 ? ` ${plural(voltam, "aula voltou", "aulas voltaram")} para a agenda.` : ""}`;
-    if (gravar(reativarPlano, { congelamentoId: congelamento.id, dataVolta }, mensagem)) aoFechar();
+    if (await gravar(reativarPlano, { congelamentoId: congelamento.id, dataVolta }, mensagem)) aoFechar();
   }
 
   return (

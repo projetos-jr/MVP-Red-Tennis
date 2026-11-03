@@ -154,8 +154,8 @@ export function ModalReservas({
         rotuloConfirmar="Liberar todas"
         perigoso
         aoCancelar={() => setLiberandoTodas(false)}
-        aoConfirmar={() => {
-          gravar(
+        aoConfirmar={async () => {
+          await gravar(
             liberarReservasVencidas,
             {},
             `${plural(vencidas, "reserva liberada", "reservas liberadas")}.`,

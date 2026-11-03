@@ -30,8 +30,8 @@ export function ModalAnular({
   const { lancamento, pessoa } = detalhe.linha;
   const nome = pessoa?.nome ?? lancamento.nomePagante;
 
-  function confirmar() {
-    if (gravar(anularLancamento, { id, motivo }, "Lançamento anulado.")) aoConcluir();
+  async function confirmar() {
+    if (await gravar(anularLancamento, { id, motivo }, "Lançamento anulado.")) aoConcluir();
   }
 
   return (

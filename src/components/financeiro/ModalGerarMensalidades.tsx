@@ -54,11 +54,11 @@ export function ModalGerarMensalidades({
   const previa = useMemo(() => previaDasMensalidades(banco, competencia), [banco, competencia]);
   const nome = nomeDoMes(competencia);
 
-  function gerar(evento: FormEvent) {
+  async function gerar(evento: FormEvent) {
     evento.preventDefault();
     const n = previa.itens.length;
     const mensagem = `${mensalidades(n)} de ${nome} ${n === 1 ? "gerada" : "geradas"}.`;
-    if (gravar(gerarMensalidades, { competencia }, mensagem)) setGerado(previa);
+    if (await gravar(gerarMensalidades, { competencia }, mensagem)) setGerado(previa);
   }
 
   if (gerado) {

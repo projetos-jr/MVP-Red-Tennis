@@ -261,3 +261,20 @@ RLS de `comentarios`).
 Diferença em relação à tela: na comparação de nomes (siglas, formas de
 pagamento, planos), o banco ignora maiúsculas, espaços nas pontas e os
 acentos mais comuns do português (á, ã, ç, é...), sem a extensão `unaccent`.
+
+### Ligação com as telas
+
+As operações de Configurações estão ligadas ao banco real em
+`src/lib/supabase/operacoes/configuracoes.ts` (comentários: `base.ts`, na
+mesma pasta). Todas usam as funções da tabela acima, menos desativar e
+reativar plano do catálogo, que gravam direto em `planos`. Ao salvar uma
+seção, só os parâmetros dela vão para `salvar_parametros`; os outros ficam
+como estão. Testes de integração:
+`src/lib/supabase/operacoes/configuracoes.integracao.test.ts` (cada teste
+devolve o valor anterior no fim, porque a linha de configurações é uma só).
+
+Diferenças entre o modo demonstração e o modo Supabase:
+
+- O id de um plano novo é criado pelo banco (a tela não depende dele).
+- No modo demonstração, o menu do usuário mostra "Modo demonstração · nada é
+  gravado": ali tudo fica só no navegador e some ao recarregar a página.

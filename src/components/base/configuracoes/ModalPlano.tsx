@@ -50,7 +50,7 @@ export function ModalPlano({
     setRascunho((atual) => ({ ...atual, [campo]: valor }));
   }
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     const dados: DadosDoPlano = {
       nome: rascunho.nome,
@@ -62,8 +62,8 @@ export function ModalPlano({
       ativo: rascunho.ativo,
     };
     const gravou = plano
-      ? gravar(editarPlano, { ...dados, id: plano.id }, "Plano atualizado.")
-      : gravar(incluirPlano, dados, "Plano incluído no catálogo.");
+      ? await gravar(editarPlano, { ...dados, id: plano.id }, "Plano atualizado.")
+      : await gravar(incluirPlano, dados, "Plano incluído no catálogo.");
     if (gravou) aoFechar();
   }
 

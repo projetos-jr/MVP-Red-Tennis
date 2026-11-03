@@ -41,14 +41,14 @@ export function ComentariosDoRegistro({
 
   const comentarios = comentariosDe(banco, entidade, entidadeId);
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
-    if (gravar(adicionarComentario, { entidade, entidadeId, texto })) setTexto("");
+    if (await gravar(adicionarComentario, { entidade, entidadeId, texto })) setTexto("");
   }
 
-  function salvarEdicao(evento: FormEvent) {
+  async function salvarEdicao(evento: FormEvent) {
     evento.preventDefault();
-    if (editando && gravar(editarComentario, editando, "Comentário atualizado.")) {
+    if (editando && (await gravar(editarComentario, editando, "Comentário atualizado."))) {
       setEditando(null);
     }
   }
@@ -125,9 +125,9 @@ export function ComentariosDoRegistro({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      gravar(apagarComentario, { id: comentario.id }, "Comentário apagado.")
-                    }
+                    onClick={async () => {
+                      await gravar(apagarComentario, { id: comentario.id }, "Comentário apagado.");
+                    }}
                     className="text-tijolo-700 hover:underline"
                   >
                     Apagar

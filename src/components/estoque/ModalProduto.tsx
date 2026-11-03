@@ -60,7 +60,7 @@ export function ModalProduto({
     return novos;
   }
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const novos = conferir();
     setErros(novos);
@@ -75,8 +75,8 @@ export function ModalProduto({
       estoqueMinimo: lerInteiro(estoqueMinimo),
     };
     const gravou = produto
-      ? gravar(editarProduto, { ...dados, id: produto.id }, "Cadastro do produto atualizado.")
-      : gravar(
+      ? await gravar(editarProduto, { ...dados, id: produto.id }, "Cadastro do produto atualizado.")
+      : await gravar(
           cadastrarProduto,
           dados,
           "Produto cadastrado. Registre a entrada da mercadoria para ele ter saldo.",

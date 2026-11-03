@@ -35,13 +35,13 @@ export function ModalFecharConta({
 
   const total = abertos.reduce((soma, c) => soma + c.valor, 0);
 
-  function confirmar() {
+  async function confirmar() {
     if (!forma) {
       setErro("Escolha a forma de pagamento.");
       return;
     }
     setErro(undefined);
-    const gravou = gravar(
+    const gravou = await gravar(
       fecharContaDeConsumo,
       { pessoaId, pagoEm, formaPagamento: forma },
       `Conta de ${nomePessoa} fechada: ${formatarMoeda(total)} recebidos.`,

@@ -72,9 +72,9 @@ export function IncluirAluno({ item, aoFechar }: { item: ItemAgenda; aoFechar: (
             <span className="flex gap-1.5">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    gravar(
+                    await gravar(
                       incluirAluno,
                       { ocupacaoId: ocupacao.id, alunoId: aluno.id },
                       `${aluno.nome} entrou na aula.`,
@@ -90,9 +90,9 @@ export function IncluirAluno({ item, aoFechar }: { item: ItemAgenda; aoFechar: (
               {aceitaReposicao && (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      gravar(
+                      await gravar(
                         usarReposicao,
                         { ocupacaoId: ocupacao.id, alunoId: aluno.id },
                         `${aluno.nome} entrou na aula com reposição. Saldo usado: ${formatarMinutos(minutos)}.`,

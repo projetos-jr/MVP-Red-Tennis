@@ -315,3 +315,24 @@ Como testar: com o Postgres local rodando, rode os testes do banco
 (`supabase test db`) e confira que `50_alunos.test.sql` passa inteiro (97
 verificações: congelar, reativar, anular, trocar e desmarcar plano, inativar,
 permissões e auditoria).
+
+### Ligação com as telas
+
+As operações deste módulo (alunos e professores) estão ligadas ao banco real
+em `src/lib/supabase/operacoes/alunos.ts`: matrícula, congelamento e
+inativação chamam as funções da tabela acima; cadastro e edição de aluno e de
+professor, reativar cadastro e corrigir matrícula gravam direto na tabela
+(com o mesmo id que a tela gerou, por isso a ficha nova abre logo depois de
+salvar). Testes de integração (as telas gravando num Supabase de verdade, com
+os três perfis): `src/lib/supabase/operacoes/alunos.integracao.test.ts`.
+
+Diferenças entre o modo demonstração e o modo Supabase:
+
+- No modo Supabase, o banco confere tudo de novo; o que a tela já recusa nem
+  chega a ser enviado. Mesmo burlando a tela, o professor não cadastra
+  alunos e a recepção não muda a regra de repasse.
+- Os ids de matrícula e de congelamento são criados pelo banco (a tela não
+  depende deles).
+- Ao reativar um plano, a mensagem "N aulas voltaram" vem da prévia da tela.
+  Se alguém ocupar a quadra entre a prévia e a gravação, o banco deixa essa
+  aula de fora; a agenda, relida logo depois, mostra o que de fato voltou.

@@ -46,8 +46,8 @@ export function SecaoPermissoes() {
     });
   }
 
-  function salvar() {
-    gravar(alterarPermissoes, { permissoes: rascunho }, "Permissões salvas. Já valem para todos.");
+  async function salvar() {
+    await gravar(alterarPermissoes, { permissoes: rascunho }, "Permissões salvas. Já valem para todos.");
   }
 
   return (

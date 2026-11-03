@@ -77,8 +77,12 @@ Para rodar na sua máquina (precisa do Docker):
 
 ```bash
 npx supabase start
+npx supabase db reset --no-seed   # banco limpo, sem os dados de exemplo
 npx supabase test db
 ```
+
+Os testes do banco supõem o banco vazio (como no CI): com os dados de exemplo
+carregados, alguns horários de teste esbarram nas aulas de exemplo.
 
 ## Dados de exemplo
 

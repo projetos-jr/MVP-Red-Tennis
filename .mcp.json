@@ -2,7 +2,7 @@
   "mcpServers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=xfludepkrcnwovnckpfc"
+      "url": "https://mcp.supabase.com/mcp?project_ref=mpmbnwqaiqgoojdtmrqr"
     },
     "cloudflare": {
       "type": "http",

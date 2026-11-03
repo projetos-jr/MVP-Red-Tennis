@@ -35,12 +35,12 @@ export function ModalFecharRepasse({
   const total = linhas.reduce((soma, l) => soma + l.faltaLancar, 0);
   const contas = linhas.filter((l) => l.faltaLancar > 0).length;
 
-  function confirmar() {
+  async function confirmar() {
     const mensagem =
       contas === 0
         ? `Repasse de ${nome} fechado. Não havia nada a lançar.`
         : `Repasse de ${nome} fechado: ${contas} ${contas === 1 ? "conta a pagar lançada" : "contas a pagar lançadas"}.`;
-    if (gravar(fecharRepasseDoMes, { competencia: relatorio.competencia, vencimento }, mensagem)) {
+    if (await gravar(fecharRepasseDoMes, { competencia: relatorio.competencia, vencimento }, mensagem)) {
       aoConcluir();
     }
   }

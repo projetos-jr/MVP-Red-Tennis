@@ -46,9 +46,9 @@ export function ModalPagamento({
   const reserva = detalhe.reserva?.aguardandoPagamento ? detalhe.reserva : undefined;
   const valorConvenio = lerValor(convenio);
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
-    const gravou = gravar(
+    const gravou = await gravar(
       registrarPagamento,
       {
         id,

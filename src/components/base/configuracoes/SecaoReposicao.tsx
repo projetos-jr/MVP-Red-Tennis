@@ -45,17 +45,17 @@ export function SecaoReposicao() {
 
   const erroDaValidade = erroDeInteiro(validade, 1, "Use um número inteiro de meses, a partir de 1.");
 
-  function salvarValidade() {
-    gravar(
+  async function salvarValidade() {
+    await gravar(
       salvarParametros,
       { validadeReposicaoMeses: paraNumero(validade) },
       "Validade da reposição salva.",
     );
   }
 
-  function confirmarDesativacao() {
+  async function confirmarDesativacao() {
     if (!desativando) return;
-    if (gravar(desativarSigla, { codigo: desativando.codigo }, `Sigla ${desativando.codigo} desativada.`)) {
+    if (await gravar(desativarSigla, { codigo: desativando.codigo }, `Sigla ${desativando.codigo} desativada.`)) {
       setDesativando(null);
     }
   }
@@ -167,9 +167,9 @@ export function SecaoReposicao() {
                   {sigla.desativada ? (
                     <button
                       type="button"
-                      onClick={() =>
-                        gravar(reativarSigla, { codigo: sigla.codigo }, `Sigla ${sigla.codigo} reativada.`)
-                      }
+                      onClick={async () => {
+                        await gravar(reativarSigla, { codigo: sigla.codigo }, `Sigla ${sigla.codigo} reativada.`);
+                      }}
                       className="btn-fantasma px-2.5 py-1.5 text-xs text-emerald-800"
                     >
                       Reativar

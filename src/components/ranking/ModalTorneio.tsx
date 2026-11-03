@@ -64,7 +64,7 @@ export function ModalTorneio({
     setInscricoes([]);
   }
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const dados = {
       nome,
@@ -76,7 +76,7 @@ export function ModalTorneio({
     };
 
     if (torneio) {
-      const ok = gravar(
+      const ok = await gravar(
         editarTorneio,
         { ...dados, id: torneio.id, inscricoes: chaveGerada ? undefined : dados.inscricoes },
         "Torneio atualizado.",
@@ -87,15 +87,18 @@ export function ModalTorneio({
 
     // Aqui se usa `executar` (e nao `useGravar`) para saber o id do torneio
     // criado e abrir a tela dele em seguida.
-    const resultado = executar(criarTorneio, dados);
+    // No banco real, o id e o que o banco criou (`resultado.id`); na
+    // demonstracao, o torneio novo e o ultimo da lista.
+    const resultado = await executar(criarTorneio, dados);
     if (!resultado.ok) {
-      avisar("erro", resultado.erro);
+      // Erro vazio = clique repetido enquanto a gravacao anterior acontecia.
+      if (resultado.erro) avisar("erro", resultado.erro);
       return;
     }
-    const novo = resultado.banco.torneios[resultado.banco.torneios.length - 1];
+    const id = resultado.id ?? resultado.banco.torneios[resultado.banco.torneios.length - 1].id;
     avisar("sucesso", "Torneio criado. Confira as inscrições e gere a chave quando estiver pronto.");
     aoFechar();
-    router.push(`/ranking/torneio?id=${novo.id}`);
+    router.push(`/ranking/torneio?id=${id}`);
   }
 
   return (

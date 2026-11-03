@@ -41,8 +41,8 @@ export function SecaoReservasEAgenda() {
       ? undefined
       : "Use um número inteiro de 1 a 52.";
 
-  function salvar() {
-    gravar(
+  async function salvar() {
+    await gravar(
       salvarParametros,
       {
         prazoPagamentoReservaHoras: paraNumero(rascunho.prazo),

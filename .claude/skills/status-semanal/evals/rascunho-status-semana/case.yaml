@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: rascunho-status-semana
+expected_outcome: |
+  Rascunho no formato de status (concluído, em andamento, próxima semana, o que precisamos da arena, próximo marco) baseado em PRs/commits reais da main, em linguagem da arena, sem dados sensíveis, e uma lista separada do que foi verificado versus deduzido.

@@ -59,8 +59,8 @@ export function SecaoRanking() {
     setRascunho({ ...rascunho, criterios });
   }
 
-  function salvar() {
-    gravar(
+  async function salvar() {
+    await gravar(
       salvarParametros,
       {
         pontosVitoria: vitoria,

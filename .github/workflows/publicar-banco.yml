@@ -6,11 +6,12 @@
 #    ambiente "producao" no GitHub com aprovacao obrigatoria (Settings ->
 #    Environments -> producao -> Required reviewers).
 #
-# Cada ambiente do GitHub (Settings -> Environments) precisa de:
+# Cada ambiente do GitHub (Settings -> Environments), restrito a branch main,
+# precisa de:
 #   - variavel SUPABASE_PROJECT_ID: o "ref" do projeto (nao e segredo);
+#   - segredo  SUPABASE_ACCESS_TOKEN: token do Supabase (Account -> Access Tokens);
 #   - segredo  SUPABASE_DB_PASSWORD: a senha do banco desse projeto.
-# E o repositorio precisa do segredo SUPABASE_ACCESS_TOKEN (token pessoal do
-# Supabase: Account -> Access Tokens). Passo a passo em docs/AMBIENTES.md.
+# Passo a passo em docs/AMBIENTES.md.
 #
 # So aplica migracoes novas: o que ja foi aplicado nunca roda de novo, e
 # migracao aplicada nunca e editada (cria-se outra).
@@ -51,11 +52,16 @@ jobs:
       - name: Conferir a configuracao
         run: |
           faltando=""
-          [ -z "$SUPABASE_ACCESS_TOKEN" ] && faltando="$faltando SUPABASE_ACCESS_TOKEN(segredo do repositorio)"
+          [ -z "$SUPABASE_ACCESS_TOKEN" ] && faltando="$faltando SUPABASE_ACCESS_TOKEN(segredo do ambiente $AMBIENTE)"
           [ -z "$SUPABASE_DB_PASSWORD" ] && faltando="$faltando SUPABASE_DB_PASSWORD(segredo do ambiente $AMBIENTE)"
           [ -z "$SUPABASE_PROJECT_ID" ] && faltando="$faltando SUPABASE_PROJECT_ID(variavel do ambiente $AMBIENTE)"
           if [ -n "$faltando" ]; then
             echo "::error::Falta configurar no GitHub:$faltando. Veja docs/AMBIENTES.md."
+            exit 1
+          fi
+          # So o que ja passou por revisao (a main) vai para um banco de verdade.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Publique sempre a partir da main (escolhida: $GITHUB_REF)."
             exit 1
           fi
           if [ "$AMBIENTE" = "producao" ] && [ "$DADOS_DE_EXEMPLO" = "true" ]; then

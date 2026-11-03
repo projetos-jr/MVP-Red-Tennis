@@ -123,3 +123,12 @@
     background: transparent;
   }
 }
+
+/* Enquanto uma gravacao vai para o banco (IndicadorDeGravacao): botoes de
+   confirmar travados, para nao gravar duas vezes. */
+body.gravando button[type="submit"],
+body.gravando .btn-primario,
+body.gravando .btn-perigo {
+  pointer-events: none;
+  opacity: 0.6;
+}

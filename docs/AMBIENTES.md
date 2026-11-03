@@ -30,12 +30,20 @@ tem backup diário: o backup próprio entra na semana 3 (`docs/BANCO.md`).
    revisor do ambiente.
 
 O passo "Mostrar o que vai ser aplicado" lista as migrações antes de aplicar.
-Migração que já foi aplicada nunca roda de novo.
+Migração que já foi aplicada nunca roda de novo. O workflow só publica a partir
+da `main` (o que já passou por revisão e pelo CI).
 
-**Dados de exemplo no teste:** *Run workflow* → ambiente `teste` → marcar
-"Carregar os dados de exemplo". Só funciona com o banco vazio (os registros de
-exemplo têm ids fixos). Os dados de exemplo são fictícios; antes de importar
-dados reais, eles são apagados.
+**Antes da primeira publicação na produção:** a migração do modelo novo apaga
+as tabelas antigas do projeto Red Tennis (do MVP), que estavam vazias em 29/10.
+Confirme que continuam vazias (Table Editor) antes de rodar.
+
+**Se o repositório virar privado:** no plano gratuito do GitHub, os
+ambientes (`teste`, `producao`), os segredos de ambiente e a aprovação
+obrigatória só existem em repositório público; em repositório privado exigem
+plano pago (GitHub Pro/Team). Nesse caso, peça ao Claude Code para trocar o
+workflow para segredos do repositório só do teste, e não cadastre a senha do
+banco de produção no GitHub até a entrega (a produção passa a ser publicada
+junto com a equipe, sem automação).
 
 ---
 
@@ -44,23 +52,26 @@ dados reais, eles são apagados.
 O Claude não vê nem guarda senhas e tokens. Quem tem acesso às contas do
 projeto faz isto uma vez, direto no GitHub:
 
-1. **Token do Supabase** (vale para os dois projetos): no Supabase, clique no
-   avatar → *Account preferences* → *Access Tokens* → *Generate new token*,
-   nome `github-actions-red-tennis`. Copie o token.
-   No GitHub: *Settings → Secrets and variables → Actions → New repository
-   secret*, nome `SUPABASE_ACCESS_TOKEN`, cole o token.
+1. **Token do Supabase**: no Supabase, clique no avatar → *Account
+   preferences* → *Access Tokens* → *Generate new token*, nome
+   `github-actions-red-tennis`. Copie o token (ele dá acesso à conta inteira:
+   por isso fica só dentro dos ambientes, nunca como segredo do repositório,
+   que qualquer branch alcançaria).
 2. **Ambiente de teste**: GitHub → *Settings → Environments → New environment*
    → `teste`.
+   - *Deployment branches and tags* → *Selected branches* → `main`.
    - *Add environment variable*: `SUPABASE_PROJECT_ID` = `mpmbnwqaiqgoojdtmrqr`.
+   - *Add environment secret*: `SUPABASE_ACCESS_TOKEN` = o token do passo 1.
    - *Add environment secret*: `SUPABASE_DB_PASSWORD` = a senha do banco do
      projeto Red Tennis Teste (definida na criação do projeto; se ninguém
      souber, troque em Supabase → projeto → *Database → Settings → Reset
      database password* e guarde no cofre de senhas da equipe).
 3. **Ambiente de produção**: *New environment* → `producao`.
    - Marque *Required reviewers* e escolha quem aprova (o coordenador, por
-     exemplo).
+     exemplo); *Deployment branches and tags* → só `main`.
    - Variável `SUPABASE_PROJECT_ID` = `xfludepkrcnwovnckpfc`.
-   - Segredo `SUPABASE_DB_PASSWORD` = a senha do banco do projeto Red Tennis.
+   - Segredos `SUPABASE_ACCESS_TOKEN` (o mesmo token) e `SUPABASE_DB_PASSWORD`
+     (a senha do banco do projeto Red Tennis).
 4. Teste: *Actions → publicar-banco → Run workflow* (ambiente `teste`). Se
    faltar alguma configuração, o primeiro passo diz exatamente qual.
 
