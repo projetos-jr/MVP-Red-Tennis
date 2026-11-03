@@ -260,3 +260,26 @@ continua pulando o mês que tem uma mensalidade anulada.
 
 Como testar: `supabase test db` (arquivo
 `supabase/tests/60_financeiro_estoque.test.sql`).
+
+### Ligação com as telas
+
+As telas chamam essas funções pelo arquivo
+`src/lib/supabase/operacoes/financeiro.ts` (uma linha por operação: qual
+função, com quais parâmetros e quais tabelas a tela lê de novo depois de
+gravar). A regra da tela roda antes, com as mesmas mensagens: o que ela recusa
+nem chega ao banco. Testes de integração (gravando num Supabase de verdade):
+`src/lib/supabase/operacoes/financeiro.integracao.test.ts` — lançar, receber e
+anular; pagar a cobrança de uma reserva e ver a reserva confirmada; gerar as
+mensalidades de um mês futuro sem duplicar; fechar o repasse de um mês passado
+descontando o adiantamento, uma vez só; e as recusas do banco (valor zero,
+pagar duas vezes, anular cobrança de reserva aguardando pagamento, recepção
+lançando conta a pagar ou fechando repasse, professor no financeiro). Como
+rodar: `src/lib/supabase/integracao/ambiente.ts`.
+
+Diferenças entre o modo demonstração e o modo Supabase: os ids dos
+lançamentos e repasses são gerados pelo banco; as datas de criação, pagamento
+registrado e anulação usam o relógio do banco. "Gerar mensalidades" e
+"Fechar repasse do mês" valem para a arena inteira: no modo Supabase, o banco
+recalcula a lista na hora de gravar, então se alguém criou uma matrícula ou
+marcou uma aula entre abrir a janela e confirmar, o que foi gravado inclui
+essa mudança (a mensagem de sucesso mostra a contagem da prévia).

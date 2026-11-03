@@ -71,7 +71,7 @@ export function ModalConsumo({
   const quantidadeValida = Number.isInteger(numero) && numero > 0;
   const total = selecionado && quantidadeValida ? selecionado.produto.precoVenda * numero : 0;
 
-  function confirmar(evento: FormEvent) {
+  async function confirmar(evento: FormEvent) {
     evento.preventDefault();
     const falta = !pessoa
       ? "Escolha para quem é o consumo."
@@ -84,7 +84,7 @@ export function ModalConsumo({
     if (falta || !pessoa || !selecionado) return;
 
     // Quantidade acima do saldo vai para a regra, que recusa com a mensagem certa.
-    const gravou = gravar(
+    const gravou = await gravar(
       lancarConsumo,
       {
         pessoaId: pessoa.id,

@@ -231,3 +231,29 @@ Diferenças em relação ao front de exemplo:
 
 Como testar: `supabase test db` (arquivo
 `supabase/tests/60_financeiro_estoque.test.sql`).
+
+### Ligação com as telas
+
+As telas chamam essas funções pelo arquivo
+`src/lib/supabase/operacoes/estoque.ts` (uma linha por operação: qual função,
+com quais parâmetros e quais tabelas a tela lê de novo depois de gravar). A
+regra da tela roda antes, com as mesmas mensagens: o que ela recusa nem chega
+ao banco. Testes de integração: `src/lib/supabase/operacoes/estoque.integracao.test.ts`
+— cadastrar, editar, inativar e reativar; entrada, perda, inventário, consumo
+e fechar a conta, conferindo o saldo (soma dos movimentos); entrada com conta a
+pagar; e as recusas do banco (nome repetido, saída maior que o saldo, produto
+inativo, conta já fechada, professor no estoque). Como rodar:
+`src/lib/supabase/integracao/ambiente.ts`.
+
+Diferenças entre o modo demonstração e o modo Supabase:
+
+- **Entrada com conta a pagar feita pela recepção.** No modo demonstração a
+  tela aceita; no modo Supabase o banco recusa ("Seu perfil não tem permissão
+  para esta operação.") e nada é gravado, nem a entrada. É o que a regra do
+  banco diz (a conta a pagar fica com o dono), mas a tela ainda oferece a
+  opção à recepção. Decisão pendente da equipe: esconder a opção para quem não
+  tem "financeiro_pagar" (e recusar na regra da tela) ou liberar no banco.
+- Produto com preço de venda zero: no modo Supabase o consumo e a baixa são
+  gravados, mas sem conta a receber (ver acima).
+- Os ids (produto, movimento, consumo, lançamento) são gerados pelo banco;
+  depois de gravar, a tela lê de novo as tabelas e passa a usar esses ids.

@@ -193,13 +193,13 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
             ) : (
               <button
                 type="button"
-                onClick={() =>
-                  gravar(
+                onClick={async () => {
+                  await gravar(
                     reativarProduto,
                     { id: produto.id },
                     `${produto.nome} voltou para o catálogo e para as listas de venda.`,
-                  )
-                }
+                  );
+                }}
                 className="btn-secundario sm:ml-auto"
               >
                 Reativar produto

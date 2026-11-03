@@ -69,9 +69,9 @@ export default function PaginaEstoque() {
     setFiltro((atual) => ({ ...atual, ...parcial }));
   }
 
-  function agir(tipo: AcaoRapida, item: ProdutoComSaldo) {
+  async function agir(tipo: AcaoRapida, item: ProdutoComSaldo) {
     if (tipo === "reativar") {
-      gravar(
+      await gravar(
         reativarProduto,
         { id: item.produto.id },
         `${item.produto.nome} voltou para o catálogo e para as listas de venda.`,
