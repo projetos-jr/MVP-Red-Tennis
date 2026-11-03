@@ -30,7 +30,7 @@ export function ModalInventario({
   const contadoValido = Number.isInteger(numero) && numero >= 0;
   const diferenca = contadoValido ? numero - saldo : 0;
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     if (!contadoValido) {
       setErro("Informe quantas unidades você contou (pode ser zero).");
@@ -38,7 +38,7 @@ export function ModalInventario({
     }
     setErro(undefined);
     // Contado igual ao sistema vai para a regra, que explica que nao ha o que ajustar.
-    const gravou = gravar(
+    const gravou = await gravar(
       ajustarInventario,
       { produtoId: produto.id, saldoContado: numero, observacao },
       `Inventário ajustado: ${produto.nome} agora tem ${numero} em estoque.`,

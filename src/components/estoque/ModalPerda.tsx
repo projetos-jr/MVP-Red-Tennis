@@ -25,7 +25,7 @@ export function ModalPerda({ item, aoFechar }: { item: ProdutoComSaldo; aoFechar
   const numero = lerInteiro(quantidade);
   const quantidadeValida = Number.isInteger(numero) && numero > 0;
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const novos: typeof erros = {};
     if (!quantidadeValida) novos.quantidade = "Informe quantas unidades foram perdidas.";
@@ -34,7 +34,7 @@ export function ModalPerda({ item, aoFechar }: { item: ProdutoComSaldo; aoFechar
     if (Object.keys(novos).length > 0) return;
 
     // Quantidade acima do saldo vai para a regra, que recusa com a mensagem certa.
-    const gravou = gravar(
+    const gravou = await gravar(
       registrarPerda,
       { produtoId: produto.id, quantidade: numero, motivo },
       `Perda de ${numero} unidade(s) de ${produto.nome} registrada.`,

@@ -80,7 +80,7 @@ export function ModalNovoLancamento({
     setNomePagante("");
   }
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     const dados: DadosNovoLancamento = {
       tipo,
@@ -97,7 +97,7 @@ export function ModalNovoLancamento({
       competencia: repasse ? competencia : undefined,
     };
     const mensagem = jaPago ? "Lançamento criado, já como pago." : "Lançamento criado.";
-    if (gravar(criarLancamento, dados, mensagem)) aoConcluir(tipo);
+    if (await gravar(criarLancamento, dados, mensagem)) aoConcluir(tipo);
   }
 
   return (

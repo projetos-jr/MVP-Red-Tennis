@@ -82,9 +82,9 @@ export function ModaisDoEstoque({
               )}
             </>
           }
-          aoConfirmar={() => {
+          aoConfirmar={async () => {
             if (
-              gravar(
+              await gravar(
                 inativarProduto,
                 { id: item.produto.id },
                 `${item.produto.nome} foi inativado e saiu das listas de venda.`,

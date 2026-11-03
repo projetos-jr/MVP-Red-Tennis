@@ -55,7 +55,7 @@ export function ModalEntrada({
   const custoEstimado = quantidadeValida ? produto.precoCusto * numero : 0;
   const valorDaConta = valorDigitado ?? (quantidadeValida ? valorParaCampo(custoEstimado) : "");
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const novos: Erros = {};
     if (!quantidadeValida) novos.quantidade = "Informe quantas unidades chegaram.";
@@ -68,7 +68,7 @@ export function ModalEntrada({
     setErros(novos);
     if (Object.keys(novos).length > 0) return;
 
-    const gravou = gravar(
+    const gravou = await gravar(
       registrarEntrada,
       {
         produtoId: produto.id,
