@@ -84,10 +84,10 @@ function LinhaDoAluno({
   const minutosDeCredito =
     regra?.geraCredito && tipoComDireitoAReposicao(ocupacao.tipo) ? duracaoEmMinutos(ocupacao) : 0;
 
-  function marcar(presenca: Presenca, mensagem: string, comSigla?: string) {
+  async function marcar(presenca: Presenca, mensagem: string, comSigla?: string) {
     // Clicar de novo na opcao ja marcada desfaz a marcacao.
     const desfazer = presenca === participacao.presenca && presenca !== "falta_avisada";
-    const gravou = gravar(
+    const gravou = await gravar(
       marcarPresenca,
       {
         ocupacaoId: ocupacao.id,
@@ -109,7 +109,7 @@ function LinhaDoAluno({
       ocupacao.tipo === "Individual"
         ? `Falta avisada (${sigla}): a aula individual foi cancelada. ${credito}`
         : `Falta avisada (${sigla}) registrada. ${credito}`;
-    marcar("falta_avisada", mensagem, sigla);
+    void marcar("falta_avisada", mensagem, sigla);
   }
 
   const botao = grande
@@ -286,9 +286,9 @@ function LinhaDoAluno({
         rotuloConfirmar="Tirar da aula"
         perigoso
         aoCancelar={() => setRemovendo(false)}
-        aoConfirmar={() => {
+        aoConfirmar={async () => {
           if (
-            gravar(
+            await gravar(
               removerAluno,
               { ocupacaoId: ocupacao.id, alunoId: participacao.alunoId },
               `${nome} saiu da aula.`,

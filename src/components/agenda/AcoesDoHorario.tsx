@@ -60,12 +60,12 @@ export function ConfirmarCancelamento({
     [banco, item.ocupacao, motivo, agora],
   );
 
-  function confirmar() {
+  async function confirmar() {
     const minutos = previa?.minutosTotais ?? 0;
     const mensagem = bloqueio
       ? "Bloqueio cancelado: a quadra está livre nesse horário."
       : `Aula cancelada (${motivo}).${minutos > 0 ? ` Reposição gerada: ${formatarMinutos(minutos)}.` : ""}`;
-    if (gravar(cancelarOcupacao, { id: item.ocupacao.id, motivo }, mensagem)) aoFechar();
+    if (await gravar(cancelarOcupacao, { id: item.ocupacao.id, motivo }, mensagem)) aoFechar();
   }
 
   return (
@@ -190,10 +190,10 @@ export function ModalRemarcar({ item, aoFechar }: { item: ItemAgenda; aoFechar: 
     [banco, ocupacao.id, data, inicio, fim, valida],
   );
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     if (
-      gravar(
+      await gravar(
         remarcarOcupacao,
         alvo,
         `Horário remarcado para ${rotuloDaQuadra(quadraId)} · ${formatarDiaMes(data)} · ${inicio}–${fim}.`,
@@ -286,9 +286,9 @@ export function ConfirmarEncerramento({
       perigoso
       desabilitado={!valida}
       aoCancelar={aoFechar}
-      aoConfirmar={() => {
+      aoConfirmar={async () => {
         if (
-          gravar(
+          await gravar(
             encerrarHorarioFixo,
             { horarioFixoId: horarioFixo.id, fim },
             `Horário fixo encerrado em ${formatarData(fim)}. ${removidas.length} ${removidas.length === 1 ? "aula saiu" : "aulas saíram"} da agenda.`,
@@ -341,9 +341,9 @@ export function ConfirmarLiberacao({ item, aoFechar }: { item: ItemAgenda; aoFec
       rotuloConfirmar="Liberar horário"
       perigoso
       aoCancelar={aoFechar}
-      aoConfirmar={() => {
+      aoConfirmar={async () => {
         if (
-          gravar(
+          await gravar(
             liberarReserva,
             { id: item.ocupacao.id },
             "Horário liberado: a reserva sem pagamento foi cancelada.",

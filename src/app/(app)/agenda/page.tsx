@@ -190,12 +190,18 @@ function Agenda({
     jaLiberou.current = true;
     const vencidas = contarReservasVencidas(banco, agoraArena());
     if (vencidas === 0) return;
-    if (executar(liberarReservasVencidas, {}).ok) {
-      avisar(
-        "info",
-        `${plural(vencidas, "reserva sem pagamento no prazo foi liberada", "reservas sem pagamento no prazo foram liberadas")} automaticamente (opção ligada nas Configurações).`,
-      );
-    }
+    void executar(liberarReservasVencidas, {}).then((resultado) => {
+      if (resultado.ok) {
+        avisar(
+          "info",
+          `${plural(vencidas, "reserva sem pagamento no prazo foi liberada", "reservas sem pagamento no prazo foram liberadas")} automaticamente (opção ligada nas Configurações).`,
+        );
+      } else if (!resultado.erro) {
+        // Erro vazio: outra gravacao estava em andamento. Tenta de novo quando
+        // o banco mudar (o efeito roda outra vez).
+        jaLiberou.current = false;
+      }
+    });
   }, [banco, podeEditar, executar, avisar]);
 
   // --- Acoes ---------------------------------------------------------------------

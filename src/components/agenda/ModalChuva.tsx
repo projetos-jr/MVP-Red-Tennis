@@ -66,7 +66,7 @@ export function ModalChuva({
     [banco, dados, agora, valida, quadrasIds.length],
   );
 
-  function cancelar() {
+  async function cancelar() {
     if (!previa) return;
     const feito = {
       aulas: previa.aulas.length,
@@ -74,7 +74,7 @@ export function ModalChuva({
       minutos: previa.minutos,
       data,
     };
-    const gravou = gravar(
+    const gravou = await gravar(
       cancelarPorChuva,
       dados,
       `Chuva registrada: ${plural(feito.aulas, "aula cancelada", "aulas canceladas")}, ${plural(feito.alunos, "aluno", "alunos")}, ${formatarMinutos(feito.minutos)} de reposição.`,

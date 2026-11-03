@@ -53,10 +53,10 @@ export function ModalBloquearQuadra({
   );
   const jaBloqueada = previa?.bloqueiosExistentes[0];
 
-  function bloquear() {
+  async function bloquear() {
     const aulas = previa?.aulas.length ?? 0;
     const nomes = quadrasIds.map((q) => rotuloDaQuadra(q)).join(", ");
-    const gravou = gravar(
+    const gravou = await gravar(
       bloquearQuadra,
       { quadrasIds, data, horaInicio: inicio, horaFim: fim, descricao },
       aulas > 0
@@ -71,7 +71,7 @@ export function ModalBloquearQuadra({
     evento.preventDefault();
     // Com aulas no caminho, pede confirmacao (cancelar aulas nao tem volta).
     if ((previa?.aulas.length ?? 0) > 0) setConfirmando(true);
-    else bloquear();
+    else void bloquear();
   }
 
   // Enquanto a confirmacao esta aberta, o formulario sai da frente (o estado

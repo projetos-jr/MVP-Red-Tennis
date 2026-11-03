@@ -388,3 +388,29 @@ semanas (H12).
 **Como testar**: `supabase test db` (arquivo
 `supabase/tests/40_agenda.test.sql`, 88 testes: caminho feliz e cada recusa
 importante, permissão do professor e auditoria).
+
+**Ligação com as telas** (versão de 03/11/2026). As 14 operações da agenda
+estão ligadas às funções acima em `src/lib/supabase/operacoes/agenda.ts`
+(todas por função do banco, nenhuma grava direto na tabela). No modo
+Supabase, cada botão roda primeiro a regra da tela (mesmas mensagens), depois
+a função do banco, e relê as tabelas que ela pode mudar (ocupações, alunos da
+aula, reposições, cobranças e, no horário fixo, os moldes). Testes de
+integração: `src/lib/supabase/operacoes/agenda.integracao.test.ts` (10 testes,
+com os usuários de teste da recepção, do professor e do dono; como rodar em
+`src/lib/supabase/integracao/ambiente.ts`). Diferenças entre os dois modos:
+
+- Os ids dos registros criados vêm do banco. O id do registro principal volta
+  para a tela (ocupação criada, molde do horário fixo, primeiro bloqueio,
+  participação incluída); hoje nenhuma tela abre o registro recém-criado (o
+  "Novo horário" só leva a agenda até a data).
+- Os números das mensagens de sucesso (aulas canceladas pela chuva ou pelo
+  bloqueio, minutos de reposição, reservas liberadas) são os da prévia da
+  tela. Se outra pessoa mudou a agenda nesse meio-tempo, a grade relida mostra
+  o que de fato ficou gravado.
+- "Liberar todas as vencidas" e a liberação automática ao abrir a agenda usam
+  o relógio do banco e liberam **todas** as reservas vencidas, mesmo as que a
+  tela ainda não contava. A liberação automática agora espera a gravação; se
+  outra gravação estiver em andamento, tenta de novo quando o banco mudar.
+- No teste de integração, os testes de liberar reserva só rodam depois das
+  09:00 (precisam de uma reserva de hoje que já começou) e liberam também as
+  reservas vencidas dos dados de exemplo do banco de teste.
