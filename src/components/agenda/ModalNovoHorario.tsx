@@ -187,12 +187,12 @@ export function ModalNovoHorario({
     );
   }
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const quando = `${rotuloDaQuadra(quadraId)} · ${formatarDiaMes(data)} · ${inicio}–${fim}`;
     let gravou = false;
     if (modo === "avulso") {
-      gravou = gravar(
+      gravou = await gravar(
         criarHorarioAvulso,
         { ...alvo, tipo, professorId: professorEfetivo, alunosIds, descricao },
         tipo === "Locação Avulsa"
@@ -200,7 +200,7 @@ export function ModalNovoHorario({
           : `Horário marcado: ${quando}.`,
       );
     } else if (modo === "fixo") {
-      gravou = gravar(
+      gravou = await gravar(
         criarHorarioFixo,
         {
           quadraId,
@@ -216,7 +216,7 @@ export function ModalNovoHorario({
         `Horário fixo criado: ${repeticaoSemanal(diaDaSemana(data))}, ${inicio}–${fim}, ${rotuloDaQuadra(quadraId)} (${aulasQueSeraoCriadas} aulas).`,
       );
     } else {
-      gravou = gravar(
+      gravou = await gravar(
         marcarAulaDeReposicao,
         { alunoId: alunosIds[0] ?? "", ...alvo, tipo, professorId: professorEfetivo },
         `Reposição marcada (${quando}). Saldo usado: ${formatarMinutos(minutos)}.`,
