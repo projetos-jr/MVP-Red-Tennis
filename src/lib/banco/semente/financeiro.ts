@@ -2,7 +2,8 @@
  * Dados de exemplo: financeiro.
  *
  * - Mensalidades dos ultimos 6 meses de cada matricula (o mes corrente com
- *   pagamentos pendentes e em atraso). As do mes seguinte NAO existem: e o
+ *   pagamentos pendentes e em atraso, e algumas do mes passado ainda em
+ *   aberto). As do mes seguinte NAO existem: e o
  *   que o botao "Gerar mensalidades" demonstra;
  * - locacoes avulsas (pagas, ou aguardando pagamento dentro do prazo);
  * - inscricoes de torneio e algumas aulas experimentais;
@@ -119,7 +120,11 @@ export function gerarFinanceiro(dados: DadosParaFinanceiro): FinanceiroGerado {
       if (matricula.fim && vencimento > matricula.fim) return;
 
       let pagoEm: string | undefined;
-      if (competencia !== competenciaAtual) {
+      if (competencia === competenciaAnterior && rng() < 0.08) {
+        // Algumas do mes passado continuam em aberto: o painel e o financeiro
+        // mostram mensalidades em atraso em qualquer dia do mes (inclusive
+        // nos primeiros dias, quando as do mes corrente ainda nao venceram).
+      } else if (competencia !== competenciaAtual) {
         const atraso = rng() < 0.1 ? inteiro(rng, 5, 20) : inteiro(rng, -3, 3);
         pagoEm = ateHoje(somarDias(vencimento, atraso));
       } else if (vencimento < HOJE) {

@@ -87,6 +87,10 @@ A partir daí, cada push na `main` publica uma nova versão.
 **Pela linha de comando:** `npx wrangler login` uma vez e depois
 `npm run deploy`.
 
+**Ambientes de teste e produção** (projetos do Supabase, publicação
+automática das migrações, segredos e usuários da equipe): ver
+[`docs/AMBIENTES.md`](docs/AMBIENTES.md).
+
 ---
 
 ## Legenda de cores da agenda
