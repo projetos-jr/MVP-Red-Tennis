@@ -52,16 +52,16 @@ export function SecaoPlanos() {
 
   const usoDe = (plano: Plano) => usoPorPlano.get(plano.id) ?? { vigentes: 0, total: 0 };
 
-  function reativar(plano: Plano) {
-    gravar(reativarPlano, { id: plano.id }, `Plano "${plano.nome}" reativado.`);
+  async function reativar(plano: Plano) {
+    await gravar(reativarPlano, { id: plano.id }, `Plano "${plano.nome}" reativado.`);
   }
 
-  function confirmar() {
+  async function confirmar() {
     if (!acao || acao.tipo === "editar") return;
     const gravou =
       acao.tipo === "desativar"
-        ? gravar(desativarPlano, { id: acao.plano.id }, `Plano "${acao.plano.nome}" desativado.`)
-        : gravar(apagarPlano, { id: acao.plano.id }, `Plano "${acao.plano.nome}" apagado.`);
+        ? await gravar(desativarPlano, { id: acao.plano.id }, `Plano "${acao.plano.nome}" desativado.`)
+        : await gravar(apagarPlano, { id: acao.plano.id }, `Plano "${acao.plano.nome}" apagado.`);
     if (gravou) setAcao(null);
   }
 

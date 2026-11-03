@@ -56,8 +56,8 @@ export function SecaoFinanceiro() {
     setRascunho({ ...rascunho, formas: rascunho.formas.map((f, i) => (i === indice ? valor : f)) });
   }
 
-  function salvar() {
-    gravar(
+  async function salvar() {
+    await gravar(
       salvarParametros,
       {
         formasPagamento: rascunho.formas,

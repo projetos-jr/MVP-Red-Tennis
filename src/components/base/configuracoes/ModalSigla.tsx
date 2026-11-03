@@ -61,11 +61,11 @@ export function ModalSigla({
     setDados((atual) => ({ ...atual, [campo]: valor }));
   }
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     const gravou = sigla
-      ? gravar(editarSigla, { codigoAtual: sigla.codigo, sigla: dados }, `Sigla ${dados.codigo.trim()} atualizada.`)
-      : gravar(incluirSigla, dados, `Sigla ${dados.codigo.trim()} incluída.`);
+      ? await gravar(editarSigla, { codigoAtual: sigla.codigo, sigla: dados }, `Sigla ${dados.codigo.trim()} atualizada.`)
+      : await gravar(incluirSigla, dados, `Sigla ${dados.codigo.trim()} incluída.`);
     if (gravou) aoFechar();
   }
 
