@@ -16,6 +16,10 @@ aprove nem faça merge por conta própria, a menos que a pessoa peça explicitam
   `git diff main...<branch>`.
 - Leia os documentos do módulo afetado (`docs/modulos/`, `docs/BANCO.md`) para saber qual
   regra deveria valer.
+- Confira o estado real antes de opinar: o PR ainda está aberto (ou já entrou na `main`)? A
+  base mudou depois dele? Os passos de "como testar" funcionam hoje no repositório como ele
+  está (branch padrão, segredos e ambientes configurados, site publicado)? Um passo de teste
+  que a pessoa não consegue executar é um problema do parecer, não dela.
 
 ## O que conferir (definição de pronto do projeto)
 

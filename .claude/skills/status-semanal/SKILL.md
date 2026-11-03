@@ -56,6 +56,9 @@ Qualquer dúvida, estamos à disposição.
 - Nada de dados de alunos, valores do contrato, senhas ou links internos sensíveis.
 - Não prometa o que não está no plano; o que estiver fora do escopo segue a skill
   `pedido-do-cliente`.
+- Data ou previsão que você não confirmou (no plano, num PR ou com a equipe) fica como lacuna
+  marcada — `<dia>`, `<link do ambiente de teste>` — para o coordenador preencher. Uma data
+  inventada num e-mail ao cliente vira compromisso.
 - Pendência do cliente com prazo vencido: registre de forma cordial e objetiva que o prazo
   depende da resposta (é isso que formaliza a suspensão do prazo).
 - Entregue também, separado do e-mail, uma lista curta para o coordenador conferir: o que
