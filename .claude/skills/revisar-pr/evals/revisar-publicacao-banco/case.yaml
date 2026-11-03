@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: revisar-publicacao-banco
+expected_outcome: |
+  Parecer em linguagem simples com veredito, o que muda, como testar em passos e problemas classificados por gravidade, diferenciando o que foi verificado do que só está descrito.

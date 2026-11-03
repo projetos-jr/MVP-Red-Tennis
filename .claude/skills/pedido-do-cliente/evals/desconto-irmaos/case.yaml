@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: desconto-irmaos
+expected_outcome: |
+  Reconhece que a matrícula já tem valor combinado editável (dá para atender manualmente hoje), trata o desconto automático como regra nova que precisa ser confirmada/registrada por e-mail antes de implementar, e não trata como trivial.

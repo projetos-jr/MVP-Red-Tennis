@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: congelamento-falta-regra
+expected_outcome: |
+  Classifica como falta de regra de negócio (congelamento está no escopo, mas a regra não foi confirmada), propõe pergunta objetiva ao cliente e o uso de parâmetro configurável/hipótese enquanto isso.

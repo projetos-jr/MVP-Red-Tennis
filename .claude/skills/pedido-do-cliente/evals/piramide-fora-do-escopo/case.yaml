@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: piramide-fora-do-escopo
+expected_outcome: |
+  Classifica como fora do escopo (a pirâmide não é um dos três formatos contratados), não promete prazo e traz uma mensagem cordial oferecendo fase 2 ou Termo Aditivo.
