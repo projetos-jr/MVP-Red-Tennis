@@ -30,12 +30,20 @@ tem backup diário: o backup próprio entra na semana 3 (`docs/BANCO.md`).
    revisor do ambiente.
 
 O passo "Mostrar o que vai ser aplicado" lista as migrações antes de aplicar.
-Migração que já foi aplicada nunca roda de novo.
+Migração que já foi aplicada nunca roda de novo. O workflow só publica a partir
+da `main` (o que já passou por revisão e pelo CI).
 
-**Dados de exemplo no teste:** *Run workflow* → ambiente `teste` → marcar
-"Carregar os dados de exemplo". Só funciona com o banco vazio (os registros de
-exemplo têm ids fixos). Os dados de exemplo são fictícios; antes de importar
-dados reais, eles são apagados.
+**Antes da primeira publicação na produção:** a migração do modelo novo apaga
+as tabelas antigas do projeto Red Tennis (do MVP), que estavam vazias em 29/10.
+Confirme que continuam vazias (Table Editor) antes de rodar.
+
+**Se o repositório virar privado:** no plano gratuito do GitHub, os
+ambientes (`teste`, `producao`), os segredos de ambiente e a aprovação
+obrigatória só existem em repositório público; em repositório privado exigem
+plano pago (GitHub Pro/Team). Nesse caso, peça ao Claude Code para trocar o
+workflow para segredos do repositório só do teste, e não cadastre a senha do
+banco de produção no GitHub até a entrega (a produção passa a ser publicada
+junto com a equipe, sem automação).
 
 ---
 

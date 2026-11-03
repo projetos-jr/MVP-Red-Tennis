@@ -58,6 +58,11 @@ jobs:
             echo "::error::Falta configurar no GitHub:$faltando. Veja docs/AMBIENTES.md."
             exit 1
           fi
+          # So o que ja passou por revisao (a main) vai para um banco de verdade.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Publique sempre a partir da main (escolhida: $GITHUB_REF)."
+            exit 1
+          fi
           if [ "$AMBIENTE" = "producao" ] && [ "$DADOS_DE_EXEMPLO" = "true" ]; then
             echo "::error::Dados de exemplo nunca vao para a producao."
             exit 1

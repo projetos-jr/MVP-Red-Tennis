@@ -30,14 +30,17 @@ Papéis: Consultor 1 = front e telas; Consultor 2 = banco, migrações, auth, RL
 
 - Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 3.
 - Publicação na Cloudflare Workers via OpenNext (`wrangler.jsonc`, `open-next.config.ts`). As telas internas são montadas só no navegador (`CascaDoApp`), então quase todas as rotas são arquivos estáticos.
-- Supabase (Postgres 17, Auth, RLS), projeto "Red Tennis" (`xfludepkrcnwovnckpfc`), região sa-east-1 (São Paulo), plano Free. O front AINDA NÃO usa o Supabase: usa um banco de exemplo em memória com as mesmas tabelas. O PR #2 (branch `supabase`) foi feito sobre o modelo antigo e precisa ser refeito.
+- Supabase (Postgres 17, Auth, RLS), região sa-east-1 (São Paulo), plano Free, dois projetos: **Red Tennis Teste** (`mpmbnwqaiqgoojdtmrqr`, onde se trabalha e testa) e **Red Tennis** (`xfludepkrcnwovnckpfc`, produção: só pelo workflow `publicar-banco` com aprovação). Detalhes em `docs/AMBIENTES.md`.
+- Dois modos: com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (ver `.env.example`) o front usa o Supabase (login com e-mail e senha); sem elas, abre em modo demonstração com o banco de exemplo em memória (mesmas tabelas).
 
-Comandos: `npm run dev`, `npm test` (vitest), `npm run lint`, `npm run build`, `npm run preview` (build Cloudflare local), `npm run deploy`.
+Comandos: `npm run dev`, `npm test` (vitest), `npm run lint`, `npm run build`, `npm run preview` (build Cloudflare local), `npm run deploy`, `npm run test:integracao` (telas gravando num Supabase local), `npm run banco:seed` (dados de exemplo para o banco), `npx supabase test db` (testes pgTAP).
 
 Arquitetura (detalhes em `docs/ARQUITETURA.md`; plano e hipóteses H1–H14 em `docs/MODELO-E-TELAS.md`; um documento por módulo em `docs/modulos/`):
 - `src/lib/banco/tipos.ts`: as tabelas. `semente/`: dados de exemplo por módulo. `regras/`: regras que viram constraints/funções no Postgres. `operacoes/`: gravações "tudo ou nada" (`definirOperacao`, funções puras sem alterar objetos no lugar; `exigir(...)` recusa com mensagem). A auditoria é automática.
 - `src/lib/consultas/`: toda leitura das telas, uma por módulo, com `banco` como 1º parâmetro.
-- Na tela: `useApp()` (banco, colaborador, executar) e `useGravar()` (grava e mostra aviso). Peças comuns em `components/ui/` e `components/registro/`.
+- `src/lib/supabase/`: leitura do banco real, conversão de formatos e gravação; cada operação é ligada a uma função do Postgres (`porFuncao`) ou a uma gravação direta (`espelhar`) em `operacoes/<módulo>.ts`.
+- Na tela: `useApp()` (banco, colaborador, executar) e `useGravar()` (grava e mostra aviso). Gravar é assíncrono: sempre `await gravar(...)`. Peças comuns em `components/ui/` e `components/registro/`.
+- Skills do projeto em `.claude/skills/`: `mudar-banco`, `nova-operacao`, `revisar-pr`, `pedido-do-cliente`, `status-semanal`.
 - Hoje é `HOJE` de `src/lib/banco/constantes.ts`; nunca `new Date()` na renderização.
 
 ## Regras técnicas (do Plano de Ação)
@@ -65,11 +68,10 @@ Arquitetura (detalhes em `docs/ARQUITETURA.md`; plano e hipóteses H1–H14 em `
 
 ## Conectores (MCP)
 
-`.mcp.json` configura o Supabase (projeto fixado) e a Cloudflare. Na primeira sessão, rode `/mcp` e faça login em cada um com a conta do projeto. Para o GitHub, use `gh auth login` com a conta `projetos-jr`. Antes de alterar o banco pelo MCP, liste as tabelas e as migrações para entender o estado atual.
+`.mcp.json` configura o Supabase (fixado no projeto de **teste**; a produção só muda pelo workflow) e a Cloudflare. Na primeira sessão, rode `/mcp` e faça login em cada um com a conta do projeto. Para o GitHub, use `gh auth login` com a conta `projetos-jr`. Antes de alterar o banco pelo MCP, liste as tabelas e as migrações para entender o estado atual.
 
 ## Divergências em aberto (não decida sozinho)
 
 1. Next.js em Workers x SPA estática: as telas já são montadas no navegador e quase todas as rotas saem estáticas; falta a equipe confirmar se fica assim.
-2. O schema aplicado no Supabase ainda espelha o MVP antigo; o front já segue o modelo novo (`src/lib/banco/tipos.ts`). As migrações novas devem seguir esse modelo.
-3. Perfis: o modelo novo usa `dono`/`recepcao`/`professor`; o banco aplicado ainda usa `diretor`/`operacao`/`professor`.
-4. Ainda há um só projeto Supabase; o plano pede teste e produção separados.
+2. Perfis `dono`/`recepcao`/`professor` (modelo novo, já nas migrações) ainda dependem de o cliente confirmar o que cada um pode (H9).
+3. Repositório público com fotos reais em `public/avatars/` (LGPD): decidir com o coordenador se as fotos saem e se o código vai para um repositório privado.
