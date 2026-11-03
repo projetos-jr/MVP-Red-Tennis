@@ -95,7 +95,7 @@ function Conteudo({ aoFechar, aluno, aoSalvar }: FormularioAlunoProps) {
   }
   const erros = tentouSalvar ? validar() : {};
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     setTentouSalvar(true);
     if (Object.keys(validar()).length > 0) return;
@@ -110,7 +110,7 @@ function Conteudo({ aoFechar, aluno, aoSalvar }: FormularioAlunoProps) {
       categoriaRanking: inscrito && categoria ? categoria : undefined,
     };
     if (aluno) {
-      if (gravar(editarAluno, { ...dados, id: aluno.id }, "Cadastro atualizado.")) {
+      if (await gravar(editarAluno, { ...dados, id: aluno.id }, "Cadastro atualizado.")) {
         aoFechar();
         aoSalvar?.(aluno.id);
       }
@@ -118,7 +118,7 @@ function Conteudo({ aoFechar, aluno, aoSalvar }: FormularioAlunoProps) {
     }
     // O id nasce aqui para a tela poder abrir a ficha nova logo depois.
     const id = novoId("al");
-    if (gravar(cadastrarAluno, { ...dados, id }, "Aluno cadastrado. Agora escolha o plano na ficha.")) {
+    if (await gravar(cadastrarAluno, { ...dados, id }, "Aluno cadastrado. Agora escolha o plano na ficha.")) {
       aoFechar();
       aoSalvar?.(id);
     }

@@ -46,9 +46,9 @@ function ConteudoInativar({ aoFechar, aluno }: { aoFechar: () => void; aluno: Al
   const canceladas = previa.aulas.filter((a) => a.acao === "cancelada").length;
   const emTurma = previa.aulas.length - canceladas;
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
-    if (gravar(inativarAluno, { alunoId: aluno.id, ultimoDia, motivo }, `${aluno.nome} foi inativado.`)) {
+    if (await gravar(inativarAluno, { alunoId: aluno.id, ultimoDia, motivo }, `${aluno.nome} foi inativado.`)) {
       aoFechar();
     }
   }
@@ -181,8 +181,8 @@ export function ConfirmarReativacaoDoCadastro({
         </>
       }
       aoCancelar={aoFechar}
-      aoConfirmar={() => {
-        if (gravar(reativarCadastro, { alunoId: aluno.id }, "Cadastro reativado.")) aoFechar();
+      aoConfirmar={async () => {
+        if (await gravar(reativarCadastro, { alunoId: aluno.id }, "Cadastro reativado.")) aoFechar();
       }}
     />
   );

@@ -89,7 +89,7 @@ function Conteudo({ aoFechar, professor, aoSalvar }: FormularioProfessorProps) {
   }
   const erros = tentouSalvar ? validar() : {};
 
-  function enviar(evento: FormEvent) {
+  async function enviar(evento: FormEvent) {
     evento.preventDefault();
     setTentouSalvar(true);
     if (Object.keys(validar()).length > 0) return;
@@ -103,14 +103,14 @@ function Conteudo({ aoFechar, professor, aoSalvar }: FormularioProfessorProps) {
       repasse: { modo, valor: valorNumerico },
     };
     if (professor) {
-      if (gravar(editarProfessor, { ...dados, id: professor.id }, "Cadastro do professor atualizado.")) {
+      if (await gravar(editarProfessor, { ...dados, id: professor.id }, "Cadastro do professor atualizado.")) {
         aoFechar();
         aoSalvar?.(professor.id);
       }
       return;
     }
     const id = novoId("prof");
-    if (gravar(cadastrarProfessor, { ...dados, id }, "Professor cadastrado.")) {
+    if (await gravar(cadastrarProfessor, { ...dados, id }, "Professor cadastrado.")) {
       aoFechar();
       aoSalvar?.(id);
     }

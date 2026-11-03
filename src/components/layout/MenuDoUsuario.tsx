@@ -19,7 +19,7 @@ import { areasDoMenuPermitidas, estaNaArea } from "./abas";
 export function MenuDoUsuario() {
   const caminho = usePathname();
   const router = useRouter();
-  const { banco, colaborador, sair } = useApp();
+  const { banco, colaborador, sair, fonte } = useApp();
   const [aberto, setAberto] = useState(false);
   const botao = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -114,6 +114,11 @@ export function MenuDoUsuario() {
             <p className="mt-2 text-xs leading-snug text-areia-500">
               {resumoDoAcesso(banco.configuracoes, colaborador.perfil)}
             </p>
+            {fonte === "demonstracao" && (
+              <p className="mt-2 text-[11px] leading-snug text-areia-400">
+                Modo demonstração · nada é gravado
+              </p>
+            )}
           </div>
 
           {areas.length > 0 && (
