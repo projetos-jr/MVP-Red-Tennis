@@ -10,19 +10,26 @@ import { useApp } from "./AppStore";
  * aviso de sucesso ou o erro da regra.
  *
  *   const gravar = useGravar();
- *   if (gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.")) fecharModal();
+ *   if (await gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.")) fecharModal();
  *
- * Devolve true se gravou e false se uma regra recusou.
+ * Devolve (sempre com `await`) true se gravou e false se uma regra recusou.
+ * Enquanto grava, `useApp().gravando` fica true e um segundo clique e
+ * ignorado.
  */
 export function useGravar() {
   const { executar } = useApp();
   const { avisar } = useAvisos();
 
   return useCallback(
-    <Dados,>(operacao: Operacao<Dados>, dados: Dados, mensagemDeSucesso?: string): boolean => {
-      const resultado = executar(operacao, dados);
+    async <Dados,>(
+      operacao: Operacao<Dados>,
+      dados: Dados,
+      mensagemDeSucesso?: string,
+    ): Promise<boolean> => {
+      const resultado = await executar(operacao, dados);
       if (!resultado.ok) {
-        avisar("erro", resultado.erro);
+        // Erro vazio = clique repetido enquanto a gravacao anterior acontecia.
+        if (resultado.erro) avisar("erro", resultado.erro);
         return false;
       }
       if (mensagemDeSucesso) avisar("sucesso", mensagemDeSucesso);

@@ -6,6 +6,7 @@ import { IconeInfo } from "@/components/base/Icones";
 import { ESTILO_DO_PERFIL } from "@/components/base/perfis";
 import { areaInicial } from "@/components/layout/abas";
 import { Logo } from "@/components/layout/Logo";
+import { LoginComEmail } from "@/components/base/LoginComEmail";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeCadeado, IconeSeta } from "@/components/ui/Icons";
 import { NOMES_DOS_PERFIS, resumoDoAcesso } from "@/lib/consultas/configuracoes";
@@ -17,17 +18,25 @@ import {
 import { useApp } from "@/store/AppStore";
 
 /**
- * Tela de login — demonstracao.
+ * Tela de login. Com o Supabase configurado, e-mail e senha
+ * (`LoginComEmail`); sem ele, a escolha de pessoa da demonstracao.
+ */
+export default function PaginaLogin() {
+  const { fonte } = useApp();
+  return fonte === "supabase" ? <LoginComEmail /> : <LoginDemonstracao />;
+}
+
+/**
+ * Login da demonstracao.
  *
- * Ainda nao ha autenticacao: escolhe-se quem entra (equipe de
+ * Sem banco configurado (modo demonstracao): escolhe-se quem entra (equipe de
  * `banco.colaboradores`) e qualquer senha serve. O perfil escolhido define o
- * que aparece no sistema (Hipotese H9). O login com e-mail e senha
- * individuais chega com o Supabase.
+ * que aparece no sistema (Hipotese H9).
  *
  * Visual deliberadamente limpo: fundo branco e marca centralizada, sem
  * elementos decorativos competindo com o formulario.
  */
-export default function PaginaLogin() {
+function LoginDemonstracao() {
   const router = useRouter();
   const { banco, entrar } = useApp();
   const equipe = equipeAtiva(banco);
@@ -135,8 +144,8 @@ export default function PaginaLogin() {
             <IconeInfo className="mt-0.5 h-4 w-4 shrink-0 text-saibro-700" />
             <span>
               <strong className="font-semibold text-areia-800">Demonstração:</strong> qualquer
-              senha serve. O acesso com e-mail e senha individuais chega quando o sistema for
-              ligado ao banco de dados (Supabase).
+              senha serve e nada é gravado de verdade. Com o banco de dados (Supabase)
+              configurado, cada pessoa entra com o próprio e-mail e senha.
             </span>
           </p>
         </form>
