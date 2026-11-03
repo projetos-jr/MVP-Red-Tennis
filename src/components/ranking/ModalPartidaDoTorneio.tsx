@@ -61,12 +61,12 @@ export function ModalPartidaDoTorneio({
   const temResultado = Boolean(partida.vencedor);
   const final = !partida.grupo && !partida.proximaPartidaId && torneio.formato !== "todos_contra_todos";
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const dados = { partidaId: partida.id, ...valores, data };
     const ok = temResultado
-      ? gravar(corrigirResultadoDeTorneio, dados, "Resultado corrigido.")
-      : gravar(
+      ? await gravar(corrigirResultadoDeTorneio, dados, "Resultado corrigido.")
+      : await gravar(
           registrarResultadoDeTorneio,
           dados,
           final
@@ -78,8 +78,8 @@ export function ModalPartidaDoTorneio({
     if (ok) aoFechar();
   }
 
-  function apagar() {
-    if (gravar(apagarResultadoDeTorneio, { partidaId: partida.id }, "Resultado apagado.")) {
+  async function apagar() {
+    if (await gravar(apagarResultadoDeTorneio, { partidaId: partida.id }, "Resultado apagado.")) {
       setApagando(false);
       aoFechar();
     }

@@ -40,18 +40,18 @@ export function ModalPartida({ item, aoFechar }: { item: PartidaNaLista; aoFecha
   const aindaNaoChegou = !temResultado && dataDaPartida > HOJE;
   const reservaFutura = reserva && reserva.situacao !== "cancelada" && reserva.data >= HOJE;
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     // Com reserva, a data e a da reserva (a operacao ignora a data enviada).
     const dados = { id: partida.id, ...valores, data: reserva ? undefined : data };
     const ok = temResultado
-      ? gravar(corrigirResultadoDePartida, dados, "Resultado corrigido. O ranking foi recalculado.")
-      : gravar(registrarResultadoDePartida, dados, "Resultado registrado. O ranking foi atualizado.");
+      ? await gravar(corrigirResultadoDePartida, dados, "Resultado corrigido. O ranking foi recalculado.")
+      : await gravar(registrarResultadoDePartida, dados, "Resultado registrado. O ranking foi atualizado.");
     if (ok) aoFechar();
   }
 
-  function excluir() {
-    if (gravar(excluirPartida, { id: partida.id }, "Partida excluída.")) {
+  async function excluir() {
+    if (await gravar(excluirPartida, { id: partida.id }, "Partida excluída.")) {
       setExcluindo(false);
       aoFechar();
     }

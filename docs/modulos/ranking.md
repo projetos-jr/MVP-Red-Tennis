@@ -404,3 +404,23 @@ em que as inscrições foram feitas (os ids são aleatórios). Na tela, essa ord
 **Para perguntar à arena (não muda nada agora).** Ao registrar o resultado de
 uma partida de ranking com reserva, a reserva deveria virar "realizada" na
 agenda? Hoje nem a tela nem o banco fazem isso.
+
+**Ligação com as telas.** As 12 operações do módulo estão ligadas às funções
+acima em `src/lib/supabase/operacoes/ranking.ts` (todas por `supabase.rpc`;
+nenhuma grava direto na tabela). Testes de integração (banco real) em
+`src/lib/supabase/operacoes/ranking.integracao.test.ts`: partidas de ranking
+(com e sem reserva de quadra), torneios nos três formatos, recusas do banco
+burlando a tela e o professor sem permissão. Nos torneios, cada gravação é
+conferida contra a tela: a chave relida do banco tem que ser igual à que a
+tela calculou (fases, rodadas, ordem, quem joga de cada lado, para onde vai o
+vencedor e grupo de cada inscrição). Diferenças entre o modo demonstração e o
+modo Supabase:
+
+- **Sorteio da chave.** A tela sorteia e mostra a chave; a ligação lê, da chave
+  que a tela montou, a ordem sorteada e a envia em `p_sorteio`. Assim o banco
+  grava exatamente a chave que a tela mostraria (nunca usa o `random()` dele).
+- **Ids.** No Supabase, o banco cria os ids do torneio, das inscrições e das
+  partidas (os da tela são descartados). Ao criar um torneio, a tela abre o
+  torneio pelo id devolvido pelo banco (`resultado.id`); na demonstração, pelo
+  último torneio da lista. Ao editar, as inscrições já gravadas vão com o id lido
+  do banco (são mantidas) e as novas vão sem id.

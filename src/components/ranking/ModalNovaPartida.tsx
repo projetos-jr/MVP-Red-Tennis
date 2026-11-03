@@ -78,16 +78,16 @@ export function ModalNovaPartida({
     setHoraFim(`${String(fim).padStart(2, "0")}:00`);
   }
 
-  function salvar(evento: FormEvent) {
+  async function salvar(evento: FormEvent) {
     evento.preventDefault();
     const ok =
       modo === "resultado"
-        ? gravar(
+        ? await gravar(
             registrarPartida,
             { jogadorA, jogadorB, data, ...resultado },
             "Partida registrada. O ranking foi atualizado.",
           )
-        : gravar(
+        : await gravar(
             marcarPartida,
             {
               jogadorA,
