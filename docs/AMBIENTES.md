@@ -52,23 +52,26 @@ junto com a equipe, sem automação).
 O Claude não vê nem guarda senhas e tokens. Quem tem acesso às contas do
 projeto faz isto uma vez, direto no GitHub:
 
-1. **Token do Supabase** (vale para os dois projetos): no Supabase, clique no
-   avatar → *Account preferences* → *Access Tokens* → *Generate new token*,
-   nome `github-actions-red-tennis`. Copie o token.
-   No GitHub: *Settings → Secrets and variables → Actions → New repository
-   secret*, nome `SUPABASE_ACCESS_TOKEN`, cole o token.
+1. **Token do Supabase**: no Supabase, clique no avatar → *Account
+   preferences* → *Access Tokens* → *Generate new token*, nome
+   `github-actions-red-tennis`. Copie o token (ele dá acesso à conta inteira:
+   por isso fica só dentro dos ambientes, nunca como segredo do repositório,
+   que qualquer branch alcançaria).
 2. **Ambiente de teste**: GitHub → *Settings → Environments → New environment*
    → `teste`.
+   - *Deployment branches and tags* → *Selected branches* → `main`.
    - *Add environment variable*: `SUPABASE_PROJECT_ID` = `mpmbnwqaiqgoojdtmrqr`.
+   - *Add environment secret*: `SUPABASE_ACCESS_TOKEN` = o token do passo 1.
    - *Add environment secret*: `SUPABASE_DB_PASSWORD` = a senha do banco do
      projeto Red Tennis Teste (definida na criação do projeto; se ninguém
      souber, troque em Supabase → projeto → *Database → Settings → Reset
      database password* e guarde no cofre de senhas da equipe).
 3. **Ambiente de produção**: *New environment* → `producao`.
    - Marque *Required reviewers* e escolha quem aprova (o coordenador, por
-     exemplo).
+     exemplo); *Deployment branches and tags* → só `main`.
    - Variável `SUPABASE_PROJECT_ID` = `xfludepkrcnwovnckpfc`.
-   - Segredo `SUPABASE_DB_PASSWORD` = a senha do banco do projeto Red Tennis.
+   - Segredos `SUPABASE_ACCESS_TOKEN` (o mesmo token) e `SUPABASE_DB_PASSWORD`
+     (a senha do banco do projeto Red Tennis).
 4. Teste: *Actions → publicar-banco → Run workflow* (ambiente `teste`). Se
    faltar alguma configuração, o primeiro passo diz exatamente qual.
 

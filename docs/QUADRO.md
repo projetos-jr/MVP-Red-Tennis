@@ -23,11 +23,12 @@ painéis); **[claude]** o Claude Code pode fazer com a equipe revisando.
 
 ### 2. Branch padrão `main` e `main` protegida · base · [pessoa] coordenador
 - [ ] *Settings → General → Default branch* = `main`; branch antiga `claude/fervent-feynman-svpzu0` apagada.
-- [ ] *Settings → Rules*: PR obrigatório com 1 aprovação e os checks `verificar`, `banco` e `integracao` verdes.
+- [ ] *Settings → Rules*: PR obrigatório com 1 aprovação e os checks `verificar`, `banco` e `integracao` verdes, sem exceção para administradores.
+- [ ] Cada consultor com a própria conta no GitHub, como colaborador (o GitHub não deixa o autor aprovar o próprio PR; com uma conta só para todos, ninguém consegue revisar ninguém).
 
 ### 3. Segredos do GitHub para publicar o banco · base · [pessoa] Consultor 2
 Passo a passo em `docs/AMBIENTES.md` ("Configuração única no GitHub").
-- [ ] `SUPABASE_ACCESS_TOKEN` e os ambientes `teste` e `producao` (com aprovação) configurados.
+- [ ] Ambientes `teste` e `producao` (só `main`; produção com aprovação), cada um com `SUPABASE_PROJECT_ID`, `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`.
 - [ ] Actions → publicar-banco → Run workflow (`teste`, com dados de exemplo) verde.
 - [ ] *Allow new users to sign up* desligado nos dois projetos do Supabase.
 
