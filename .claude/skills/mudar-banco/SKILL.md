@@ -57,12 +57,13 @@ Rodar (precisa do Docker):
 
 ```bash
 npx supabase start
-npx supabase db reset   # aplica todas as migrações num banco limpo (+ dados de exemplo, se gerados)
-npx supabase test db
+npx supabase db reset --no-seed   # todas as migrações num banco limpo, sem dados de exemplo
+npx supabase test db              # os testes pgTAP supõem o banco vazio (como no CI)
 ```
 
-Se a mudança afeta o que a tela grava, rode também os testes de integração
-(`npm run test:integracao`, instruções em `src/lib/supabase/integracao/ambiente.ts`) e, se
+Se a mudança afeta o que a tela grava, rode também os testes de integração, esses sim com
+os dados de exemplo (`npm run banco:seed && npx supabase db reset`, depois as instruções em
+`src/lib/supabase/integracao/ambiente.ts`) e, se
 mudou um campo de tabela, ajuste `src/lib/banco/tipos.ts`, a conversão em
 `src/lib/supabase/conversao.ts` (`COLUNAS_OPCIONAIS`) e os dados de exemplo
 (`src/lib/banco/semente/`) — o front e o banco usam o mesmo modelo.

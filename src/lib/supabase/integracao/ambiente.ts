@@ -6,7 +6,7 @@
  *
  *   npx supabase start
  *   npm run banco:seed && npx supabase db reset      # banco limpo com os dados de exemplo
- *   SUPABASE_TESTE_URL=http://127.0.0.1:54321 SUPABASE_TESTE_CHAVE_SECRETA=... node scripts/integracao/preparar.mjs
+ *   SUPABASE_TESTE_URL=http://127.0.0.1:54321 SUPABASE_TESTE_CHAVE_SECRETA=<SERVICE_ROLE_KEY> node scripts/integracao/preparar.mjs
  *   SUPABASE_TESTE_URL=http://127.0.0.1:54321 SUPABASE_TESTE_CHAVE=<PUBLISHABLE_KEY> npm run test:integracao
  *
  * Os testes criam os proprios registros (nomes e datas unicos por execucao),
