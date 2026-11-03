@@ -6,10 +6,10 @@ agenda, alunos e professores, financeiro, estoque, ranking e torneios.
 A arena tem 3 quadras de saibro, 1 de cimento e 1 paredão, e funciona das 7h às
 22h.
 
-> **Estado atual: front-end completo com dados de exemplo.** Todos os dados
-> são fictícios e vivem num "banco de exemplo" em memória, com as mesmas
-> tabelas e regras que o banco real (Supabase) terá. O que for gravado vale
-> até a página ser recarregada. A ligação com o Supabase é o próximo passo.
+> **Estado atual:** telas, banco (Supabase) e a ligação entre eles prontos e
+> testados. Com as variáveis do Supabase preenchidas, o sistema usa o banco
+> real (login com e-mail e senha); sem elas, abre em **modo demonstração**,
+> com dados fictícios em memória que voltam ao início a cada recarga.
 
 ---
 
@@ -22,21 +22,25 @@ npm install
 npm run dev
 ```
 
-Acesse <http://localhost:3000>. Não há configuração adicional, variável de
-ambiente nem serviço externo.
+Acesse <http://localhost:3000>. Sem configuração, o sistema abre em modo
+demonstração. Para usar um banco Supabase, copie `.env.example` para
+`.env.local` e preencha a URL e a chave **publicável** do projeto (detalhes em
+[`docs/AMBIENTES.md`](docs/AMBIENTES.md)).
 
 | Comando | O que faz |
 | --- | --- |
 | `npm run dev` | Sobe o ambiente de desenvolvimento |
 | `npm test` | Roda os testes das regras, das operações e dos fluxos entre módulos |
+| `npm run test:integracao` | Testa as telas gravando num Supabase local (ver `docs/ARQUITETURA.md`) |
+| `npm run banco:seed` | Gera os dados de exemplo para o banco (`supabase/seed.sql`) |
 | `npm run lint` | Confere o estilo do código (ESLint) |
 | `npm run build` | Gera o build de produção |
 | `npm run start` | Sobe o build de produção |
 | `npm run preview` | Gera o build para a Cloudflare e roda localmente, como em produção |
 | `npm run deploy` | Gera o build para a Cloudflare e publica |
 
-Todo pull request passa pelo CI (`.github/workflows/ci.yml`): lint, testes e
-build.
+Todo pull request passa pelo CI (`.github/workflows/ci.yml`): lint, testes,
+build, testes do banco e testes de integração com o Supabase.
 
 ---
 
@@ -61,8 +65,9 @@ ajustáveis na tela de Configurações.
 
 **Perfis de acesso (hipótese H9):** o dono vê tudo; a recepção não vê
 Configurações, Histórico nem contas a pagar; o professor vê a agenda e os
-próprios alunos. Na demonstração, o login escolhe a pessoa e aceita qualquer
-senha; o login real (e-mail e senha) chega com o Supabase.
+próprios alunos. No modo Supabase, cada pessoa entra com e-mail e senha e o
+banco (RLS) garante as permissões; na demonstração, o login escolhe a pessoa e
+aceita qualquer senha.
 
 ---
 

@@ -4,10 +4,26 @@ Como o código está organizado, por quê, e como ele vai para o banco real.
 O plano das telas e o modelo de dados estão em `docs/MODELO-E-TELAS.md`;
 cada módulo tem a sua documentação em `docs/modulos/`.
 
+## Dois modos: Supabase e demonstração
+
+O sistema funciona de dois jeitos, escolhidos pelas variáveis de ambiente
+(modelo em `.env.example`):
+
+- **Supabase** (variáveis preenchidas): login com e-mail e senha, os dados vêm
+  do banco real (cada perfil recebe só o que a RLS deixa) e cada gravação vai
+  para o banco. É o modo dos ambientes de teste e produção
+  (`docs/AMBIENTES.md`).
+- **Demonstração** (sem variáveis): os dados de exemplo ficam em memória, o
+  login escolhe a pessoa e tudo volta ao início ao recarregar a página. Serve
+  para desenvolver telas sem banco e para apresentações.
+
+As telas são as mesmas nos dois modos: elas leem um objeto `Banco` (as mesmas
+tabelas do Supabase, em camelCase) e gravam por operações. Só a origem dos
+dados muda.
+
 ## As quatro peças
 
-O front ainda não tem banco real: usa um **banco de exemplo em memória** com
-as mesmas tabelas que o Supabase terá. Tudo gira em torno de quatro peças:
+Tudo gira em torno de quatro peças:
 
 | Peça | Onde | Para que serve |
 | --- | --- | --- |
@@ -22,8 +38,13 @@ Na tela:
 const { banco, colaborador } = useApp();      // ler
 const gravar = useGravar();                    // gravar, com aviso de sucesso ou erro
 const detalhe = detalheDaOcupacao(banco, id, agora, HOJE); // de consultas/agenda.ts
-gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.");
+if (await gravar(cancelarOcupacao, { id, motivo: "CH" }, "Aula cancelada.")) fechar();
 ```
+
+Gravar é **assíncrono** (o banco responde depois): sempre `await`. O lint
+(`@typescript-eslint/no-misused-promises`) acusa `if (gravar(...))` sem
+`await`, que seria sempre verdadeiro. Enquanto grava, `useApp().gravando` fica
+verdadeiro, aparece "Salvando…" e os botões de confirmar ficam travados.
 
 ### Como uma operação funciona
 
@@ -64,10 +85,12 @@ histórico de qualquer registro.
 
 ### Estado da aplicação
 
-`src/store/AppStore.tsx` guarda o banco da sessão, quem está logado e
-`executar`. Recarregar a página volta tudo ao início. A demonstração abre já
-logada como o dono (para links diretos funcionarem); "Sair" deixa ninguém
-logado e as telas internas mandam para o login.
+`src/store/AppStore.tsx` guarda o banco que as telas leem, quem está logado e
+`executar`. No modo demonstração, recarregar a página volta tudo ao início e
+o sistema abre já logado como o dono (para links diretos funcionarem). No
+modo Supabase, a sessão de login fica guardada no navegador; ao voltar para a
+aba depois de 2 minutos, o banco é lido de novo (outras pessoas podem ter
+gravado).
 
 ### Telas montadas no navegador
 
@@ -86,30 +109,45 @@ H9, editável em Configurações). A navegação esconde o que o perfil não vê
 `ProtecaoDeRota` mostra "Sem acesso a esta área" para endereços digitados, e
 as operações recusam gravações de quem não pode. Toda rota nova de primeiro
 nível precisa entrar em `MODULO_DA_ROTA` (`components/layout/abas.ts`). No
-banco real, quem garante isso são as políticas de acesso (RLS) do Supabase.
+modo Supabase, quem garante de verdade são as políticas de acesso (RLS),
+com as mesmas permissões (`docs/BANCO.md`).
 
 ## Testes
 
-`npm test` (vitest) roda os testes das regras e das operações de cada
-módulo, das consultas, dos dados de exemplo (que precisam respeitar todas as
-regras) e dos fluxos entre módulos. O CI (`.github/workflows/ci.yml`) roda
-lint, testes e build em todo pull request.
+| Comando | O que testa | No CI |
+| --- | --- | --- |
+| `npm test` | Regras, operações, consultas, dados de exemplo e fluxos entre módulos (sem banco) | job `verificar` |
+| `npx supabase test db` | O banco: constraints, funções, permissões por perfil e auditoria (pgTAP, `supabase/tests/`) | job `banco` |
+| `npm run test:integracao` | As operações das telas gravando num Supabase de verdade | job `integracao` |
 
-## Quando o Supabase entrar
+O CI (`.github/workflows/ci.yml`) roda também o lint e o build em todo pull
+request.
 
-| Hoje (banco de exemplo) | No banco real |
-| --- | --- |
-| Cada interface de `tipos.ts` | Uma tabela, com o nome em snake_case, criada por migração em `supabase/migrations/` |
-| Regras de `regras/` | Constraints (ex.: conflito de quadra com `btree_gist`), CHECKs, gatilhos e funções do Postgres |
-| Operações de `operacoes/` | `insert`/`update` diretos ou funções chamadas por `rpc` (as que gravam em mais de uma tabela) |
-| Auditoria automática | Gatilho único de auditoria em todas as tabelas |
-| Permissões por perfil | Políticas de RLS testadas por perfil (pgTAP) |
-| Consultas de `consultas/` | Consultas ao banco; as telas não mudam |
-| Dados de exemplo | `supabase/seed.sql`, gerado a partir da semente |
+## Como as telas falam com o Supabase (`src/lib/supabase/`)
 
-Cada documento de módulo tem uma seção "Notas para a migração ao Supabase"
-com o mapeamento detalhado. O PR #2 (primeira ligação com o Supabase, feita
-sobre o modelo antigo) precisa ser refeito sobre este modelo.
+| Peça | Arquivo | O que faz |
+| --- | --- | --- |
+| Cliente | `cliente.ts` | Liga ao projeto pelas variáveis de ambiente (só a chave publicável) |
+| Leitura | `carregar.ts` | Lê as tabelas (em páginas de 1.000 linhas, em paralelo) para o objeto `Banco`; o histórico traz os 5.000 registros mais recentes |
+| Conversão | `conversao.ts` | snake_case ↔ camelCase, `null` ↔ campo ausente, horas `08:00:00` → `08:00`, data e hora em UTC ↔ fuso da arena |
+| Gravação | `gravar.ts` + `operacoes/<módulo>.ts` | Cada operação da tela é **ligada** a uma função do banco (`porFuncao`, via `rpc`) ou a uma gravação direta nas tabelas (`espelhar`, para cadastros simples) |
+| Execução | `executar.ts` | Roda a operação na tela primeiro (mesmas regras e mensagens; o que ela recusar nem é enviado), grava no banco e relê as tabelas que mudaram |
+| Erros | `erros.ts` | Mensagens do banco em linguagem da tela |
+
+O banco confere tudo de novo: as funções recusam com a mesma mensagem da tela,
+e a RLS barra quem não tem permissão mesmo que alguém burle a tela. O nome da
+operação ("Cancelar aula") vai para o histórico nas duas formas de gravar.
+
+Testes: `src/lib/supabase/ligacoes.test.ts` falha se alguma operação ficar sem
+ligação; os testes de integração (`*.integracao.test.ts`, `npm run
+test:integracao`) gravam num Supabase local de verdade. Como rodar está no
+cabeçalho de `src/lib/supabase/integracao/ambiente.ts`; o CI roda os mesmos
+testes (job `integracao`).
+
+Limite conhecido: o sistema lê as tabelas inteiras ao entrar (com os dados de
+exemplo, cerca de 3 segundos). Com anos de dados reais, a agenda e o
+financeiro vão precisar ler só o período em uso; isso está previsto para a
+semana de desempenho (meta: agenda semanal em menos de 2 segundos).
 
 ## Estilo e acessibilidade
 
