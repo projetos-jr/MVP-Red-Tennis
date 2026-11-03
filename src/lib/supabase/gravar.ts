@@ -131,9 +131,31 @@ export function diferencas<T extends ComId>(antes: T[], depois: T[]) {
   const atuais = new Set(depois.map((r) => r.id));
   return {
     criados: depois.filter((r) => !anteriores.has(r.id)),
-    alterados: depois.filter((r) => anteriores.has(r.id) && anteriores.get(r.id) !== r),
+    alterados: depois.flatMap((r) => {
+      const anterior = anteriores.get(r.id);
+      return anterior && anterior !== r ? [{ antes: anterior, depois: r }] : [];
+    }),
     apagados: antes.filter((r) => !atuais.has(r.id)),
   };
+}
+
+/**
+ * So as colunas que mudaram (para nao regravar valores iguais: o historico
+ * registraria uma mudanca que nao houve, e datas lidas do banco perdem as
+ * fracoes de segundo na conversao).
+ */
+export function colunasAlteradas(
+  tabela: TabelaDeRegistros,
+  antes: object,
+  depois: object,
+): Record<string, unknown> {
+  const linhaAntes = paraBanco(tabela, antes, "atualizar");
+  const linhaDepois = paraBanco(tabela, depois, "atualizar");
+  return Object.fromEntries(
+    Object.entries(linhaDepois).filter(
+      ([coluna, valor]) => coluna !== "id" && JSON.stringify(valor) !== JSON.stringify(linhaAntes[coluna]),
+    ),
+  );
 }
 
 /**
@@ -163,12 +185,13 @@ export function espelhar<Dados>(tabelas: TabelaDeRegistros[]): Gravacao<Dados> {
           primeiroCriado ??= registro.id;
         }
 
-        for (const registro of alterados) {
-          const { id, ...campos } = paraBanco(tabela, registro, "atualizar");
+        for (const { antes, depois } of alterados) {
+          const campos = colunasAlteradas(tabela, antes, depois);
+          if (Object.keys(campos).length === 0) continue;
           const { data, error } = await ctx.cliente
             .from(nome)
             .update(campos)
-            .eq("id", id as string)
+            .eq("id", depois.id)
             .select("id")
             .setHeader("x-operacao", cabecalho);
           if (error) throw new ErroDoBanco(mensagemDoErro(error));

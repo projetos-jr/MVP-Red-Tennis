@@ -17,7 +17,7 @@ import "./operacoes";
  */
 
 /** Operacoes que nenhuma tela usa (so servem de apoio a outras). */
-const SEM_TELA = new Set(["Alterar configurações"]);
+const SEM_TELA = new Set<unknown>([base.alterarConfiguracoes]);
 
 const MODULOS = { agenda, alunos, base, configuracoes, estoque, financeiro, professores, ranking };
 
@@ -33,7 +33,7 @@ function operacoesDo(modulo: Record<string, unknown>): [string, Operacao<unknown
 describe("todas as operações das telas estão ligadas ao banco real", () => {
   for (const [nomeDoModulo, modulo] of Object.entries(MODULOS)) {
     for (const [exportada, operacao] of operacoesDo(modulo)) {
-      if (SEM_TELA.has(operacao.nome)) continue;
+      if (SEM_TELA.has(operacao)) continue;
       it(`${nomeDoModulo}.${exportada} ("${operacao.nome}")`, () => {
         expect(gravacaoDe(operacao)).toBeDefined();
       });
