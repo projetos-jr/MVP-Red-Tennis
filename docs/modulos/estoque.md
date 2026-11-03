@@ -247,12 +247,10 @@ inativo, conta já fechada, professor no estoque). Como rodar:
 
 Diferenças entre o modo demonstração e o modo Supabase:
 
-- **Entrada com conta a pagar feita pela recepção.** No modo demonstração a
-  tela aceita; no modo Supabase o banco recusa ("Seu perfil não tem permissão
-  para esta operação.") e nada é gravado, nem a entrada. É o que a regra do
-  banco diz (a conta a pagar fica com o dono), mas a tela ainda oferece a
-  opção à recepção. Decisão pendente da equipe: esconder a opção para quem não
-  tem "financeiro_pagar" (e recusar na regra da tela) ou liberar no banco.
+- **Entrada com conta a pagar.** A opção "Lançar conta a pagar ao
+  fornecedor" só aparece para quem vê as contas a pagar (hipótese H9: hoje, o
+  dono); o banco recusa os demais perfis. A recepção registra a entrada sem a
+  conta, e o dono lança a conta no Financeiro.
 - Produto com preço de venda zero: no modo Supabase o consumo e a baixa são
   gravados, mas sem conta a receber (ver acima).
 - Os ids (produto, movimento, consumo, lançamento) são gerados pelo banco;
