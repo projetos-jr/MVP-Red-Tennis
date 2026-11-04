@@ -17,3 +17,12 @@ export const LOGO_MARCA = "/logo-red-tennis-marca.webp";
 
 /** Proporções dos arquivos, para reservar o espaço e evitar salto no layout. */
 export const PROPORCAO_LOGO = { completo: 447 / 311, marca: 447 / 150 };
+
+/**
+ * Endereço do site da arena, aberto pelo atalho "Site" do Início (em nova aba).
+ *
+ * VAZIO de propósito: o endereço ainda não foi confirmado pelo cliente
+ * (o site atual não tem HTTPS). Enquanto estiver vazio, o atalho não aparece.
+ * Para ligar: escreva o endereço completo, por exemplo "https://www.exemplo.com.br".
+ */
+export const SITE_DA_ARENA = "";

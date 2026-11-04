@@ -44,7 +44,7 @@ export function ProtecaoDeRota({ children }: { children: ReactNode }) {
           <>
             {inicial && (
               <Link href={inicial.href} className="btn-primario">
-                {inicial.modulo === "painel" ? "Voltar ao painel" : `Ir para ${inicial.rotulo}`}
+                {inicial.modulo === "painel" ? "Voltar ao Início" : `Ir para ${inicial.rotulo}`}
               </Link>
             )}
             <button type="button" onClick={trocarDeUsuario} className="btn-secundario">

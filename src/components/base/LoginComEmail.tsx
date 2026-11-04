@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { IconeInfo } from "@/components/base/Icones";
 import { areaInicial } from "@/components/layout/abas";
+import { FaixaDeQuadra } from "@/components/layout/FaixaDeQuadra";
 import { Logo } from "@/components/layout/Logo";
 import { Carregando } from "@/components/ui/Carregando";
 import { IconeCadeado, IconeSeta } from "@/components/ui/Icons";
@@ -48,14 +49,16 @@ export function LoginComEmail() {
   const mensagem = erro ?? aviso;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12">
+    <div className="relative flex min-h-screen items-center justify-center bg-white px-6 py-12">
+      <FaixaDeQuadra className="absolute inset-x-0 top-0" />
       <div className="w-full max-w-sm animate-fade-up">
         <Logo className="mx-auto h-24 w-auto sm:h-28" />
+        <FaixaDeQuadra className="mx-auto mt-6 !w-14 rounded-full" />
 
-        <h1 className="mt-8 text-center text-xl font-semibold text-areia-900">
+        <h1 className="mt-6 text-center font-display text-2xl font-bold text-areia-900">
           Acesse sua conta
         </h1>
-        <p className="mt-1.5 text-center text-sm text-areia-500">
+        <p className="mt-1.5 text-center text-sm text-areia-600">
           Entre com o e-mail e a senha do seu acesso.
         </p>
 

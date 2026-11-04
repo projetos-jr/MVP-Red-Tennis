@@ -20,7 +20,6 @@ import type { Configuracoes } from "@/lib/banco/tipos";
 import { nivelDoEstoque } from "@/lib/consultas/estoque";
 import type {
   AlunoResumido,
-  GrupoDeAtencao,
   MensalidadeEmAtraso,
   PrecisaDeAtencao as DadosDeAtencao,
   ProdutoAbaixoDoMinimo,
@@ -44,7 +43,7 @@ const CONTAGEM = {
   vazia: "border-emerald-200 bg-emerald-50 text-emerald-800",
 } as const;
 
-export function plural(quantidade: number, singular: string, formaPlural: string): string {
+function plural(quantidade: number, singular: string, formaPlural: string): string {
   return `${quantidade} ${quantidade === 1 ? singular : formaPlural}`;
 }
 
@@ -103,7 +102,7 @@ function Item({
     <li>
       <Link
         href={href}
-        className="flex items-start gap-3 rounded-xl border border-areia-200 p-2.5 transition-colors hover:border-saibro-300 hover:bg-saibro-50/40"
+        className="flex items-start gap-3 rounded-xl border border-areia-200 bg-white p-2.5 transition-colors hover:border-saibro-300 hover:bg-saibro-50"
       >
         <span aria-hidden="true">{foto}</span>
         <span className="min-w-0 flex-1">
@@ -141,7 +140,7 @@ function Grupo({
   const quantidade = itens.length;
 
   return (
-    <section className="px-5 py-4" aria-label={`${titulo}: ${quantidade}`}>
+    <section className="bg-white px-5 py-4" aria-label={`${titulo}: ${quantidade}`}>
       <header className="flex items-start gap-2.5">
         <span className="mt-0.5 text-areia-500">{icone}</span>
         <div className="min-w-0 flex-1">
@@ -181,7 +180,7 @@ function Grupo({
           <Link
             key={link.href}
             href={link.href}
-            className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-tijolo-700 hover:underline"
+            className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-saibro-700 underline-offset-2 hover:underline"
           >
             {link.rotulo} <IconeSeta className="h-3.5 w-3.5" />
           </Link>
@@ -332,34 +331,15 @@ function GrupoDeReposicoes({ itens }: { itens: ReposicaoAVencer[] }) {
           }
         />
       ))}
-      links={[{ href: "/alunos", rotulo: "Ver alunos" }]}
+      links={[{ href: "/alunos", rotulo: "Ver clientes" }]}
     />
   );
 }
 
-/** "6 reservas · 14 mensalidades · 7 produtos · 5 reposições" (o detalhe do cartão Pendências). */
-export function resumoDasPendencias(grupos: GrupoDeAtencao[]): string {
-  const partes = grupos
-    .filter((g) => g.itens.length > 0)
-    .map((g) => {
-      const n = g.itens.length;
-      switch (g.tipo) {
-        case "reservas":
-          return plural(n, "reserva", "reservas");
-        case "mensalidades":
-          return plural(n, "mensalidade", "mensalidades");
-        case "produtos":
-          return plural(n, "produto", "produtos");
-        case "reposicoes":
-          return plural(n, "reposição", "reposições");
-      }
-    });
-  return partes.length > 0 ? partes.join(" · ") : "Nada pendente agora";
-}
-
 /**
- * Quadro "Precisa de atenção": junta o que pede uma acao hoje. Cada grupo
- * mostra a contagem da lista inteira e cada item leva a tela certa.
+ * Quadro "Precisa de atenção" (embaixo, no Início): junta o que pede uma acao
+ * hoje. Cada grupo mostra a contagem da lista inteira e cada item leva a tela
+ * certa. O total no topo e a soma dos grupos.
  */
 export function PrecisaDeAtencao({
   atencao,
@@ -387,7 +367,9 @@ export function PrecisaDeAtencao({
           Nada para acompanhar nas áreas do seu perfil.
         </p>
       ) : (
-        <div className="divide-y divide-areia-200">
+        // Grupos em grade (2 colunas no computador e no tablet); o fundo cinza
+        // entre as celulas faz as linhas divisorias.
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-b-2xl bg-areia-200 lg:grid-cols-2">
           {atencao.grupos.map((grupo) => {
             switch (grupo.tipo) {
               case "reservas":

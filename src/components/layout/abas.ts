@@ -4,7 +4,7 @@ import {
   IconeAgenda,
   IconeEstoque,
   IconeFinanceiro,
-  IconeQuadras,
+  IconeInicio,
   IconeTrofeu,
   IconeUsuarios,
 } from "@/components/ui/Icons";
@@ -19,18 +19,21 @@ export interface Area {
   Icone: ComponentType<SVGProps<SVGSVGElement>>;
   /** Permissão exigida (Hipótese H9, editável nas Configurações). */
   modulo: ModuloSistema;
-  /** Outras telas que ficam "dentro" desta aba (a aba aparece marcada nelas). */
+  /** Outras telas que ficam "dentro" desta aba (a aba aparece marcada nelas): Professores fica em Clientes. */
   inclui?: string[];
 }
 
-/** Seções principais do sistema, compartilhadas pela topbar e pela barra do celular. */
+/**
+ * Seções principais do sistema, compartilhadas pela topbar e pela barra do celular.
+ * A tela inicial continua na rota `/dashboard`, com o nome "Início".
+ */
 export const ABAS: Area[] = [
-  { href: "/dashboard", rotulo: "Painel", curto: "Painel", Icone: IconeQuadras, modulo: "painel" },
+  { href: "/dashboard", rotulo: "Início", curto: "Início", Icone: IconeInicio, modulo: "painel" },
   { href: "/agenda", rotulo: "Agenda", curto: "Agenda", Icone: IconeAgenda, modulo: "agenda" },
   {
     href: "/alunos",
-    rotulo: "Alunos",
-    curto: "Alunos",
+    rotulo: "Clientes",
+    curto: "Clientes",
     Icone: IconeUsuarios,
     modulo: "alunos",
     inclui: ["/professores"],
@@ -79,7 +82,7 @@ export function estaNaArea(caminho: string, href: string): boolean {
   return caminho === href || caminho.startsWith(`${href}/`);
 }
 
-/** A aba fica marcada na própria área e nas telas que ela inclui (Professores fica em Alunos). */
+/** A aba fica marcada na própria área e nas telas que ela inclui (Professores fica em Clientes). */
 export function abaAtiva(caminho: string, area: Area): boolean {
   return [area.href, ...(area.inclui ?? [])].some((href) => estaNaArea(caminho, href));
 }

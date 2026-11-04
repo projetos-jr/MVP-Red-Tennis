@@ -78,8 +78,8 @@ export function MenuDoUsuario() {
         aria-expanded={aberto}
         aria-controls={aberto ? idDoMenu : undefined}
         aria-label={`Menu de ${colaborador.nome}`}
-        className={`flex items-center gap-2.5 rounded-xl px-1.5 py-1 transition-colors hover:bg-areia-100 lg:px-2 ${
-          aberto || numaAreaDoMenu ? "bg-areia-100" : ""
+        className={`alvo-de-toque flex items-center gap-2.5 rounded-xl px-1.5 py-1 transition-colors hover:bg-areia-200/60 lg:px-2 ${
+          aberto || numaAreaDoMenu ? "bg-areia-200/60" : ""
         }`}
       >
         <span className="hidden text-right lg:block">
@@ -115,7 +115,7 @@ export function MenuDoUsuario() {
               {resumoDoAcesso(banco.configuracoes, colaborador.perfil)}
             </p>
             {fonte === "demonstracao" && (
-              <p className="mt-2 text-[11px] leading-snug text-areia-400">
+              <p className="mt-2 text-[11px] leading-snug text-areia-500">
                 Modo demonstração · nada é gravado
               </p>
             )}
@@ -130,7 +130,7 @@ export function MenuDoUsuario() {
                     role="menuitem"
                     onClick={() => setAberto(false)}
                     aria-current={estaNaArea(caminho, href) ? "page" : undefined}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-areia-700 hover:bg-areia-50 hover:text-areia-900 focus-visible:bg-areia-50 aria-[current=page]:text-tijolo-700"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-areia-700 hover:bg-areia-50 hover:text-areia-900 focus-visible:bg-areia-50 aria-[current=page]:text-saibro-700"
                   >
                     <Icone className="h-[18px] w-[18px]" />
                     {rotulo}
