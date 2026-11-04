@@ -20,7 +20,7 @@ function NomeDoProfessor({ professor }: { professor: Professor }) {
   return (
     <Link
       href={`/professores/${professor.id}`}
-      className="inline-flex items-center gap-2 font-medium text-areia-800 hover:text-tijolo-700 hover:underline"
+      className="inline-flex items-center gap-2 font-medium text-areia-800 hover:text-saibro-700 hover:underline"
     >
       <span
         className="h-2.5 w-2.5 shrink-0 rounded-full"

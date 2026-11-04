@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { textoLegivelSobre } from "@/lib/cores";
 import { corAvatar, iniciais } from "@/lib/theme";
 
 interface AvatarProps {
@@ -73,10 +74,13 @@ export function Avatar({
     );
   }
 
+  // A cor do professor e escolhida no cadastro: o texto (branco ou escuro)
+  // acompanha o que for mais legivel sobre ela.
+  const fundo = cor ?? corAvatar(id);
   return (
     <span
-      className={`${classesBase} inline-flex items-center justify-center font-semibold text-white`}
-      style={{ backgroundColor: cor ?? corAvatar(id) }}
+      className={`${classesBase} inline-flex items-center justify-center font-semibold`}
+      style={{ backgroundColor: fundo, color: textoLegivelSobre(fundo) }}
       title={nome}
       aria-label={nome}
       role="img"

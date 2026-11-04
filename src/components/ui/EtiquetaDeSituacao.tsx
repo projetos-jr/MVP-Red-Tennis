@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Badge } from "./Badge";
 import { PALETA } from "@/lib/paleta";
+import { APOIO } from "@/lib/theme";
 import { IconeAlerta, IconeCheck, IconeCongelado, IconeFechar, IconeRelogio } from "./Icons";
 
 /**
@@ -20,16 +21,16 @@ export type Tom = "positivo" | "atencao" | "alerta" | "neutro" | "info" | "desta
 
 /** As cores de cada tom (texto, fundo e borda). Todas passam de 4,5:1 de contraste. */
 export const TONS: Record<Tom, { cor: string; fundo: string; borda: string }> = {
-  /** Pago, ativo, presente, em dia. */
-  positivo: { cor: "#15803D", fundo: "#F0FDF4", borda: "#9DE0B4" },
+  /** Pago, ativo, presente, em dia: o verde de quadra. */
+  positivo: { cor: PALETA.quadra[700], fundo: PALETA.quadra[50], borda: PALETA.quadra[200] },
   /** Pendente, em aberto, aguardando, a fechar. */
-  atencao: { cor: "#A16207", fundo: "#FEFBEB", borda: "#F5D97A" },
+  atencao: { cor: APOIO.ambar.texto, fundo: APOIO.ambar.fundo, borda: APOIO.ambar.borda },
   /** Em atraso, prazo vencido, esgotado, inativo. */
-  alerta: { cor: "#8A2118", fundo: "#FBE3E0", borda: "#EC9A90" },
+  alerta: { cor: PALETA.tijolo[800], fundo: PALETA.tijolo[100], borda: PALETA.tijolo[300] },
   /** Anulado, encerrado, a marcar, mês em andamento. */
   neutro: { cor: PALETA.areia[700], fundo: PALETA.areia[100], borda: PALETA.areia[300] },
   /** Congelado (plano pausado), suspensa. */
-  info: { cor: "#0369A1", fundo: "#F0FAFF", borda: "#A5DFF7" },
+  info: { cor: APOIO.ceu.texto, fundo: APOIO.ceu.fundo, borda: APOIO.ceu.borda },
   /** Saibro: plano do aluno, inscrições abertas, repasse fechado a pagar. */
   destaque: { cor: PALETA.saibro[800], fundo: PALETA.saibro[100], borda: PALETA.saibro[200] },
 };

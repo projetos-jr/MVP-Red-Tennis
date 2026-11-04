@@ -90,16 +90,17 @@ function CaixaDoCampeao({ campeao }: { campeao?: InscricaoNaTela }) {
   return (
     <div
       className={`w-full rounded-xl border px-3 py-3 text-center ${
-        campeao ? "border-saibro-300 bg-saibro-50 shadow-sm" : "border-dashed border-areia-300 bg-areia-50/70"
+        campeao ? "border-saibro-700 bg-saibro-600 shadow-card" : "border-dashed border-areia-300 bg-areia-50/70"
       }`}
     >
-      <IconeTrofeu className={`mx-auto h-5 w-5 ${campeao ? "text-saibro-600" : "text-areia-400"}`} />
+      {/* Campeao em destaque: laranja cheio e o trofeu na cor da bola. */}
+      <IconeTrofeu className={`mx-auto h-6 w-6 ${campeao ? "text-bola-300" : "text-areia-400"}`} />
       {campeao ? (
         <>
           <span className="mt-1.5 flex justify-center">
             <AvataresDoLado alunos={campeao.alunos} tamanho="sm" />
           </span>
-          <p className="mt-1.5 truncate text-sm font-semibold text-saibro-800">{campeao.nome}</p>
+          <p className="mt-1.5 truncate font-display text-base font-bold text-white">{campeao.nome}</p>
         </>
       ) : (
         <p className="mt-1 text-xs italic text-areia-500">A definir na final</p>

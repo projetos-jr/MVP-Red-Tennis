@@ -97,7 +97,7 @@ export function DetalheDoProduto({ produtoId }: { produtoId: string }) {
                 </Badge>
                 {!produto.ativo && <Badge>Inativo · fora das listas de venda</Badge>}
               </div>
-              <h1 className="mt-2 text-2xl font-bold text-areia-900">{produto.nome}</h1>
+              <h1 className="mt-2 font-display text-3xl font-bold leading-tight text-areia-900">{produto.nome}</h1>
               <p className="mt-0.5 text-sm text-areia-600">Vendido por {produto.unidade}</p>
               <p className="mt-3 text-sm text-areia-700">
                 Venda <strong className="font-semibold">{formatarMoeda(produto.precoVenda)}</strong>

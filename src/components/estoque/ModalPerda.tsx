@@ -80,9 +80,9 @@ export function ModalPerda({ item, aoFechar }: { item: ProdutoComSaldo; aoFechar
                   type="button"
                   onClick={() => setMotivo(comum)}
                   aria-pressed={motivo === comum}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  className={`alvo-de-toque rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
                     motivo === comum
-                      ? "bg-tijolo-600 text-white"
+                      ? "bg-saibro-600 text-white"
                       : "bg-areia-100 text-areia-700 hover:bg-areia-200"
                   }`}
                 >

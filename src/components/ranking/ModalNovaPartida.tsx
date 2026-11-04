@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Campo, RodapeDoFormulario } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { IconeAlerta, IconeCheck } from "@/components/ui/Icons";
 import { Modal } from "@/components/ui/Modal";
 import { Segmentado } from "@/components/ui/Segmentado";
@@ -168,20 +169,12 @@ export function ModalNovaPartida({
             <CamposDoResultado valores={resultado} aoMudar={setResultado} nomeA={nomeA} nomeB={nomeB} />
           ) : (
             <div className="space-y-3 rounded-xl border border-areia-200 p-3.5">
-              <label className="flex cursor-pointer items-start gap-2.5 text-sm">
-                <input
-                  type="checkbox"
-                  checked={reservar}
-                  onChange={(e) => setReservar(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-saibro-600"
-                />
-                <span>
-                  <span className="font-medium text-areia-800">Reservar quadra</span>
-                  <span className="block text-xs text-areia-500">
-                    A reserva entra na agenda como partida de ranking (roxo).
-                  </span>
-                </span>
-              </label>
+              <OpcaoSimNao
+                ligado={reservar}
+                aoMudar={setReservar}
+                titulo="Reservar quadra"
+                descricao="A reserva entra na agenda como partida de ranking (roxo)."
+              />
 
               {reservar && (
                 <>

@@ -79,7 +79,7 @@ export function ModalGerarMensalidades({
           </p>
           {gerado.congeladas > 0 && (
             <p className="flex items-start gap-2.5">
-              <IconeCongelado className="mt-0.5 h-4 w-4 shrink-0 text-[#1E3A8A]" />
+              <IconeCongelado className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
               <span>
                 {gerado.congeladas === 1
                   ? "1 aluno está com o plano congelado: a cobrança saiu normalmente"
@@ -140,7 +140,7 @@ export function ModalGerarMensalidades({
 
           {previa.congeladas > 0 && (
             <p className="flex items-start gap-2 text-sm text-areia-700">
-              <IconeCongelado className="mt-0.5 h-4 w-4 shrink-0 text-[#1E3A8A]" />
+              <IconeCongelado className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
               <span>
                 {previa.congeladas === 1
                   ? "1 aluno está com o plano congelado."

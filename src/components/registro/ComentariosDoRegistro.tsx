@@ -119,7 +119,7 @@ export function ComentariosDoRegistro({
                   <button
                     type="button"
                     onClick={() => setEditando({ id: comentario.id, texto: comentario.texto })}
-                    className="text-saibro-700 hover:underline"
+                    className="alvo-de-toque text-saibro-700 hover:underline"
                   >
                     Editar
                   </button>
@@ -128,7 +128,7 @@ export function ComentariosDoRegistro({
                     onClick={async () => {
                       await gravar(apagarComentario, { id: comentario.id }, "Comentário apagado.");
                     }}
-                    className="text-tijolo-700 hover:underline"
+                    className="alvo-de-toque text-tijolo-700 hover:underline"
                   >
                     Apagar
                   </button>

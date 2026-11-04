@@ -122,7 +122,7 @@ export function DetalheDoLancamento({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p
-              className={`text-3xl font-bold leading-none ${anulado ? "text-areia-400 line-through" : "text-areia-900"}`}
+              className={`text-3xl font-bold leading-none ${anulado ? "text-areia-500 line-through" : "text-areia-900"}`}
             >
               {formatarMoeda(l.valor)}
             </p>
@@ -154,7 +154,7 @@ export function DetalheDoLancamento({
             <Dado rotulo={pessoa.tipo === "aluno" ? "Aluno" : "Professor"}>
               <Link
                 href={pessoa.tipo === "aluno" ? `/alunos/${pessoa.id}` : `/professores/${pessoa.id}`}
-                className="font-medium text-tijolo-700 hover:underline"
+                className="font-semibold text-saibro-700 hover:underline"
               >
                 {pessoa.nome}
               </Link>

@@ -12,6 +12,7 @@ import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/Modais
 import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
 import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
+import { InterruptorBola } from "@/components/ui/InterruptorBola";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import {
@@ -191,25 +192,16 @@ export default function PaginaEstoque() {
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
-                  <input
-                    type="checkbox"
-                    checked={filtro.apenasRepor}
-                    onChange={(e) => mudarFiltro({ apenasRepor: e.target.checked })}
-                    className="h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
-                  />
-                  Só o que precisa repor
-                </label>
-                <label className="alvo-de-toque flex cursor-pointer items-center gap-2 text-xs font-medium text-areia-700">
-                  <input
-                    type="checkbox"
-                    checked={filtro.incluirInativos}
-                    onChange={(e) => mudarFiltro({ incluirInativos: e.target.checked })}
-                    className="h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
-                  />
-                  Mostrar inativos
-                  {resumo.produtosInativos > 0 && ` (${resumo.produtosInativos})`}
-                </label>
+                <InterruptorBola
+                  ligado={filtro.apenasRepor}
+                  aoMudar={(apenasRepor) => mudarFiltro({ apenasRepor })}
+                  rotulo="Só o que precisa repor"
+                />
+                <InterruptorBola
+                  ligado={filtro.incluirInativos}
+                  aoMudar={(incluirInativos) => mudarFiltro({ incluirInativos })}
+                  rotulo={`Mostrar inativos${resumo.produtosInativos > 0 ? ` (${resumo.produtosInativos})` : ""}`}
+                />
               </div>
             </div>
 

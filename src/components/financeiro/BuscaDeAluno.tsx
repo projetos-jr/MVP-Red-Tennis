@@ -45,7 +45,7 @@ export function BuscaDeAluno({
           <button
             type="button"
             onClick={() => aoEscolher(undefined)}
-            className="shrink-0 rounded-md px-1.5 py-1 text-xs font-semibold text-tijolo-700 hover:bg-tijolo-50"
+            className="shrink-0 rounded-md px-1.5 py-1 text-xs font-semibold text-saibro-700 hover:bg-saibro-50"
             aria-label={`Trocar o aluno (${selecionado.nome})`}
           >
             Trocar

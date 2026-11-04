@@ -104,13 +104,26 @@ export const ESTILO_OCUPACAO: Record<TipoOcupacao, EstiloTipo> = {
   },
 };
 
+/**
+ * Cores de apoio que nao sao da paleta da arena: as cores nativas do Tailwind
+ * que ja tem significado no sistema (ambar = aguardando, ceu = chuva/info,
+ * violeta = reposicao/ranking, ciano = avatar). Ficam so aqui, nas tabelas de
+ * estilo, e cada par texto/fundo e conferido em `cores.test.ts`.
+ */
+export const APOIO = {
+  ambar: { texto: "#A16207", fundo: "#FEFBEB", borda: "#F5D97A", barra: "#EAB308" },
+  ceu: { texto: "#0369A1", fundo: "#F0FAFF", borda: "#A5DFF7" },
+  violeta: { texto: "#6D28D9", fundo: "#F7F3FF", borda: "#CBB4F8" },
+  ciano: "#0E7490",
+} as const;
+
 /** Cores das siglas de falta/cancelamento, pelo codigo (CH, 24h, FP, IAC, TIP). */
 const ESTILO_SIGLA: Record<string, { cor: string; fundo: string }> = {
-  CH: { cor: "#0369A1", fundo: "#F0FAFF" },
-  "24h": { cor: "#15803D", fundo: "#F0FDF4" },
-  FP: { cor: "#A16207", fundo: "#FEFBEB" },
-  IAC: { cor: "#6D28D9", fundo: "#F7F3FF" },
-  TIP: { cor: "#C2410C", fundo: "#FFF6ED" },
+  CH: { cor: APOIO.ceu.texto, fundo: APOIO.ceu.fundo },
+  "24h": { cor: PALETA.quadra[700], fundo: PALETA.quadra[50] },
+  FP: { cor: APOIO.ambar.texto, fundo: APOIO.ambar.fundo },
+  IAC: { cor: APOIO.violeta.texto, fundo: APOIO.violeta.fundo },
+  TIP: { cor: PALETA.saibro[800], fundo: PALETA.saibro[50] },
 };
 
 /** Siglas novas (cadastradas nas Configuracoes) caem num estilo neutro. */
@@ -122,14 +135,15 @@ export const ESTILO_CATEGORIA: Record<
   CategoriaRanking,
   { label: string; descricao: string; cor: string; fundo: string; borda: string }
 > = {
+  // Escala do saibro: quanto mais alta a categoria, mais forte o laranja (o
+  // vermelho fica so para alerta). A letra vai sempre escrita no selo.
   A: {
     label: "Categoria A",
     descricao: "Avançado",
-    cor: PALETA.tijolo[800],
-    fundo: PALETA.tijolo[100],
-    borda: PALETA.tijolo[300],
+    cor: PALETA.saibro[950],
+    fundo: PALETA.saibro[300],
+    borda: PALETA.saibro[400],
   },
-  // B e C: texto um tom mais escuro que o do MVP, para o contraste passar de 4,5:1.
   B: {
     label: "Categoria B",
     descricao: "Intermediário +",
@@ -153,17 +167,20 @@ export const ESTILO_CATEGORIA: Record<
   },
 };
 
-/** Paleta dos avatares placeholder (iniciais sobre fundo colorido). */
+/**
+ * Paleta dos avatares placeholder (iniciais brancas sobre fundo colorido; todos
+ * passam de 4,5:1). Sem vermelho: ao lado de um nome, ele pareceria alerta.
+ */
 export const CORES_AVATAR = [
   PALETA.saibro[600],
-  PALETA.tijolo[700],
-  "#0E7490",
+  PALETA.cimento[600],
+  APOIO.ciano,
   PALETA.quadra[700],
-  "#6D28D9",
-  "#A16207",
-  PALETA.cimento[700],
-  "#15803D",
-  PALETA.tijolo[600],
+  APOIO.violeta.texto,
+  APOIO.ambar.texto,
+  PALETA.cimento[800],
+  PALETA.bola[800],
+  PALETA.saibro[800],
   PALETA.areia[600],
 ];
 
@@ -208,31 +225,31 @@ export function corAvatar(id: string): string {
 export const ESTILO_NIVEL_ESTOQUE = {
   esgotado: {
     label: "Esgotado",
-    cor: "#8A2118",
-    fundo: "#FBE3E0",
-    borda: "#EC9A90",
-    barra: "#C43F2F",
+    cor: PALETA.tijolo[800],
+    fundo: PALETA.tijolo[100],
+    borda: PALETA.tijolo[300],
+    barra: PALETA.tijolo[600],
   },
   critico: {
     label: "Repor já",
-    cor: "#A32A1C",
-    fundo: "#FDF3F2",
-    borda: "#F6C4BE",
-    barra: "#DC6557",
+    cor: PALETA.tijolo[700],
+    fundo: PALETA.tijolo[50],
+    borda: PALETA.tijolo[200],
+    barra: PALETA.tijolo[500],
   },
   atencao: {
     label: "Atenção",
-    cor: "#A16207",
-    fundo: "#FEFBEB",
-    borda: "#F5D97A",
-    barra: "#EAB308",
+    cor: APOIO.ambar.texto,
+    fundo: APOIO.ambar.fundo,
+    borda: APOIO.ambar.borda,
+    barra: APOIO.ambar.barra,
   },
   saudavel: {
     label: "Em dia",
-    cor: "#15803D",
-    fundo: "#F0FDF4",
-    borda: "#9DE0B4",
-    barra: "#16A34A",
+    cor: PALETA.quadra[700],
+    fundo: PALETA.quadra[50],
+    borda: PALETA.quadra[200],
+    barra: PALETA.quadra[500],
   },
 } as const;
 
@@ -240,18 +257,18 @@ export const ESTILO_CATEGORIA_PRODUTO: Record<
   CategoriaProduto,
   { cor: string; fundo: string; borda: string }
 > = {
-  Bebidas: { cor: "#0369A1", fundo: "#F0FAFF", borda: "#A5DFF7" },
-  Cervejas: { cor: "#A16207", fundo: "#FEFBEB", borda: "#F5D97A" },
-  Lanches: { cor: "#C2410C", fundo: "#FFF6ED", borda: "#FBBF8F" },
-  Acessórios: { cor: "#6D28D9", fundo: "#F7F3FF", borda: "#CBB4F8" },
+  Bebidas: { cor: APOIO.ceu.texto, fundo: APOIO.ceu.fundo, borda: APOIO.ceu.borda },
+  Cervejas: { cor: APOIO.ambar.texto, fundo: APOIO.ambar.fundo, borda: APOIO.ambar.borda },
+  Lanches: { cor: PALETA.saibro[800], fundo: PALETA.saibro[50], borda: PALETA.saibro[200] },
+  Acessórios: { cor: APOIO.violeta.texto, fundo: APOIO.violeta.fundo, borda: APOIO.violeta.borda },
 };
 
 export const ESTILO_MOVIMENTO: Record<
   TipoMovimento,
   { label: string; sinal: string; cor: string; fundo: string }
 > = {
-  entrada: { label: "Entrada", sinal: "+", cor: "#15803D", fundo: "#F0FDF4" },
-  venda: { label: "Venda", sinal: "−", cor: "#0369A1", fundo: "#F0FAFF" },
-  perda: { label: "Perda", sinal: "−", cor: "#8A2118", fundo: "#FBE3E0" },
+  entrada: { label: "Entrada", sinal: "+", cor: PALETA.quadra[700], fundo: PALETA.quadra[50] },
+  venda: { label: "Venda", sinal: "−", cor: APOIO.ceu.texto, fundo: APOIO.ceu.fundo },
+  perda: { label: "Perda", sinal: "−", cor: PALETA.tijolo[800], fundo: PALETA.tijolo[100] },
   ajuste: { label: "Ajuste", sinal: "±", cor: PALETA.areia[700], fundo: PALETA.areia[100] },
 };
