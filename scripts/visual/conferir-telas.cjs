@@ -220,7 +220,12 @@ function medirNaPagina(comToque) {
 async function entrar(pagina, perfil) {
   await pagina.goto(`${BASE}/`, { waitUntil: "networkidle" });
   await pagina.waitForTimeout(400);
-  const rotulo = pagina.locator("label", { hasText: NOME_DO_PERFIL[perfil] }).first();
+  // O selo do perfil tem o texto exato ("Professor"); o resumo de acesso de
+  // outros perfis tambem cita "Professores", por isso a busca e exata.
+  const rotulo = pagina
+    .locator("label")
+    .filter({ has: pagina.getByText(NOME_DO_PERFIL[perfil], { exact: true }) })
+    .first();
   if (await rotulo.count()) await rotulo.click();
   await pagina.locator("button[type=submit]").click();
   await pagina.waitForURL((u) => new URL(u).pathname !== "/", { timeout: 20000 });
