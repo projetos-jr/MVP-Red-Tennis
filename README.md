@@ -51,9 +51,9 @@ hipóteses usadas e um **roteiro de teste para quem não é programador**.
 
 | Módulo | Telas | Documentação |
 | --- | --- | --- |
-| Base | Login por perfil, Painel (`/dashboard`), busca rápida de aluno, Configurações, Histórico de alterações | [`base.md`](docs/modulos/base.md) |
-| Agenda | `/agenda` (dia por quadra, semana, mês), modo quadra no tablet, impressão do dia | [`agenda.md`](docs/modulos/agenda.md) |
-| Alunos e professores | `/alunos`, ficha do aluno, `/professores`, ficha do professor | [`alunos.md`](docs/modulos/alunos.md) |
+| Base | Login, Início (`/dashboard`: quadras agora + mosaico de atalhos), busca rápida, Configurações, Histórico de alterações | [`base.md`](docs/modulos/base.md) |
+| Agenda | `/agenda`: Diária (hoje e amanhã, por quadra, de 30 em 30 min), Quadra, Professor e Mês; modo quadra no tablet; impressão do dia | [`agenda.md`](docs/modulos/agenda.md) |
+| Clientes e professores | `/alunos` (Clientes), ficha do aluno, `/professores`, ficha do professor | [`alunos.md`](docs/modulos/alunos.md) |
 | Financeiro | `/financeiro`: a receber, a pagar, mensalidades, repasse dos professores | [`financeiro.md`](docs/modulos/financeiro.md) |
 | Estoque | `/estoque`, detalhe do produto, consumo no balcão | [`estoque.md`](docs/modulos/estoque.md) |
 | Ranking e torneios | `/ranking`, chaves dos torneios nos três formatos | [`ranking.md`](docs/modulos/ranking.md) |
@@ -130,7 +130,8 @@ src/
 ├── components/
 │   ├── ui/                   # Peças comuns: Card, Modal, Formulário, Confirmação, Avisos…
 │   ├── registro/             # Comentários e histórico de qualquer registro
-│   ├── layout/               # Topbar, navegação, busca rápida, casca das telas
+│   ├── layout/               # Topbar, abas, atalhos do mosaico, busca rápida, casca das telas
+│   ├── inicio/               # Início: faixa das quadras e mosaico
 │   └── <módulo>/             # Componentes de cada módulo
 ├── lib/
 │   ├── banco/
@@ -139,7 +140,8 @@ src/
 │   │   ├── regras/           # Regras do banco: conflito, reposição, situação do pagamento…
 │   │   └── operacoes/        # Gravações "tudo ou nada", uma por ação da tela
 │   ├── consultas/            # Leitura das telas, um arquivo por módulo
-│   ├── theme.ts              # Cores e formatadores
+│   ├── paleta.ts             # As cores (fonte única) · cores.ts: contraste
+│   ├── theme.ts              # Cores por tipo/situação e formatadores
 │   └── date.ts               # Datas no fuso da arena
 └── store/
     ├── AppStore.tsx          # Banco da sessão, usuário logado e `executar`
@@ -152,11 +154,27 @@ Detalhes técnicos em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**; o banco 
 
 ## Identidade visual
 
-Paleta derivada do logo da Red Tennis, definida em `tailwind.config.ts`:
+Cores **vivas** de quadra de tênis (pedido do cliente), definidas num arquivo só,
+`src/lib/paleta.ts`, que o Tailwind lê:
 
-- **`saibro`** — laranja/terracota da quadra de saibro (cor primária)
-- **`tijolo`** — vermelho escuro do letreiro (ações e alertas)
-- **`areia`** — neutros quentes (fundos e textos)
+- **`saibro`**: laranja do saibro, a cor principal (botões, mosaico, aba ativa);
+- **`tijolo`**: vermelho do letreiro, só para perigo, alerta e a marca;
+- **`areia`**: neutros (fundo cinza-claro, textos e bordas);
+- **`cimento`**: azul/roxo da Quadra 1;
+- **`quadra`**: verde de quadra (faixa das quadras, "livre", "sim");
+- **`bola`**: amarelo da bola de tênis (detalhes pequenos).
+
+O teste `src/lib/cores.test.ts` garante que todo texto continua legível
+(contraste mínimo de 4,5:1). Títulos e números usam a fonte Barlow Semi
+Condensed, com cara de placar, e o texto usa Inter. As duas vêm empacotadas
+(`@fontsource`, licença OFL) e funcionam sem internet. As regras de uso (onde vai
+cor viva e onde não vai, peças comuns, interruptor de bola de tênis...) estão na
+skill `.claude/skills/design-red-tennis/SKILL.md`.
+
+Para conferir as telas depois de uma mudança visual:
+`node scripts/visual/conferir-telas.cjs` (instruções no próprio arquivo). Ele
+fotografa as telas em 3 tamanhos e 3 perfis e conta erros, contraste e alvos
+de toque.
 
 O logo oficial está em `public/` em duas versões: `logo-red-tennis.webp`
 (login) e `logo-red-tennis-marca.webp` (topbar). Para trocar, substitua os

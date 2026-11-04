@@ -70,19 +70,35 @@ Torneio ── inscritos ── partidas encadeadas (o vencedor avança)
   individuais **[cliente]**. O perfil de quem entra define o que aparece
   (ver Hipótese H9).
 
-### Painel (dashboard)
+### Início (antigo Painel)
 
-- **Fica:** quadras em 3D, aulas de hoje, próximos horários, indicadores do dia.
-- **Muda:** o quadro "Precisa de atenção" passa a juntar tudo o que pede ação
-  **[sugestão]**:
-  - reservas perto de vencer o prazo de pagamento;
-  - mensalidades em atraso;
-  - produtos abaixo do mínimo;
-  - créditos de reposição que vencem em até 30 dias.
-- **Corrige:** o cartão do financeiro dizia 12 reservas atrasadas e a lista
-  mostrava 6.
+**Redesign de novembro, a pedido do cliente:** a tela inicial passou a ter a
+estrutura do sistema antigo que ele usa e de que gosta **[cliente]**.
+
+- **Topo:** "Agora nas quadras", com as 4 quadras e o paredão desenhados (Quadra
+  1 de cimento em azul; 2 a 4 e paredão de saibro em laranja). Cada quadra mostra
+  quem está jogando agora, até que horas e o professor, ou "Livre agora" com a
+  próxima aula. Clicar abre a agenda daquela quadra.
+- **Mosaico de botões grandes laranja**, como no sistema antigo: Diária, Agenda
+  Professores, Financeiro, Estoque, Histórico, Clientes, Professores,
+  Configurações, Ranking, Torneio, LAP e Site. Cada perfil só vê o que pode
+  abrir (H9). Ver H16 e H17.
+- **Embaixo:** o quadro "Precisa de atenção" (reservas perto de vencer o prazo,
+  mensalidades em atraso, produtos abaixo do mínimo, créditos que vencem em até
+  30 dias).
+- A rota continua `/dashboard`. O professor, que não tem o módulo, entra direto
+  na agenda.
 
 ### Agenda
+
+**Redesign de novembro, a pedido do cliente [cliente]:** a visão principal
+passou a ser a **Diária**: o dia atual e o próximo lado a lado, cada um com as
+colunas Quadra 1, 2, 3, 4 e Paredão, e as linhas de 30 em 30 minutos (como no
+sistema antigo). As outras visões são **Quadra** (a semana de uma quadra),
+**Professor** (a semana de um professor) e **Mês**. A semana com todas as
+quadras juntas saiu. Os blocos são pintados com a cor cheia de cada tipo. Clicar
+numa meia hora livre abre o "Novo horário" já preenchido. Detalhes e roteiro de
+teste em `docs/modulos/agenda.md`.
 
 - **Fica:** visões de semana e mês, cores por tipo e legenda, filtros por quadra,
   professor e tipo, versão de celular, clique num espaço livre para marcar.
@@ -114,14 +130,15 @@ Torneio ── inscritos ── partidas encadeadas (o vencedor avança)
     grandes de presença e falta, para usar na beira da quadra **[sugestão]**.
   - **Imprimir a agenda do dia**, para a transição do papel **[sugestão]**.
 
-### Alunos (tela nova: lista)
+### Clientes (lista de alunos)
 
-Hoje não existe lista de alunos: só se chega à ficha pela agenda ou pelo
-ranking.
-
-- Busca por nome e filtros por plano, professor e situação (ativo, congelado,
-  inativo) **[base]**.
-- Botão "Novo aluno", que abre o formulário de cadastro **[base]**.
+- Tabela densa, como a lista de clientes do sistema antigo **[cliente]**, com os
+  filtros "Ativos / Inativos / Todos" e "Ranking / Alunos / Aluguel / Torneio /
+  Todos" (H15), busca por nome, telefone ou e-mail e filtros por plano,
+  professor e situação **[base]**.
+- Ações por linha: editar e inativar. Não há exclusão (o histórico do aluno fica)
+  nem foto, que dependeria de guardar arquivos.
+- Botão "Novo cliente", que abre o formulário de cadastro **[base]**.
 
 ### Ficha do aluno
 
@@ -329,6 +346,10 @@ valor, sem programar.
 | H12 | Até quando a agenda é criada | Horários fixos viram aulas até 12 semanas à frente, estendidas automaticamente. |
 | H13 | Prazo para pagar o consumo do balcão | 7 dias (valor de teste). |
 | H14 | Pontuação atual do ranking | Na importação, cada jogador recebe um lançamento de "pontos iniciais" com a pontuação do sistema atual. A confirmar com a arena. |
+| H15 | Categorias de cliente (filtro) | **Ranking**: inscrito no ranking. **Alunos**: plano de aula (Individual, Dupla ou LAP). **Aluguel**: plano de locação, ou é o titular (primeiro nome, quem paga) de alguma locação não cancelada. **Torneio**: inscrito em algum torneio. Um cliente pode estar em mais de uma. |
+| H16 | Botão LAP do mosaico | Abre a agenda Diária filtrada pelo tipo LAP. |
+| H17 | Botão Site do mosaico | Abre o site atual da arena numa nova aba. Fica escondido até o endereço ser confirmado (`SITE_DA_ARENA` em `src/lib/branding.ts`). |
+| H18 | "Clientes" no lugar de "Alunos" | A lista e a aba se chamam "Clientes" (como no sistema antigo); formulários e fichas ainda dizem "aluno". Confirmar se o cliente quer "Clientes" em todo o sistema. |
 
 **Divergência registrada (H5):** o plano de ação manda cancelar sozinho a
 reserva não paga no prazo. O pedido da arena fala em alertar e permitir que

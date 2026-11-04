@@ -40,7 +40,7 @@ Arquitetura (detalhes em `docs/ARQUITETURA.md`; plano e hipóteses H1–H14 em `
 - `src/lib/consultas/`: toda leitura das telas, uma por módulo, com `banco` como 1º parâmetro.
 - `src/lib/supabase/`: leitura do banco real, conversão de formatos e gravação; cada operação é ligada a uma função do Postgres (`porFuncao`) ou a uma gravação direta (`espelhar`) em `operacoes/<módulo>.ts`.
 - Na tela: `useApp()` (banco, colaborador, executar) e `useGravar()` (grava e mostra aviso). Gravar é assíncrono: sempre `await gravar(...)`. Peças comuns em `components/ui/` e `components/registro/`.
-- Skills do projeto em `.claude/skills/`: `mudar-banco`, `nova-operacao`, `revisar-pr`, `pedido-do-cliente`, `status-semanal`.
+- Skills do projeto em `.claude/skills/`: `mudar-banco`, `nova-operacao`, `revisar-pr`, `pedido-do-cliente`, `status-semanal`, `design-red-tennis` (sistema visual: cores vivas em `src/lib/paleta.ts`, contraste testado, peças comuns).
 - Hoje é `HOJE` de `src/lib/banco/constantes.ts`; nunca `new Date()` na renderização.
 
 ## Regras técnicas (do Plano de Ação)
