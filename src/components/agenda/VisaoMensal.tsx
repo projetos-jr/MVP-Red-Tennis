@@ -3,7 +3,7 @@
 import type { ItemAgenda } from "@/lib/consultas/agenda";
 import { DIAS_SEMANA_CURTO, ORDEM_SEMANA, formatarDiaMes, mesmoMes, paraData } from "@/lib/date";
 import { ESTILO_OCUPACAO } from "@/lib/theme";
-import { FUNDO_BLOQUEIO, ORDEM_TIPOS_AGENDA } from "./estilos";
+import { COR_BLOQUEIO, FUNDO_BLOQUEIO, ORDEM_TIPOS_AGENDA } from "./estilos";
 import { IconeChuva } from "./Icones";
 
 /**
@@ -82,14 +82,14 @@ export function VisaoMensal({
               <div className="flex items-center justify-between gap-1">
                 <span
                   className={`text-sm font-semibold ${
-                    ehHoje ? "text-saibro-800" : doMes ? "text-areia-800" : "text-areia-400"
+                    ehHoje ? "text-saibro-800" : doMes ? "text-areia-800" : "text-areia-500"
                   }`}
                 >
                   {paraData(data).getUTCDate()}
                 </span>
                 {horarios > 0 && (
                   <span
-                    className={`text-[10px] font-medium ${doMes ? "text-areia-500" : "text-areia-300"}`}
+                    className={`text-[10px] font-medium ${doMes ? "text-areia-600" : "text-areia-500"}`}
                   >
                     {horarios}
                   </span>
@@ -107,7 +107,8 @@ export function VisaoMensal({
                   {bloqueios > 0 && (
                     <span
                       className="rounded px-1 py-0.5 text-[10px] font-semibold text-areia-700"
-                      style={{ backgroundColor: "#F4F1EC", backgroundImage: FUNDO_BLOQUEIO }}
+                      style={{ backgroundColor: COR_BLOQUEIO, backgroundImage: FUNDO_BLOQUEIO }}
+                      data-fundo-de-contraste={COR_BLOQUEIO}
                     >
                       <span className="sm:hidden">BL</span>
                       <span className="hidden sm:inline">Bloqueio</span>
@@ -140,7 +141,7 @@ export function VisaoMensal({
                   <span
                     key={tipo}
                     style={{
-                      backgroundColor: ESTILO_OCUPACAO[tipo].cor,
+                      backgroundColor: ESTILO_OCUPACAO[tipo].cheia,
                       width: `${(quantidade / ativos.length) * 100}%`,
                       opacity: doMes ? 1 : 0.35,
                     }}

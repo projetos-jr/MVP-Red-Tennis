@@ -1,0 +1,550 @@
+"use client";
+
+import { memo, useEffect, useMemo, useRef, type CSSProperties } from "react";
+import type { QuadraId } from "@/lib/banco/tipos";
+import type { ItemAgenda } from "@/lib/consultas/agenda";
+import {
+  DIAS_SEMANA_CURTO,
+  DIAS_SEMANA_LONGO,
+  diaDaSemana,
+  formatarDiaMes,
+  horaParaMinutos,
+  minutosParaHora,
+} from "@/lib/date";
+import { PALETA } from "@/lib/paleta";
+import { BlocoNaGrade } from "./CartaoOcupacao";
+import { CLASSE_DO_PISO } from "./estilos";
+import {
+  ABERTURA_EM_MINUTOS,
+  MEIAS_HORAS,
+  PASSO,
+  alturaDaGrade,
+  canceladasPorChuva,
+  horariosAtivos,
+  itensDaColuna,
+  minutoDoAgora,
+  minutosPassados,
+  podeMarcarEm,
+  posicaoHorizontal,
+  posicaoVertical,
+  subcolunas,
+  type ColunaDaGrade,
+  type GrupoDeColunas,
+} from "./grade";
+import { IconeChuva } from "./Icones";
+
+/** Largura da coluna das horas. */
+const COLUNA_DAS_HORAS = 56;
+
+/** O que um clique numa meia hora livre manda para o "Novo horario". */
+export interface MeiaHoraEscolhida {
+  data: string;
+  horaInicio: string;
+  quadraId?: QuadraId;
+  professorId?: string;
+}
+
+/**
+ * A grade da agenda: linhas de 30 em 30 minutos e colunas por quadra (Diaria)
+ * ou por dia (semana de uma quadra ou de um professor).
+ *
+ *  - Cabecalho fixo em 2 niveis: grupo (o dia, ou a quadra/professor da
+ *    semana) e as colunas (as quadras, na cor do piso, ou os dias).
+ *  - Coluna das horas fixa: as horas cheias em destaque, as meias horas leves.
+ *  - Cada meia hora livre e um botao invisivel que abre o "Novo horario" ja
+ *    com a data, a hora e a quadra (ou o professor).
+ *  - Linha do "agora" e pelicula do passado em cada coluna.
+ *  - Ao abrir, a grade rola ate o agora (ou ate o primeiro horario).
+ */
+export const GradeDeColunas = memo(function GradeDeColunas({
+  grupos,
+  porData,
+  ocupadoPorData,
+  hoje,
+  agora,
+  px,
+  larguraMinima,
+  realce,
+  nomesComoLink,
+  aoAbrir,
+  aoMarcar,
+  aoAbrirDia,
+}: {
+  grupos: GrupoDeColunas[];
+  /** Horarios que aparecem (com os filtros). */
+  porData: Map<string, ItemAgenda[]>;
+  /** Horarios que ocupam a quadra (sem o filtro de tipo): decidem o que pode ser marcado. */
+  ocupadoPorData: Map<string, ItemAgenda[]>;
+  hoje: string;
+  agora: string;
+  px: number;
+  larguraMinima: number;
+  /** Chave da coluna realcada (link do Inicio para uma quadra). */
+  realce?: string;
+  nomesComoLink: boolean;
+  aoAbrir: (item: ItemAgenda) => void;
+  /** Ausente para quem so consulta (perfil de professor). */
+  aoMarcar?: (escolha: MeiaHoraEscolhida) => void;
+  /** Cabecalho do dia (semana): abre a Diaria daquele dia. */
+  aoAbrirDia?: (data: string) => void;
+}) {
+  const colunas = useMemo(() => grupos.flatMap((g) => g.colunas), [grupos]);
+  const porColuna = useMemo(
+    () =>
+      new Map(
+        colunas.map((coluna) => [
+          coluna.chave,
+          {
+            itens: itensDaColuna(coluna, porData.get(coluna.data) ?? []),
+            ocupado: itensDaColuna(coluna, ocupadoPorData.get(coluna.data) ?? []),
+          },
+        ]),
+      ),
+    [colunas, porData, ocupadoPorData],
+  );
+
+  const semana = grupos[0]?.tipo !== "dia";
+  const modelo = `${COLUNA_DAS_HORAS}px repeat(${colunas.length}, minmax(${larguraMinima}px, 1fr))`;
+  const altura = alturaDaGrade(px);
+  const minutoAgora = minutoDoAgora(agora, agora.slice(0, 10));
+  const colunasDeHoje = colunas.filter((c) => c.data === agora.slice(0, 10));
+  const agoraVisivel = minutoAgora !== undefined && colunasDeHoje.length > 0;
+
+  // Rolagem ate o agora (ou o primeiro horario). So rola de novo quando a
+  // grade muda de periodo ou de tamanho, para nao atrapalhar quem esta lendo.
+  const rolagem = useRef<HTMLDivElement>(null);
+  const ultimaRolagem = useRef("");
+  const primeiroInicio = useMemo(() => {
+    let menor: number | undefined;
+    porColuna.forEach(({ itens }) =>
+      itens.forEach((i) => {
+        const minuto = horaParaMinutos(i.ocupacao.horaInicio);
+        if (menor === undefined || minuto < menor) menor = minuto;
+      }),
+    );
+    return menor;
+  }, [porColuna]);
+  const chaveDaRolagem = `${colunas.map((c) => c.chave).join(",")}|${px}|${agoraVisivel ? "agora" : "inicio"}`;
+  useEffect(() => {
+    const elemento = rolagem.current;
+    if (!elemento || ultimaRolagem.current === chaveDaRolagem) return;
+    ultimaRolagem.current = chaveDaRolagem;
+    const alvo = agoraVisivel ? minutoAgora : primeiroInicio;
+    elemento.scrollTop = alvo === undefined ? 0 : Math.max((alvo - ABERTURA_EM_MINUTOS) * px - 72, 0);
+  }, [chaveDaRolagem, agoraVisivel, minutoAgora, primeiroInicio, px]);
+
+  // Linhas da grade: hora cheia mais marcada, meia hora leve. (Memorizado:
+  // um objeto novo a cada desenho faria todas as colunas redesenharem.)
+  const linhas = useMemo<CSSProperties>(
+    () => ({
+      height: altura,
+      backgroundImage: `linear-gradient(to bottom, ${PALETA.areia[200]} 1px, transparent 1px), linear-gradient(to bottom, ${PALETA.areia[100]} 1px, transparent 1px)`,
+      backgroundSize: `100% ${PASSO * px * 2}px, 100% ${PASSO * px}px`,
+    }),
+    [altura, px],
+  );
+
+  return (
+    <div
+      ref={rolagem}
+      className="relative max-h-[calc(100vh-11rem)] min-h-[26rem] overflow-auto overscroll-contain rolagem-suave"
+    >
+      <div style={{ minWidth: COLUNA_DAS_HORAS + colunas.length * larguraMinima }}>
+        {/* Cabecalho fixo: grupos e colunas */}
+        <div
+          className="sticky top-0 z-40 grid border-b border-areia-300 bg-white shadow-sm"
+          style={{ gridTemplateColumns: modelo }}
+        >
+          <div
+            className="sticky left-0 z-10 row-span-2 border-r border-areia-200 bg-white"
+            aria-hidden="true"
+          />
+          {grupos.map((grupo, g) => (
+            <CabecalhoDoGrupo
+              key={grupo.chave}
+              grupo={grupo}
+              hoje={hoje}
+              primeiro={g === 0}
+              itensDoDia={grupo.tipo === "dia" ? (porData.get(grupo.data) ?? []) : []}
+            />
+          ))}
+          {grupos.map((grupo, g) =>
+            grupo.colunas.map((coluna, c) => (
+              <CabecalhoDaColuna
+                key={coluna.chave}
+                coluna={coluna}
+                semana={semana}
+                hoje={hoje}
+                inicioDeGrupo={g > 0 && c === 0}
+                realcada={coluna.chave === realce}
+                ativos={horariosAtivos(porColuna.get(coluna.chave)?.itens ?? [])}
+                chuva={semana ? canceladasPorChuva(porData.get(coluna.data) ?? []) : 0}
+                aoAbrirDia={aoAbrirDia}
+              />
+            )),
+          )}
+        </div>
+
+        {/* Corpo: horas + colunas */}
+        <div className="relative grid" style={{ gridTemplateColumns: modelo }}>
+          <ColunaDasHoras px={px} altura={altura} agora={agoraVisivel ? minutoAgora : undefined} />
+          {grupos.map((grupo, g) =>
+            grupo.colunas.map((coluna, c) => {
+              const dados = porColuna.get(coluna.chave);
+              return (
+                <ColunaDeHorarios
+                  key={coluna.chave}
+                  coluna={coluna}
+                  itens={dados?.itens ?? []}
+                  ocupado={dados?.ocupado ?? []}
+                  hoje={hoje}
+                  px={px}
+                  linhas={linhas}
+                  passados={minutosPassados(coluna.data, agora)}
+                  agora={coluna.data === agora.slice(0, 10) ? minutoAgora : undefined}
+                  inicioDeGrupo={g > 0 && c === 0}
+                  realcada={coluna.chave === realce}
+                  mostrarQuadra={grupo.tipo === "professor"}
+                  mostrarProfessor={grupo.tipo !== "professor"}
+                  nomesComoLink={nomesComoLink}
+                  aoAbrir={aoAbrir}
+                  aoMarcar={aoMarcar}
+                />
+              );
+            }),
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+function CabecalhoDoGrupo({
+  grupo,
+  hoje,
+  primeiro,
+  itensDoDia,
+}: {
+  grupo: GrupoDeColunas;
+  hoje: string;
+  primeiro: boolean;
+  itensDoDia: ItemAgenda[];
+}) {
+  const estilo = { gridColumn: `span ${grupo.colunas.length}` };
+  const separador = primeiro ? "" : "border-l-4 border-l-areia-300";
+
+  if (grupo.tipo === "quadra") {
+    return (
+      <div
+        style={estilo}
+        className={`linha-de-quadra flex items-center justify-center gap-2 px-3 py-1.5 ${CLASSE_DO_PISO[grupo.quadra.piso]}`}
+      >
+        <span className="font-display text-lg font-semibold leading-none">{grupo.quadra.nome}</span>
+        <span className="text-xs font-medium">
+          · {grupo.quadra.piso === "cimento" ? "piso de cimento" : "saibro"}
+        </span>
+      </div>
+    );
+  }
+  if (grupo.tipo === "professor") {
+    return (
+      <div style={estilo} className="flex items-center justify-center gap-2 bg-areia-800 px-3 py-1.5 text-white">
+        <span
+          className="h-2.5 w-2.5 rounded-full ring-2 ring-white"
+          style={{ backgroundColor: grupo.professor.cor }}
+          aria-hidden="true"
+        />
+        <span className="font-display text-lg font-semibold leading-none">{grupo.professor.nome}</span>
+        <span className="text-xs font-medium">· aulas da semana</span>
+      </div>
+    );
+  }
+
+  const ehHoje = grupo.data === hoje;
+  const chuva = canceladasPorChuva(itensDoDia);
+  return (
+    <div
+      style={estilo}
+      className={`flex items-center gap-2 px-3 py-1.5 ${separador} ${ehHoje ? "bg-saibro-50" : "bg-white"}`}
+    >
+      <span
+        className={`font-display text-lg font-semibold leading-none first-letter:uppercase ${
+          ehHoje ? "text-saibro-800" : "text-areia-900"
+        }`}
+      >
+        {DIAS_SEMANA_LONGO[diaDaSemana(grupo.data)]}, {formatarDiaMes(grupo.data)}
+      </span>
+      {ehHoje && (
+        <span className="rounded-full bg-bola-300 px-2 py-px text-[11px] font-bold uppercase tracking-wide text-areia-900">
+          Hoje
+        </span>
+      )}
+      {chuva > 0 && <SeloDeChuva quantidade={chuva} />}
+    </div>
+  );
+}
+
+function SeloDeChuva({ quantidade }: { quantidade: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded bg-sky-100 px-1.5 py-0.5 text-[11px] font-semibold text-sky-800">
+      <IconeChuva className="h-3 w-3" />
+      Chuva · {quantidade} {quantidade === 1 ? "cancelada" : "canceladas"}
+    </span>
+  );
+}
+
+function CabecalhoDaColuna({
+  coluna,
+  semana,
+  hoje,
+  inicioDeGrupo,
+  realcada,
+  ativos,
+  chuva,
+  aoAbrirDia,
+}: {
+  coluna: ColunaDaGrade;
+  semana: boolean;
+  hoje: string;
+  inicioDeGrupo: boolean;
+  realcada: boolean;
+  ativos: number;
+  chuva: number;
+  aoAbrirDia?: (data: string) => void;
+}) {
+  const separador = inicioDeGrupo ? "border-l-4 border-l-areia-300" : "border-l border-l-white";
+  const contagem = `${ativos} ${ativos === 1 ? "horário" : "horários"}`;
+
+  if (!semana && coluna.quadra) {
+    return (
+      <div
+        className={`linha-de-quadra flex min-w-0 items-center justify-between gap-1 px-2 py-1.5 ${separador} ${
+          CLASSE_DO_PISO[coluna.quadra.piso]
+        } ${realcada ? "ring-4 ring-inset ring-bola-300" : ""}`}
+        title={`${coluna.quadra.nome} (${coluna.quadra.piso}) · ${contagem}`}
+      >
+        <span className="truncate font-display text-[15px] font-semibold leading-none">
+          {coluna.quadra.nome}
+        </span>
+        <span className="shrink-0 rounded bg-black/15 px-1 text-[11px] font-bold tabular-nums leading-4">
+          <span aria-hidden="true">{ativos}</span>
+          <span className="sr-only">{contagem}</span>
+        </span>
+      </div>
+    );
+  }
+
+  const ehHoje = coluna.data === hoje;
+  const conteudo = (
+    <>
+      <span
+        className={`block text-[11px] font-semibold uppercase tracking-wide ${
+          ehHoje ? "text-saibro-800" : "text-areia-600"
+        }`}
+      >
+        {DIAS_SEMANA_CURTO[diaDaSemana(coluna.data)]}
+        {ehHoje && " · hoje"}
+      </span>
+      <span
+        className={`block font-display text-lg font-semibold leading-tight ${
+          ehHoje ? "text-saibro-800" : "text-areia-900"
+        }`}
+      >
+        {formatarDiaMes(coluna.data)}
+      </span>
+      <span className="block text-[11px] text-areia-600">{contagem}</span>
+      {chuva > 0 && (
+        <span className="mt-0.5 inline-flex items-center gap-1 rounded bg-sky-100 px-1 text-[10px] font-semibold text-sky-800">
+          <IconeChuva className="h-3 w-3" />
+          Chuva
+        </span>
+      )}
+    </>
+  );
+  const classe = `border-l border-areia-200 px-1 py-1.5 text-center first:border-l-0 ${
+    ehHoje ? "bg-saibro-50" : "bg-white"
+  }`;
+  return aoAbrirDia ? (
+    <button
+      type="button"
+      onClick={() => aoAbrirDia(coluna.data)}
+      className={`${classe} transition-colors hover:bg-saibro-100`}
+      aria-label={`Abrir a Diária de ${formatarDiaMes(coluna.data)} (${contagem})`}
+    >
+      {conteudo}
+    </button>
+  ) : (
+    <div className={classe}>{conteudo}</div>
+  );
+}
+
+function ColunaDasHoras({
+  px,
+  altura,
+  agora,
+}: {
+  px: number;
+  altura: number;
+  agora?: number;
+}) {
+  return (
+    <div
+      className="sticky left-0 z-30 border-r border-areia-200 bg-white"
+      style={{ height: altura }}
+    >
+      {MEIAS_HORAS.map((hora, i) => {
+        const cheia = hora.endsWith(":00");
+        // A etiqueta do agora cobre a hora que estiver embaixo dela.
+        const topo = i * PASSO * px + 4;
+        if (agora !== undefined && Math.abs(topo - ((agora - ABERTURA_EM_MINUTOS) * px - 9)) < 16) {
+          return null;
+        }
+        return (
+          <span
+            key={hora}
+            className={`absolute right-1.5 tabular-nums ${
+              cheia
+                ? "font-display text-[15px] font-semibold leading-none text-areia-900"
+                : "text-[11px] font-medium leading-none text-areia-500"
+            }`}
+            style={{ top: topo }}
+          >
+            {hora}
+          </span>
+        );
+      })}
+      {agora !== undefined && (
+        <>
+          <span
+            className="absolute right-2.5 z-10 rounded bg-tijolo-600 px-1 py-px text-[11px] font-bold tabular-nums leading-tight text-white shadow-sm"
+            style={{ top: (agora - ABERTURA_EM_MINUTOS) * px - 9 }}
+          >
+            {minutosParaHora(agora)}
+          </span>
+          {/* A bolinha (bola de tenis) no comeco da linha do agora, por cima dos blocos. */}
+          <span
+            className="absolute -right-1.5 z-10 h-3 w-3 rounded-full bg-bola-300 ring-2 ring-tijolo-600"
+            style={{ top: (agora - ABERTURA_EM_MINUTOS) * px - 6 }}
+            aria-hidden="true"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Uma coluna (um dia numa quadra, ou um dia do professor). Memorizada: abrir
+ * um painel ou um formulario nao redesenha as 10 colunas da Diaria.
+ */
+const ColunaDeHorarios = memo(function ColunaDeHorarios({
+  coluna,
+  itens,
+  ocupado,
+  hoje,
+  px,
+  linhas,
+  passados,
+  agora,
+  inicioDeGrupo,
+  realcada,
+  mostrarQuadra,
+  mostrarProfessor,
+  nomesComoLink,
+  aoAbrir,
+  aoMarcar,
+}: {
+  coluna: ColunaDaGrade;
+  itens: ItemAgenda[];
+  ocupado: ItemAgenda[];
+  hoje: string;
+  px: number;
+  linhas: CSSProperties;
+  passados: number;
+  agora?: number;
+  inicioDeGrupo: boolean;
+  realcada: boolean;
+  mostrarQuadra: boolean;
+  mostrarProfessor: boolean;
+  nomesComoLink: boolean;
+  aoAbrir: (item: ItemAgenda) => void;
+  aoMarcar?: (escolha: MeiaHoraEscolhida) => void;
+}) {
+  const posicoes = useMemo(() => subcolunas(itens), [itens]);
+  const livres = useMemo(
+    () => (aoMarcar ? MEIAS_HORAS.filter((hora) => podeMarcarEm(coluna, hora, ocupado, hoje)) : []),
+    [aoMarcar, coluna, ocupado, hoje],
+  );
+  const onde = coluna.quadra
+    ? `${coluna.quadra.id === "paredao" ? "no" : "na"} ${coluna.quadra.nome}, `
+    : "";
+
+  return (
+    <div
+      className={`relative ${inicioDeGrupo ? "border-l-4 border-l-areia-300" : "border-l border-l-areia-200"} ${
+        realcada ? "bg-bola-50" : "bg-white"
+      }`}
+      style={linhas}
+    >
+      {passados > 0 && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 bg-areia-200/45"
+          style={{ height: passados * px }}
+          aria-hidden="true"
+        />
+      )}
+
+      {aoMarcar &&
+        livres.map((hora) => {
+          const i = MEIAS_HORAS.indexOf(hora);
+          return (
+            <button
+              key={hora}
+              type="button"
+              tabIndex={-1}
+              onClick={() =>
+                aoMarcar({
+                  data: coluna.data,
+                  horaInicio: hora,
+                  quadraId: coluna.quadra?.id,
+                  professorId: coluna.professorId,
+                })
+              }
+              className="group/meia absolute inset-x-0.5 flex items-center justify-center rounded transition-colors [@media(hover:hover)]:hover:bg-saibro-50 [@media(hover:hover)]:hover:ring-1 [@media(hover:hover)]:hover:ring-inset [@media(hover:hover)]:hover:ring-saibro-300"
+              style={{ top: i * PASSO * px + 1, height: PASSO * px - 1 }}
+              aria-label={`Novo horário ${onde}${formatarDiaMes(coluna.data)} às ${hora}`}
+              title={`Novo horário às ${hora}`}
+            >
+              <span className="invisible text-[11px] font-semibold text-saibro-800 [@media(hover:hover)]:group-hover/meia:visible">
+                + {hora}
+              </span>
+            </button>
+          );
+        })}
+
+      {itens.map((item) => (
+        <BlocoNaGrade
+          key={item.ocupacao.id}
+          item={item}
+          posicao={{
+            ...posicaoVertical(item.ocupacao, px),
+            ...posicaoHorizontal(posicoes.get(item.ocupacao.id) ?? { coluna: 0, total: 1 }),
+          }}
+          mostrarQuadra={mostrarQuadra}
+          mostrarProfessor={mostrarProfessor}
+          nomesComoLink={nomesComoLink}
+          aoAbrir={aoAbrir}
+        />
+      ))}
+
+      {/* Linha do agora: por tras dos blocos (nao risca o texto deles). */}
+      {agora !== undefined && (
+        <div
+          className="pointer-events-none absolute inset-x-0 z-[5] h-0.5 bg-tijolo-600"
+          style={{ top: (agora - ABERTURA_EM_MINUTOS) * px - 1 }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+});

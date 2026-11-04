@@ -84,7 +84,7 @@ function AgendaParaImprimir({ dataDaUrl }: { dataDaUrl: string | null }) {
 
   return (
     <div className="space-y-5">
-      <LinkDeVolta href={`/agenda?data=${data}&visao=dia`} className="print:hidden">
+      <LinkDeVolta href={`/agenda?visao=diaria&data=${data}`} className="print:hidden">
         Agenda
       </LinkDeVolta>
 

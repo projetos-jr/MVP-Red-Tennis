@@ -54,6 +54,8 @@ export interface PreenchimentoNovoHorario {
   data?: string;
   horaInicio?: string;
   quadraId?: QuadraId;
+  /** Clique na agenda de um professor: a aula ja vem com ele. */
+  professorId?: string;
   modo?: ModoNovoHorario;
 }
 
@@ -100,7 +102,10 @@ export function ModalNovoHorario({
 
   const modoInicial = inicial.modo ?? "avulso";
   const [modo, setModo] = useState<ModoNovoHorario>(modoInicial);
-  const [tipo, setTipo] = useState<TipoOcupacao>(TIPO_INICIAL[modoInicial]);
+  // Vindo da agenda de um professor, o horario e uma aula (com professor).
+  const [tipo, setTipo] = useState<TipoOcupacao>(
+    inicial.professorId && modoInicial === "avulso" ? "Individual" : TIPO_INICIAL[modoInicial],
+  );
   const [quadraId, setQuadraId] = useState<QuadraId>(inicial.quadraId ?? "1");
   const [data, setData] = useState(inicial.data && inicial.data >= HOJE ? inicial.data : HOJE);
   const [inicio, setInicio] = useState(inicial.horaInicio ?? "19:00");
@@ -108,7 +113,9 @@ export function ModalNovoHorario({
     minutosParaHora(Math.min(horaParaMinutos(inicial.horaInicio ?? "19:00") + 60, 22 * 60)),
   );
   const [ultimaAula, setUltimaAula] = useState("");
-  const [professorId, setProfessorId] = useState(professores[0]?.id ?? "");
+  const [professorId, setProfessorId] = useState(
+    professores.find((p) => p.id === inicial.professorId)?.id ?? professores[0]?.id ?? "",
+  );
   const [alunosIds, setAlunosIds] = useState<string[]>([]);
   const [descricao, setDescricao] = useState("");
   const [datasPuladas, setDatasPuladas] = useState<string[]>([]);
@@ -273,11 +280,11 @@ export function ModalNovoHorario({
                       type="button"
                       aria-pressed={ativo}
                       onClick={() => setTipo(t)}
-                      className="rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                      className="alvo-de-toque rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
                       style={{
-                        color: ativo ? "#fff" : estilo.texto,
-                        backgroundColor: ativo ? estilo.cor : estilo.fundo,
-                        borderColor: estilo.borda,
+                        color: ativo ? estilo.sobreCheia : estilo.texto,
+                        backgroundColor: ativo ? estilo.cheia : estilo.fundo,
+                        borderColor: ativo ? estilo.cheia : estilo.borda,
                       }}
                     >
                       {t}
