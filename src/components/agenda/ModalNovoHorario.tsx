@@ -53,6 +53,8 @@ export type ModoNovoHorario = "avulso" | "fixo" | "reposicao";
 export interface PreenchimentoNovoHorario {
   data?: string;
   horaInicio?: string;
+  /** Clique numa meia hora da grade: termina antes do proximo horario da coluna. */
+  horaFim?: string;
   quadraId?: QuadraId;
   /** Clique na agenda de um professor: a aula ja vem com ele. */
   professorId?: string;
@@ -110,7 +112,9 @@ export function ModalNovoHorario({
   const [data, setData] = useState(inicial.data && inicial.data >= HOJE ? inicial.data : HOJE);
   const [inicio, setInicio] = useState(inicial.horaInicio ?? "19:00");
   const [fim, setFim] = useState(() =>
-    minutosParaHora(Math.min(horaParaMinutos(inicial.horaInicio ?? "19:00") + 60, 22 * 60)),
+    inicial.horaInicio && inicial.horaFim && inicial.horaFim > inicial.horaInicio
+      ? inicial.horaFim
+      : minutosParaHora(Math.min(horaParaMinutos(inicial.horaInicio ?? "19:00") + 60, 22 * 60)),
   );
   const [ultimaAula, setUltimaAula] = useState("");
   const [professorId, setProfessorId] = useState(

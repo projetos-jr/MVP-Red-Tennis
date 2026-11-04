@@ -136,6 +136,29 @@ function Agenda() {
     (parcial: Partial<EstadoDaAgenda>) => irPara({ ...estado, ...parcial }),
     [estado, irPara],
   );
+  // O estado mais recente para os tratadores passados a grade: assim eles nao
+  // mudam a cada endereco e a grade (memo) nao redesenha ao abrir um horario.
+  const estadoAtual = useRef(estado);
+  useEffect(() => {
+    estadoAtual.current = estado;
+  }, [estado]);
+
+  /**
+   * Abrir o painel de um horario EMPILHA um endereco: o "Voltar" do navegador
+   * (ou do tablet) fecha o painel em vez de sair da agenda. Data, visao e
+   * filtros continuam trocando o endereco no lugar.
+   */
+  const abrirPainel = useCallback((novo: EstadoDaAgenda) => {
+    const endereco = enderecoDaAgenda(novo, HOJE);
+    if (estadoAtual.current.ocupacaoId) {
+      window.history.replaceState(null, "", endereco);
+      return;
+    }
+    const base = enderecoDaAgenda({ ...novo, ocupacaoId: undefined }, HOJE);
+    // So a nossa marca: o Next acrescenta o estado interno dele e atualiza o
+    // endereco lido pela tela (copiar o estado atual inteiro o faria ignorar).
+    window.history.pushState({ painelDaAgenda: base }, "", endereco);
+  }, []);
 
   // --- Periodo visivel -------------------------------------------------------
   const diasDaDiaria = useMemo(() => [data, somarDias(data, 1)], [data]);
@@ -240,42 +263,57 @@ function Agenda() {
 
   // --- Acoes ---------------------------------------------------------------------
   const abrirHorario = useCallback(
-    (item: ItemAgenda) => mudar({ ocupacaoId: item.ocupacao.id }),
-    [mudar],
+    (item: ItemAgenda) => abrirPainel({ ...estadoAtual.current, ocupacaoId: item.ocupacao.id }),
+    [abrirPainel],
   );
-  const fecharPainel = useCallback(() => mudar({ ocupacaoId: undefined }), [mudar]);
+  const fecharPainel = useCallback(() => {
+    const atual = { ...estadoAtual.current, ocupacaoId: undefined };
+    // Aberto por clique (endereco empilhado e nada mudou depois): volta uma
+    // entrada, para o "Voltar" seguinte sair da agenda de uma vez.
+    if (window.history.state?.painelDaAgenda === enderecoDaAgenda(atual, HOJE)) {
+      window.history.back();
+    } else {
+      irPara(atual);
+    }
+  }, [irPara]);
   const abrirDia = useCallback(
     (dia: string) => {
+      const atual = estadoAtual.current;
       setSegundoDia(false);
       irPara({
-        ...trocarVisao(banco, estado, "diaria", ctx),
+        ...trocarVisao(banco, atual, "diaria", ctx),
         data: dia,
         // Da semana de uma quadra, a Diaria abre com a coluna dela realcada.
-        quadraId: estado.visao === "quadra" ? estado.quadraId : undefined,
+        quadraId: atual.visao === "quadra" ? atual.quadraId : undefined,
       });
     },
-    [banco, estado, ctx, irPara],
+    [banco, ctx, irPara],
   );
   const escolherVisao = useCallback(
-    (nova: VisaoDaAgenda) => irPara(trocarVisao(banco, estado, nova, ctx)),
-    [banco, estado, ctx, irPara],
+    (nova: VisaoDaAgenda) => {
+      setSegundoDia(false);
+      irPara(trocarVisao(banco, estadoAtual.current, nova, ctx));
+    },
+    [banco, ctx, irPara],
   );
 
   const marcar = useCallback(
     (escolha: Partial<MeiaHoraEscolhida>) => {
       let quadraId = escolha.quadraId;
+      const horaFim = escolha.horaFim ?? (escolha.horaInicio && fimSugerido(escolha.horaInicio));
       // Na visao Professor a coluna nao tem quadra: sugere a primeira livre.
-      if (!quadraId && escolha.data && escolha.horaInicio) {
+      if (!quadraId && escolha.data && escolha.horaInicio && horaFim) {
         const livres = disponibilidadeDasQuadras(banco, {
           data: escolha.data,
           horaInicio: escolha.horaInicio,
-          horaFim: fimSugerido(escolha.horaInicio),
+          horaFim,
         });
         quadraId = quadras.find((q) => !livres.get(q.id))?.id;
       }
       setNovoHorario({
         data: escolha.data,
         horaInicio: escolha.horaInicio,
+        horaFim: horaFim || undefined,
         quadraId,
         professorId: escolha.professorId,
       });
@@ -293,7 +331,8 @@ function Agenda() {
     mudar({
       data:
         visao === "diaria"
-          ? somarDias(data, direcao)
+          ? // Um dia por vez: anda a partir do dia que esta na tela.
+            somarDias(umDiaPorVez ? diaVisivel : data, direcao)
           : visao === "mes"
             ? somarMeses(data, direcao)
             : somarDias(data, 7 * direcao),
@@ -304,7 +343,14 @@ function Agenda() {
   /** Depois de gravar: vai para a data do horario se ela nao esta na tela. */
   function mostrarData(nova: string) {
     const visivel =
-      visao === "mes" ? mesmoMes(nova, data) : visao === "diaria" ? diasDaDiaria.includes(nova) : semana.includes(nova);
+      visao === "mes"
+        ? mesmoMes(nova, data)
+        : visao === "diaria"
+          ? diasDaDiaria.includes(nova)
+          : // No celular, Quadra e Professor mostram um dia so da semana.
+            largura === "estreita"
+            ? nova === data
+            : semana.includes(nova);
     if (visao === "diaria" && visivel) setSegundoDia(nova !== data);
     if (!visivel) {
       setSegundoDia(false);
@@ -514,6 +560,7 @@ function Agenda() {
             quadras={quadras}
             professores={professores}
             professorTravado={professorTravado}
+            professorFora={banco.professores.find((p) => p.id === estado.professorId)?.nome}
             extra={
               visao === "diaria" && largura === "media" ? (
                 <Segmentado
@@ -633,7 +680,7 @@ function Agenda() {
           aoAbrirHorario={(id, dia) => {
             setJanela(null);
             setSegundoDia(false);
-            mudar({ data: dia, ocupacaoId: id });
+            abrirPainel({ ...estado, data: dia, ocupacaoId: id });
           }}
         />
       )}

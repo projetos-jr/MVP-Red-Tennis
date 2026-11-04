@@ -2,6 +2,7 @@ import { CascaDoApp } from "@/components/layout/CascaDoApp";
 import { NavegacaoMobile } from "@/components/layout/NavegacaoMobile";
 import { ProtecaoDeRota } from "@/components/layout/ProtecaoDeRota";
 import { Topbar } from "@/components/layout/Topbar";
+import { VirarODia } from "@/components/layout/VirarODia";
 
 /**
  * Casca das telas internas: topbar fixa com as abas que o perfil pode abrir
@@ -26,6 +27,7 @@ export default function LayoutApp({
         </footer>
 
         <NavegacaoMobile />
+        <VirarODia />
       </div>
     </CascaDoApp>
   );

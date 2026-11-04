@@ -23,6 +23,7 @@ export function FiltrosDaAgenda({
   quadras,
   professores,
   professorTravado,
+  professorFora,
   extra,
 }: {
   estado: EstadoDaAgenda;
@@ -31,6 +32,8 @@ export function FiltrosDaAgenda({
   professores: Professor[];
   /** Perfil de professor: ve so as proprias aulas (Hipotese H9). */
   professorTravado?: string;
+  /** Nome do professor da visao quando ele nao esta em `professores` (inativo). */
+  professorFora?: string;
   /** Controle extra no inicio da barra (ex.: "Hoje | Amanhã" no tablet em pe). */
   extra?: ReactNode;
 }) {
@@ -59,6 +62,12 @@ export function FiltrosDaAgenda({
             onChange={(e) => aoMudar({ professorId: e.target.value })}
             className="campo w-auto min-w-[12rem] py-1.5 font-semibold text-areia-900"
           >
+            {/* Vindo da ficha de um professor inativo: ele aparece na lista para o nome bater com a grade. */}
+            {estado.professorId && !professores.some((p) => p.id === estado.professorId) && (
+              <option value={estado.professorId}>
+                {professorFora ?? "Professor"} (inativo)
+              </option>
+            )}
             {professores.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nome}

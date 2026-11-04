@@ -249,6 +249,23 @@ export function fimSugerido(inicio: string): string {
   return minutosParaHora(Math.min(horaParaMinutos(inicio) + 60, FECHAMENTO_EM_MINUTOS));
 }
 
+/**
+ * Fim sugerido ao clicar numa meia hora livre da grade: 1 hora depois, mas
+ * parando no inicio do proximo horario ativo da coluna (cancelada nao conta),
+ * para o formulario nao abrir ja em conflito. Nunca menos de 30 min (a meia
+ * hora clicada esta livre) e nunca depois das 22h.
+ */
+export function fimLivre(inicio: string, itens: ItemAgenda[]): string {
+  const comeco = horaParaMinutos(inicio);
+  let fim = Math.min(comeco + 60, FECHAMENTO_EM_MINUTOS);
+  itens.forEach((i) => {
+    if (i.cancelada) return;
+    const outro = horaParaMinutos(i.ocupacao.horaInicio);
+    if (outro > comeco && outro < fim) fim = outro;
+  });
+  return minutosParaHora(Math.max(fim, Math.min(comeco + PASSO, FECHAMENTO_EM_MINUTOS)));
+}
+
 // ---------------------------------------------------------------------------
 // Horarios que se sobrepoem e faixas de 1 hora (lista do celular)
 // ---------------------------------------------------------------------------
@@ -259,24 +276,32 @@ export function fimSugerido(inicio: string): string {
  * Esta funcao divide a coluna em "subcolunas" para que horarios que se
  * sobrepoem fiquem lado a lado, em vez de um por cima do outro.
  */
-export function subcolunas(itens: ItemAgenda[]): Map<string, { coluna: number; total: number }> {
+export function subcolunas(
+  itens: ItemAgenda[],
+  opcoes: { vagaAoLadoDasCanceladas?: boolean } = {},
+): Map<string, { coluna: number; total: number }> {
   const ordenados = [...itens].sort(
     (a, b) =>
       a.ocupacao.horaInicio.localeCompare(b.ocupacao.horaInicio) ||
       Number(a.cancelada) - Number(b.cancelada),
   );
   const posicoes = new Map<string, { coluna: number; total: number }>();
-  let grupo: Array<{ id: string; coluna: number }> = [];
+  let grupo: Array<{ id: string; coluna: number; cancelada: boolean }> = [];
   let finsDasColunas: string[] = [];
   let fimDoGrupo = "";
 
   const fecharGrupo = () => {
-    grupo.forEach(({ id, coluna }) => posicoes.set(id, { coluna, total: finsDasColunas.length }));
+    // Grupo so de canceladas: o horario esta livre. Com `vagaAoLadoDasCanceladas`
+    // sobra uma subcoluna vazia a direita, onde as meias horas continuam
+    // clicaveis para marcar no lugar.
+    const soCanceladas = grupo.length > 0 && grupo.every((g) => g.cancelada);
+    const total = finsDasColunas.length + (soCanceladas && opcoes.vagaAoLadoDasCanceladas ? 1 : 0);
+    grupo.forEach(({ id, coluna }) => posicoes.set(id, { coluna, total }));
     grupo = [];
     finsDasColunas = [];
   };
 
-  ordenados.forEach(({ ocupacao }) => {
+  ordenados.forEach(({ ocupacao, cancelada }) => {
     if (grupo.length > 0 && ocupacao.horaInicio >= fimDoGrupo) fecharGrupo();
     let coluna = finsDasColunas.findIndex((fim) => fim <= ocupacao.horaInicio);
     if (coluna === -1) {
@@ -287,7 +312,7 @@ export function subcolunas(itens: ItemAgenda[]): Map<string, { coluna: number; t
     }
     fimDoGrupo =
       grupo.length === 0 || ocupacao.horaFim > fimDoGrupo ? ocupacao.horaFim : fimDoGrupo;
-    grupo.push({ id: ocupacao.id, coluna });
+    grupo.push({ id: ocupacao.id, coluna, cancelada });
   });
   fecharGrupo();
   return posicoes;

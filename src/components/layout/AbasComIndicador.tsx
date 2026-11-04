@@ -17,6 +17,9 @@ import { abaAtiva, type Area } from "./abas";
 export function AbasComIndicador({ abas, caminho }: { abas: Area[]; caminho: string }) {
   const lista = useRef<HTMLUListElement>(null);
   const pilula = useRef<HTMLSpanElement>(null);
+  // As abas so mudam de verdade quando muda o conjunto (perfil): o topo monta
+  // uma lista nova a cada desenho, e o observador nao precisa recomecar por isso.
+  const conjunto = abas.map((a) => a.href).join("|");
 
   useLayoutEffect(() => {
     const ul = lista.current;
@@ -54,7 +57,7 @@ export function AbasComIndicador({ abas, caminho }: { abas: Area[]; caminho: str
       cancelAnimationFrame(quadro);
       observador.disconnect();
     };
-  }, [caminho, abas]);
+  }, [caminho, conjunto]);
 
   return (
     <ul ref={lista} className="rolagem-suave relative flex items-center gap-1 overflow-x-auto py-2">

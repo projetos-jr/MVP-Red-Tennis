@@ -48,14 +48,23 @@ antigo", com cores vivas)
 - **Situações**: prazo de pagamento vencido = anel duplo (branco e vermelho)
   e ⚠; **cancelada** = fundo branco, borda tracejada na cor do tipo, nomes
   riscados e a sigla (CH, FP, IAC…); **bloqueio** = cinza listrado; uma aula
-  cancelada aparece ao lado da que ocupou o lugar dela.
+  cancelada aparece ao lado da que ocupou o lugar dela. Sozinha, a cancelada
+  ocupa meia coluna: a outra metade continua livre para marcar no lugar.
 - **Linha do "agora"** (vermelha, com a bolinha amarela) nas colunas de hoje,
   e uma **película cinza** sobre o que já passou. Ao abrir, a grade rola até
   o agora (ou até o primeiro horário do período).
 - **Meia hora livre**: clicar (ou tocar) abre o **Novo horário** já com a
   data, a hora (inclusive :30) e a quadra; na visão Professor, com o
-  professor (e a primeira quadra livre naquele horário). Só aparece de hoje
+  professor (e a primeira quadra livre naquele horário). O término sugerido
+  é 1 hora depois, mas para no início do próximo horário daquela coluna (no
+  mínimo 30 min): o formulário nunca abre já em conflito. Só aparece de hoje
   em diante, como a regra de gravação.
+- **Voltar do navegador (ou do tablet)** com o painel de um horário aberto:
+  fecha o painel e continua na agenda. Trocar de data, visão ou filtro não
+  cria passos no "Voltar" (o endereço muda no lugar).
+- **Virada do dia**: com a tela aberta de um dia para o outro (o tablet da
+  quadra), a página recarrega sozinha depois da meia-noite para "hoje"
+  passar a ser o dia novo.
 - **Nome do aluno** (com mouse) abre a ficha; o resto do bloco abre o painel
   do horário. No toque (tablet e celular) o bloco inteiro abre o painel, e lá
   cada nome abre a ficha: um nome dentro de um bloco seria um alvo pequeno

@@ -24,6 +24,7 @@ import {
   itensDaColuna,
   minutoDoAgora,
   minutosPassados,
+  fimLivre,
   podeMarcarEm,
   posicaoHorizontal,
   posicaoVertical,
@@ -40,6 +41,8 @@ const COLUNA_DAS_HORAS = 56;
 export interface MeiaHoraEscolhida {
   data: string;
   horaInicio: string;
+  /** Ate o proximo horario da coluna (no maximo 1 h): o formulario nao abre em conflito. */
+  horaFim: string;
   quadraId?: QuadraId;
   professorId?: string;
 }
@@ -145,9 +148,11 @@ export const GradeDeColunas = memo(function GradeDeColunas({
   );
 
   return (
+    // `isolate`: os z-index de dentro (cabecalho e coluna das horas fixos)
+    // ficam so dentro da grade e nunca passam por cima do topo e dos menus.
     <div
       ref={rolagem}
-      className="relative max-h-[calc(100vh-11rem)] min-h-[26rem] overflow-auto overscroll-contain rolagem-suave"
+      className="relative isolate max-h-[calc(100vh-11rem)] min-h-[26rem] overflow-auto overscroll-contain rolagem-suave"
     >
       <div style={{ minWidth: COLUNA_DAS_HORAS + colunas.length * larguraMinima }}>
         {/* Cabecalho fixo: grupos e colunas */}
@@ -470,7 +475,11 @@ const ColunaDeHorarios = memo(function ColunaDeHorarios({
   aoAbrir: (item: ItemAgenda) => void;
   aoMarcar?: (escolha: MeiaHoraEscolhida) => void;
 }) {
-  const posicoes = useMemo(() => subcolunas(itens), [itens]);
+  // Podendo marcar, a cancelada sozinha deixa meia coluna livre ao lado.
+  const posicoes = useMemo(
+    () => subcolunas(itens, { vagaAoLadoDasCanceladas: Boolean(aoMarcar) }),
+    [itens, aoMarcar],
+  );
   const livres = useMemo(
     () => (aoMarcar ? MEIAS_HORAS.filter((hora) => podeMarcarEm(coluna, hora, ocupado, hoje)) : []),
     [aoMarcar, coluna, ocupado, hoje],
@@ -506,6 +515,7 @@ const ColunaDeHorarios = memo(function ColunaDeHorarios({
                 aoMarcar({
                   data: coluna.data,
                   horaInicio: hora,
+                  horaFim: fimLivre(hora, ocupado),
                   quadraId: coluna.quadra?.id,
                   professorId: coluna.professorId,
                 })

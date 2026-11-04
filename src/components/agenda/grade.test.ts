@@ -16,6 +16,7 @@ import {
   colunasDaDiaria,
   colunasDaSemana,
   densidadeDoBloco,
+  fimLivre,
   fimSugerido,
   itensDaColuna,
   linhasDoBloco,
@@ -175,6 +176,19 @@ describe("posicoes", () => {
     expect(posicoes.get(cancelada.ocupacao.id)).toEqual({ coluna: 1, total: 2 });
     expect(posicoes.get(depois.ocupacao.id)).toEqual({ coluna: 0, total: 1 });
   });
+
+  it("cancelada sozinha deixa meia coluna livre (para marcar no lugar) quando se pode marcar", () => {
+    const cancelada = item({ horaInicio: "08:00", horaFim: "09:00" }, true);
+    const outra = item({ horaInicio: "08:30", horaFim: "09:30" }, true);
+    const ativa = item({ horaInicio: "11:00", horaFim: "12:00" });
+    const comVaga = subcolunas([cancelada, outra, ativa], { vagaAoLadoDasCanceladas: true });
+    expect(comVaga.get(cancelada.ocupacao.id)).toEqual({ coluna: 0, total: 3 });
+    expect(comVaga.get(outra.ocupacao.id)).toEqual({ coluna: 1, total: 3 });
+    // Horario ativo nao ganha vaga (a quadra esta ocupada).
+    expect(comVaga.get(ativa.ocupacao.id)).toEqual({ coluna: 0, total: 1 });
+    // Sem poder marcar (professor), a cancelada ocupa a largura toda.
+    expect(subcolunas([cancelada]).get(cancelada.ocupacao.id)).toEqual({ coluna: 0, total: 1 });
+  });
 });
 
 describe("agora e passado", () => {
@@ -219,6 +233,16 @@ describe("o que pode ser marcado", () => {
     expect(podeMarcarEm({ data: "2026-11-03" }, "07:30", [], "2026-11-04")).toBe(false);
     expect(podeMarcarEm({ data: "2026-11-05" }, "21:30", [], "2026-11-04")).toBe(true);
     expect(podeMarcarEm({ data: "2026-11-05" }, "22:00", [], "2026-11-04")).toBe(false);
+  });
+
+  it("fim ao clicar: para no proximo horario ativo, minimo 30 min, ate as 22h", () => {
+    expect(fimLivre("07:30", itens)).toBe("08:00");
+    expect(fimLivre("07:00", itens)).toBe("08:00");
+    expect(fimLivre("09:00", itens)).toBe("10:00");
+    // A cancelada das 10:00 nao segura o fim.
+    expect(fimLivre("09:30", itens)).toBe("10:30");
+    expect(fimLivre("11:30", itens)).toBe("12:15");
+    expect(fimLivre("21:30", [])).toBe("22:00");
   });
 
   it("fim sugerido: 1 hora depois, ate as 22h", () => {
