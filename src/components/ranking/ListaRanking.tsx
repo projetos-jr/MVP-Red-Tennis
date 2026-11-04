@@ -74,13 +74,18 @@ export function ListaRanking({ linhas }: { linhas: LinhaDoRanking[] }) {
                 href={`/alunos/${linha.alunoId}`}
                 className="flex items-center gap-2 px-4 py-2.5 transition-colors hover:bg-areia-50 sm:gap-3 sm:px-5"
               >
-                <span
-                  className={`w-6 shrink-0 text-right text-sm font-bold tabular-nums sm:w-7 ${
-                    linha.posicao <= 3 ? "text-saibro-700" : "text-areia-500"
-                  }`}
-                >
-                  {linha.posicao}
-                  <span className="sr-only">º lugar</span>
+                <span className="flex w-6 shrink-0 justify-end sm:w-7">
+                  {/* Pódio em destaque: os tres primeiros num circulo laranja. */}
+                  <span
+                    className={`text-sm font-bold tabular-nums ${
+                      linha.posicao <= 3
+                        ? "flex h-6 w-6 items-center justify-center rounded-full bg-saibro-600 text-xs text-white"
+                        : "text-areia-500"
+                    }`}
+                  >
+                    {linha.posicao}
+                    <span className="sr-only">º lugar</span>
+                  </span>
                 </span>
 
                 <Avatar id={linha.alunoId} nome={linha.aluno.nome} src={linha.aluno.fotoUrl} tamanho="sm" />

@@ -15,6 +15,7 @@ import { HistoricoDoRegistro } from "@/components/registro/HistoricoDoRegistro";
 import { Badge } from "@/components/ui/Badge";
 import { LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { EstadoVazio } from "@/components/ui/EstadoVazio";
+import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import {
   IconeAgenda,
   IconeBusca,
@@ -33,6 +34,7 @@ import {
   alunosDoProfessor,
   repassesDoProfessor,
 } from "@/lib/consultas/professores";
+import { textoLegivelSobre } from "@/lib/cores";
 import { formatarDiaMes, inicioDaSemana, somarDias } from "@/lib/date";
 import { formatarMinutos, formatarMoeda, iniciais } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
@@ -80,18 +82,22 @@ export default function PaginaFichaProfessor() {
       <LinkDeVolta href="/professores">Professores</LinkDeVolta>
 
       <section className="card overflow-hidden">
-        <div className="h-20 bg-gradient-to-r from-saibro-600 via-saibro-500 to-saibro-700" />
+        {/* Faixa na cor do professor (a mesma da agenda), com a linha de fundo
+            da quadra passando atras das iniciais (decorativa). */}
+        <div aria-hidden="true" className="relative h-20" style={{ backgroundColor: professor.cor }}>
+          <span className="absolute inset-x-0 bottom-3 h-[3px] bg-white/75" />
+        </div>
         <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-5">
           <span
-            className="-mt-12 flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-2xl font-semibold text-white shadow-card ring-2 ring-white sm:self-start"
-            style={{ backgroundColor: professor.cor }}
+            className="relative -mt-12 flex h-24 w-24 shrink-0 items-center justify-center rounded-full font-display text-3xl font-bold shadow-card ring-4 ring-white sm:self-start"
+            style={{ backgroundColor: professor.cor, color: textoLegivelSobre(professor.cor) }}
             role="img"
             aria-label={professor.nome}
           >
             {iniciais(professor.nome)}
           </span>
           <div className="min-w-0 flex-1 sm:pt-2">
-            <h1 className="flex flex-wrap items-center gap-2.5 text-2xl font-bold text-areia-900">
+            <h1 className="flex flex-wrap items-center gap-2.5 font-display text-3xl font-bold leading-tight text-areia-900">
               <span
                 className="h-3 w-3 shrink-0 rounded-full"
                 style={{ backgroundColor: professor.cor }}
@@ -107,7 +113,7 @@ export default function PaginaFichaProfessor() {
               {professor.telefone && (
                 <a
                   href={`tel:+55${professor.telefone.replace(/\D/g, "")}`}
-                  className="flex items-center gap-1.5 hover:text-tijolo-700"
+                  className="alvo-de-toque flex items-center gap-1.5 hover:text-saibro-700 [@media(pointer:coarse)]:-my-1.5"
                 >
                   <IconeTelefone className="h-4 w-4 text-areia-400" />
                   {professor.telefone}
@@ -116,7 +122,7 @@ export default function PaginaFichaProfessor() {
               {professor.email && (
                 <a
                   href={`mailto:${professor.email}`}
-                  className="flex min-w-0 items-center gap-1.5 break-all hover:text-tijolo-700"
+                  className="alvo-de-toque flex min-w-0 items-center gap-1.5 break-all hover:text-saibro-700 [@media(pointer:coarse)]:-my-1.5"
                 >
                   <IconeEmail className="h-4 w-4 shrink-0 text-areia-400" />
                   {professor.email}
@@ -124,7 +130,7 @@ export default function PaginaFichaProfessor() {
               )}
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge cor="#9A4720" fundo="#FAE8DA" borda="#F3CEAF">
+              <Badge cor={TONS.destaque.cor} fundo={TONS.destaque.fundo} borda={TONS.destaque.borda}>
                 Professor
               </Badge>
               <Badge>Repasse: {rotuloDaRegraDeRepasse(professor.repasse)}</Badge>

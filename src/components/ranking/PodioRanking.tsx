@@ -4,13 +4,18 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeTrofeu } from "@/components/ui/Icons";
 import type { LinhaDoRanking } from "@/lib/consultas/ranking";
+import { LADRILHO } from "@/lib/paleta";
 import { ESTILO_CATEGORIA } from "@/lib/theme";
 
-/** Altura do degrau e ordem na tela (2º a esquerda, 1º no meio, 3º a direita). */
+/**
+ * Altura do degrau e ordem na tela (2º a esquerda, 1º no meio, 3º a direita).
+ * Degraus em laranja vivo, do mais claro (1º, com a textura do saibro) ao mais
+ * escuro; o numero e branco e grande (contraste conferido).
+ */
 const DEGRAU: Record<number, { altura: string; ordem: string; fundo: string }> = {
-  1: { altura: "h-20 sm:h-24", ordem: "order-2", fundo: "from-saibro-500 to-saibro-600" },
-  2: { altura: "h-14 sm:h-16", ordem: "order-1", fundo: "from-saibro-300 to-saibro-400" },
-  3: { altura: "h-10 sm:h-12", ordem: "order-3", fundo: "from-saibro-200 to-saibro-300" },
+  1: { altura: "h-20 sm:h-24", ordem: "order-2", fundo: "textura-saibro" },
+  2: { altura: "h-14 sm:h-16", ordem: "order-1", fundo: "bg-saibro-600" },
+  3: { altura: "h-10 sm:h-12", ordem: "order-3", fundo: "bg-saibro-700" },
 };
 
 /** Os tres primeiros do ranking (ou da categoria filtrada) em destaque. */
@@ -39,9 +44,9 @@ export function PodioRanking({ linhas }: { linhas: LinhaDoRanking[] }) {
                 src={linha.aluno.fotoUrl}
                 tamanho="lg"
                 comAnel={!primeiro}
-                className={`shadow-card ${primeiro ? "ring-4 ring-saibro-300 sm:h-24 sm:w-24 sm:text-2xl" : ""}`}
+                className={`shadow-card ${primeiro ? "ring-4 ring-saibro-500 sm:h-24 sm:w-24 sm:text-2xl" : ""}`}
               />
-              <span className="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-areia-900 group-hover:text-tijolo-700">
+              <span className="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-areia-900 group-hover:text-saibro-700">
                 {linha.aluno.nome}
               </span>
               <span className="mt-0.5 text-xs tabular-nums text-areia-600">
@@ -58,7 +63,8 @@ export function PodioRanking({ linhas }: { linhas: LinhaDoRanking[] }) {
               )}
             </Link>
             <div
-              className={`flex w-full items-start justify-center rounded-t-xl bg-gradient-to-b pt-1.5 text-lg font-bold text-white shadow-inner ${degrau.altura} ${degrau.fundo}`}
+              data-fundo-de-contraste={primeiro ? LADRILHO.referencia : undefined}
+              className={`flex w-full items-start justify-center rounded-t-xl pt-1 font-display text-2xl font-bold text-white shadow-inner ${degrau.altura} ${degrau.fundo}`}
             >
               {linha.posicao}º
             </div>

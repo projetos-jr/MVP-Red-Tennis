@@ -95,7 +95,7 @@ export function ReservasSemPagamento({
                   {titular ? (
                     <Link
                       href={`/alunos/${titular.id}`}
-                      className="flex min-w-0 items-center gap-2 text-sm font-medium text-areia-800 hover:text-tijolo-700 hover:underline"
+                      className="flex min-w-0 items-center gap-2 text-sm font-medium text-areia-800 hover:text-saibro-700 hover:underline"
                     >
                       <Avatar id={titular.id} nome={titular.nome} src={titular.fotoUrl} tamanho="xs" />
                       <span className="truncate">{titular.nome}</span>
@@ -112,7 +112,7 @@ export function ReservasSemPagamento({
                   <button
                     type="button"
                     onClick={() => aoAbrir(lancamento.lancamento.id)}
-                    className="mt-1 text-left text-xs text-areia-600 hover:text-tijolo-700 hover:underline"
+                    className="mt-1 text-left text-xs text-areia-600 hover:text-saibro-700 hover:underline"
                   >
                     {lancamento.lancamento.item} · {formatarMoeda(lancamento.lancamento.valor)}
                   </button>

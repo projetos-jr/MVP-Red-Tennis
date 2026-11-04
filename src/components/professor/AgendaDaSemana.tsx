@@ -7,6 +7,7 @@ import { IconeAgenda, IconeAnterior, IconeProximo } from "@/components/ui/Icons"
 import { rotuloDaQuadra } from "@/lib/consultas/base";
 import type { SemanaDoProfessor } from "@/lib/consultas/professores";
 import { DIAS_SEMANA_LONGO, diaDaSemana, formatarDiaMes, inicioDaSemana, somarDias } from "@/lib/date";
+import { PALETA } from "@/lib/paleta";
 import { ESTILO_OCUPACAO } from "@/lib/theme";
 
 /**
@@ -74,7 +75,7 @@ export function AgendaDaSemana({
             <h3 className="sticky top-0 z-[1] flex items-baseline justify-between gap-2 border-b border-areia-100 bg-areia-50/95 px-5 py-1.5 text-xs font-semibold uppercase tracking-wide text-areia-600 backdrop-blur">
               <span>
                 {DIAS_SEMANA_LONGO[diaDaSemana(dia.data)]}, {formatarDiaMes(dia.data)}
-                {dia.data === hoje && <span className="ml-1.5 text-tijolo-700">· hoje</span>}
+                {dia.data === hoje && <span className="ml-1.5 text-saibro-700">· hoje</span>}
               </span>
               <span className="font-normal normal-case text-areia-500">
                 {dia.aulas.length === 0
@@ -92,12 +93,12 @@ export function AgendaDaSemana({
                   <li key={ocupacao.id} className="flex items-center gap-3 px-5 py-2.5">
                     <span
                       className="h-9 w-1 shrink-0 rounded-full"
-                      style={{ backgroundColor: cancelada ? "#D6CEC2" : estilo.cor }}
+                      style={{ backgroundColor: cancelada ? PALETA.areia[300] : estilo.cor }}
                     />
                     <div className="w-[5.5rem] shrink-0">
                       <p
                         className={`text-sm font-semibold tabular-nums ${
-                          cancelada ? "text-areia-400 line-through" : "text-areia-900"
+                          cancelada ? "text-areia-500 line-through" : "text-areia-900"
                         }`}
                       >
                         {ocupacao.horaInicio}–{ocupacao.horaFim}
@@ -110,8 +111,12 @@ export function AgendaDaSemana({
                       ) : (
                         alunos.map((aluno, i) => (
                           <span key={aluno.id}>
-                            {i > 0 && <span className="text-areia-300"> · </span>}
-                            <Link href={`/alunos/${aluno.id}`} className="hover:text-tijolo-700 hover:underline">
+                            {i > 0 && (
+                              <span aria-hidden="true" className="text-areia-300">
+                                {" · "}
+                              </span>
+                            )}
+                            <Link href={`/alunos/${aluno.id}`} className="hover:text-saibro-700 hover:underline">
                               {aluno.nome}
                             </Link>
                           </span>

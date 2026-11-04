@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Campo, RodapeDoFormulario } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { Modal } from "@/components/ui/Modal";
 import { registrarEntrada } from "@/lib/banco/operacoes/estoque";
 import {
@@ -120,22 +121,13 @@ export function ModalEntrada({
 
           {lancaContaAPagar && (
             <div className="rounded-xl border border-areia-200">
-              <label className="flex cursor-pointer items-start gap-3 px-3.5 py-3">
-                <input
-                  type="checkbox"
-                  checked={comConta}
-                  onChange={(e) => setComConta(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-areia-300 text-saibro-600 focus:ring-saibro-500"
-                />
-                <span className="text-sm">
-                  <span className="font-medium text-areia-900">
-                    Lançar conta a pagar ao fornecedor
-                  </span>
-                  <span className="block text-xs text-areia-500">
-                    Aparece no Financeiro, em &ldquo;A pagar&rdquo;, junto com a entrada.
-                  </span>
-                </span>
-              </label>
+              <OpcaoSimNao
+                ligado={comConta}
+                aoMudar={setComConta}
+                titulo="Lançar conta a pagar ao fornecedor"
+                descricao={<>Aparece no Financeiro, em &ldquo;A pagar&rdquo;, junto com a entrada.</>}
+                className="px-3.5 py-2"
+              />
 
               {comConta && (
                 <div className="space-y-4 border-t border-areia-200 px-3.5 py-3.5">

@@ -117,11 +117,11 @@ export function Modal({
         <div
           ref={painel}
           tabIndex={-1}
-          className={`w-full ${LARGURAS[largura]} animate-fade-up rounded-2xl border border-areia-200 bg-white shadow-card-hover focus:outline-none`}
+          className={`w-full ${LARGURAS[largura]} motion-safe:animate-fade-up rounded-2xl border border-areia-200 bg-white shadow-card-hover focus:outline-none`}
         >
           <header className="flex items-start justify-between gap-4 border-b border-areia-200 px-5 py-4">
             <div>
-              <h2 id={`${id}-titulo`} className="text-base font-semibold text-areia-900">
+              <h2 id={`${id}-titulo`} className="font-display text-lg font-bold leading-tight text-areia-900">
                 {titulo}
               </h2>
               {descricao && <p className="mt-0.5 text-sm text-areia-600">{descricao}</p>}

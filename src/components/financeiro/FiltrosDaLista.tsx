@@ -204,7 +204,7 @@ export function FiltrosDaLista({
             <button
               type="button"
               onClick={() => aoMudar({ periodo: "todos" })}
-              className="font-semibold text-tijolo-700 underline-offset-2 hover:underline"
+              className="link-acao"
             >
               Buscar em todos os meses
             </button>

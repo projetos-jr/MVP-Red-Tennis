@@ -13,6 +13,7 @@ import { podeAlterarRepasse } from "@/lib/consultas/alunos";
 import { listarProfessores, type LinhaDaListaDeProfessores } from "@/lib/consultas/professores";
 import { formatarMesAno } from "@/lib/date";
 import { formatarMinutos, formatarMoeda, iniciais } from "@/lib/theme";
+import { textoLegivelSobre } from "@/lib/cores";
 import { useApp } from "@/store/AppStore";
 
 /** Lista de professores, com os numeros da semana e o repasse previsto do mes. */
@@ -77,15 +78,15 @@ function CartaoDoProfessor({ linha }: { linha: LinhaDaListaDeProfessores }) {
         <span className="h-1.5 w-full" style={{ backgroundColor: professor.cor }} />
         <span className="flex items-start gap-3 px-5 pt-4">
           <span
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-semibold text-white"
-            style={{ backgroundColor: professor.cor }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-display text-lg font-bold"
+            style={{ backgroundColor: professor.cor, color: textoLegivelSobre(professor.cor) }}
             aria-hidden="true"
           >
             {iniciais(professor.nome)}
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="text-base font-semibold text-areia-900">{professor.nome}</span>
+              <span className="font-display text-lg font-bold leading-tight text-areia-900">{professor.nome}</span>
               {!professor.ativo && <Badge>Inativo</Badge>}
             </span>
             <span className="block text-sm text-areia-600">
@@ -118,7 +119,7 @@ function CartaoDoProfessor({ linha }: { linha: LinhaDaListaDeProfessores }) {
           />
         </span>
 
-        <span className="mt-auto flex items-center justify-end gap-1.5 border-t border-areia-200 px-5 py-2.5 text-sm font-medium text-tijolo-700">
+        <span className="mt-auto flex items-center justify-end gap-1.5 border-t border-areia-200 px-5 py-2.5 text-sm font-semibold text-saibro-700">
           Abrir ficha
           <IconeSeta className="h-4 w-4" />
         </span>
@@ -133,7 +134,7 @@ function Numero({ rotulo, valor, detalhe }: { rotulo: string; valor: string; det
       <span className="block text-[11px] font-medium uppercase leading-tight tracking-wide text-areia-500">
         {rotulo}
       </span>
-      <span className="mt-1 block text-sm font-bold tabular-nums text-areia-900">{valor}</span>
+      <span className="mt-1 block font-display text-lg font-bold leading-tight tabular-nums text-areia-900">{valor}</span>
       {detalhe && <span className="block text-[11px] text-areia-500">{detalhe}</span>}
     </span>
   );

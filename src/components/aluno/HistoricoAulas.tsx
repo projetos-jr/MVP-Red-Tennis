@@ -219,5 +219,5 @@ function Reposicao({ aula }: { aula: AulaDoAluno }) {
       </span>
     );
   }
-  return <span className="text-areia-400">—</span>;
+  return <span className="text-areia-500">—</span>;
 }

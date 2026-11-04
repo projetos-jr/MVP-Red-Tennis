@@ -53,7 +53,7 @@ function ItemDoTorneio({
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-semibold text-areia-900 group-hover:text-tijolo-700">
+          <h3 className="text-sm font-semibold text-areia-900 group-hover:text-saibro-700">
             {torneio.nome}
           </h3>
           <SituacaoDoTorneio situacao={torneio.situacao} />
@@ -90,7 +90,7 @@ function ItemDoTorneio({
             aria-valuenow={porcentagem}
             aria-label={`Andamento: ${jogadas} de ${partidas} jogos`}
           >
-            <div className="h-full rounded-full bg-saibro-500" style={{ width: `${porcentagem}%` }} />
+            <div className="h-full rounded-full bg-saibro-600" style={{ width: `${porcentagem}%` }} />
           </div>
         )}
 

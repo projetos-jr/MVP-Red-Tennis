@@ -60,7 +60,7 @@ export function AlunosDoProfessor({
       </ul>
       <Link
         href={`/alunos?professor=${professorId}`}
-        className="block border-t border-areia-200 px-5 py-3 text-sm font-medium text-tijolo-700 hover:bg-areia-50"
+        className="block border-t border-areia-200 px-5 py-3 text-sm font-semibold text-saibro-700 hover:bg-areia-50"
       >
         Ver os alunos principais na lista de alunos
       </Link>

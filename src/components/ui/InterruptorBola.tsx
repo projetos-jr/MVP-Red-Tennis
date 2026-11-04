@@ -1,5 +1,7 @@
 "use client";
 
+import { useId, type ReactNode } from "react";
+
 /**
  * Interruptor de liga/desliga com o botão em forma de bola de tênis: desligado
  * a bola fica cinza; ligado, ela "acende" em amarelo e corre para a direita
@@ -75,5 +77,49 @@ export function InterruptorBola({
       </span>
       {rotulo && <span>{rotulo}</span>}
     </button>
+  );
+}
+
+/**
+ * Opção sim/não de formulário: o interruptor com um título e, se precisar,
+ * uma explicação embaixo. Clicar no texto também liga e desliga. Use no lugar
+ * de uma caixa de seleção sozinha ("Já foi pago", "Reservar quadra"); listas
+ * e matrizes de escolha (permissões) continuam com caixas de seleção.
+ *
+ *   <OpcaoSimNao ligado={jaPago} aoMudar={setJaPago} titulo="Já foi pago" />
+ */
+export function OpcaoSimNao({
+  ligado,
+  aoMudar,
+  titulo,
+  descricao,
+  className = "",
+}: {
+  ligado: boolean;
+  aoMudar: (ligado: boolean) => void;
+  titulo: ReactNode;
+  descricao?: ReactNode;
+  className?: string;
+}) {
+  const id = useId();
+  const idDaAjuda = `${id}-ajuda`;
+  return (
+    <div className={`flex items-center gap-3 ${className}`}>
+      <InterruptorBola
+        id={id}
+        ligado={ligado}
+        aoMudar={aoMudar}
+        descricaoId={descricao ? idDaAjuda : undefined}
+        className="shrink-0"
+      />
+      <label htmlFor={id} className="min-w-0 cursor-pointer text-sm">
+        <span className="block font-medium text-areia-900">{titulo}</span>
+        {descricao && (
+          <span id={idDaAjuda} className="block text-xs text-areia-500">
+            {descricao}
+          </span>
+        )}
+      </label>
+    </div>
   );
 }

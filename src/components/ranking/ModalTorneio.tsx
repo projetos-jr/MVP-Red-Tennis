@@ -143,7 +143,7 @@ export function ModalTorneio({
             </Campo>
           </div>
 
-          <div className={`space-y-4 ${chaveGerada ? "opacity-60" : ""}`}>
+          <div className={`space-y-4 ${chaveGerada ? "rounded-xl bg-areia-50 p-3" : ""}`}>
             <fieldset disabled={chaveGerada}>
               <legend className="mb-1.5 block text-sm font-medium text-areia-800">
                 Formato<span className="ml-0.5 text-tijolo-600">*</span>
@@ -164,7 +164,7 @@ export function ModalTorneio({
                       <span
                         className={`block h-full rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-saibro-500 ${
                           escolhido
-                            ? "border-saibro-500 bg-saibro-50"
+                            ? "border-saibro-600 bg-saibro-50 ring-1 ring-saibro-600"
                             : "border-areia-300 bg-white hover:border-saibro-300"
                         }`}
                       >

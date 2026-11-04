@@ -28,7 +28,7 @@ export function ResumoDoSaldo({
         <dd
           className={`font-semibold tabular-nums ${
             saldoDepois === undefined
-              ? "text-areia-400"
+              ? "text-areia-500"
               : abaixo
                 ? "text-tijolo-700"
                 : "text-emerald-700"

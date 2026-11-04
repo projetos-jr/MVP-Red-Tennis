@@ -16,7 +16,10 @@ import {
 import { MESES, formatarDiaMes } from "@/lib/date";
 import { formatarMoeda } from "@/lib/theme";
 
-/** Mesmos tons do StatCard, para manter a identidade dos indicadores do MVP. */
+/**
+ * Mesmos tons do StatCard: o icone em cor cheia (vivo) e o cartao claro, para
+ * o numero ser lido rapido.
+ */
 const TONS = {
   neutro: {
     caixa: "border-areia-200 bg-white hover:border-areia-300",
@@ -24,19 +27,19 @@ const TONS = {
     valor: "text-areia-900",
   },
   saibro: {
-    caixa: "border-saibro-200 bg-saibro-50/60 hover:border-saibro-300",
-    icone: "bg-saibro-100 text-saibro-700",
-    valor: "text-saibro-800",
+    caixa: "border-saibro-200 bg-white hover:border-saibro-300",
+    icone: "bg-saibro-600 text-white",
+    valor: "text-saibro-700",
   },
   alerta: {
-    caixa: "border-tijolo-200 bg-tijolo-50/70 hover:border-tijolo-300",
-    icone: "bg-tijolo-100 text-tijolo-700",
+    caixa: "border-tijolo-200 bg-tijolo-50 hover:border-tijolo-300",
+    icone: "bg-tijolo-600 text-white",
     valor: "text-tijolo-700",
   },
   positivo: {
-    caixa: "border-emerald-200 bg-emerald-50/60 hover:border-emerald-300",
-    icone: "bg-emerald-100 text-emerald-700",
-    valor: "text-emerald-700",
+    caixa: "border-quadra-200 bg-quadra-50 hover:border-quadra-300",
+    icone: "bg-quadra-700 text-white",
+    valor: "text-quadra-700",
   },
 } as const;
 
@@ -84,12 +87,12 @@ function Cartao({
             <span className="hidden sm:inline">{rotulo}</span>
           </span>
           <IconeSeta
-            className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 transition-transform group-hover:translate-x-0.5 group-hover:text-areia-700"
+            className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 transition-transform motion-safe:group-hover:translate-x-0.5 group-hover:text-areia-700"
           />
         </span>
         {/* sm:leading-none: a variante sm:text-2xl traz o line-height dela. */}
         <span
-          className={`mt-1 block text-xl font-semibold leading-none sm:text-2xl sm:leading-none ${estilo.valor}`}
+          className={`mt-1 block font-display text-2xl font-bold leading-none sm:text-3xl sm:leading-none ${estilo.valor}`}
         >
           {formatarMoeda(valor)}
         </span>

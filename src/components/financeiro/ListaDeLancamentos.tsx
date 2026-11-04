@@ -35,7 +35,7 @@ function Pessoa({ linha, tipo, compacta }: { linha: LinhaLancamento; tipo: TipoL
       {pessoa ? (
         <Link
           href={linkDaPessoa(pessoa)}
-          className="flex min-w-0 items-center gap-2 font-medium text-areia-800 hover:text-tijolo-700 hover:underline"
+          className="flex min-w-0 items-center gap-2 font-medium text-areia-800 hover:text-saibro-700 hover:underline"
         >
           <Avatar id={pessoa.id} nome={pessoa.nome} src={pessoa.fotoUrl} tamanho={compacta ? "sm" : "xs"} />
           <span className="truncate">{pessoa.nome}</span>
@@ -57,7 +57,7 @@ function Pessoa({ linha, tipo, compacta }: { linha: LinhaLancamento; tipo: TipoL
 function Valor({ linha, className = "" }: { linha: LinhaLancamento; className?: string }) {
   const anulado = linha.situacao === "cancelado";
   return (
-    <span className={`tabular-nums ${anulado ? "text-areia-400 line-through" : ""} ${className}`}>
+    <span className={`tabular-nums ${anulado ? "text-areia-500 line-through" : ""} ${className}`}>
       {formatarMoeda(linha.lancamento.valor)}
     </span>
   );
@@ -114,7 +114,7 @@ export function ListaDeLancamentos({
               <button
                 type="button"
                 onClick={() => aoAbrir(lancamento.id)}
-                className="mt-2 block text-left text-sm text-areia-700 underline decoration-areia-300 underline-offset-2 hover:text-tijolo-700"
+                className="mt-2 block text-left text-sm text-areia-700 underline decoration-areia-300 underline-offset-2 hover:text-saibro-700"
               >
                 {lancamento.item}
               </button>
@@ -193,7 +193,7 @@ export function ListaDeLancamentos({
                     <button
                       type="button"
                       onClick={() => aoAbrir(lancamento.id)}
-                      className="text-left text-areia-700 hover:text-tijolo-700 hover:underline"
+                      className="text-left text-areia-700 hover:text-saibro-700 hover:underline"
                     >
                       {lancamento.item}
                     </button>

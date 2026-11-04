@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { BRANCO } from "@/lib/paleta";
 
 /**
  * Botão-pílula de filtro (quadra, professor, categoria...). Use quando há
@@ -44,7 +45,7 @@ export function BotaoFiltro({
       style={
         cores
           ? {
-              color: ativo ? "#fff" : cores.cor,
+              color: ativo ? BRANCO : cores.cor,
               backgroundColor: ativo ? cores.cor : cores.fundo,
               borderColor: cores.borda,
             }
@@ -52,7 +53,7 @@ export function BotaoFiltro({
       }
     >
       {cor && (
-        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ativo ? "#fff" : cor }} />
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ativo ? BRANCO : cor }} />
       )}
       {children}
     </button>

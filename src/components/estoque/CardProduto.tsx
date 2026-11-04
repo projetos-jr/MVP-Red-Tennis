@@ -37,10 +37,10 @@ export function CardProduto({ item, aoAgir }: CardProdutoProps) {
           <h3 className="text-sm font-semibold leading-tight text-areia-900">
             <Link
               href={`/estoque/produto?id=${produto.id}`}
-              className="group inline-flex items-start gap-1 rounded hover:text-tijolo-700"
+              className="group inline-flex items-start gap-1 rounded hover:text-saibro-700"
             >
               <span className="group-hover:underline">{produto.nome}</span>
-              <IconeProximo className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 group-hover:text-tijolo-700" />
+              <IconeProximo className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 group-hover:text-saibro-700" />
             </Link>
           </h3>
           <p className="mt-0.5 text-xs text-areia-500">{produto.unidade}</p>

@@ -8,6 +8,7 @@ import type {
 import type { RegraRepasse } from "@/lib/banco/tipos";
 import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import { diferencaEmDias } from "@/lib/date";
+import { BRANCO, PALETA } from "@/lib/paleta";
 import { formatarMoeda } from "@/lib/theme";
 
 /**
@@ -39,10 +40,10 @@ export const ORDEM_SITUACOES: SituacaoAluno[] = ["ativo", "congelado", "avulso",
 
 export const ESTILO_SITUACAO_NA_AULA: Record<SituacaoNaAula, EstiloRotulo> = {
   presente: { rotulo: "Presente", ...VERDE },
-  falta: { rotulo: "Falta", cor: "#991B1B", fundo: "#FEF2F2", borda: "#FCA5A5" },
+  falta: { rotulo: "Falta", ...VERMELHO },
   falta_avisada: { rotulo: "Falta avisada", ...AMARELO },
   a_marcar: { rotulo: "A marcar", ...NEUTRO },
-  cancelada: { rotulo: "Aula cancelada", cor: "#6B6255", fundo: "#FFFFFF", borda: "#D6CEC2" },
+  cancelada: { rotulo: "Aula cancelada", cor: PALETA.areia[600], fundo: BRANCO, borda: PALETA.areia[300] },
   suspensa: { rotulo: "Suspensa", ...AZUL },
 };
 

@@ -50,7 +50,7 @@ export function ExtratoReposicao({
       <div className="space-y-3 p-5">
         <div className="rounded-xl border border-saibro-200 bg-saibro-50/70 p-4 text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-saibro-700">Saldo disponível</p>
-          <p className="mt-1 text-3xl font-bold text-saibro-800">
+          <p className="mt-1 font-display text-4xl font-bold leading-none text-saibro-800">
             {saldo > 0 ? formatarMinutos(saldo) : "0min"}
           </p>
           <p className="mt-1 text-xs text-saibro-700">
@@ -164,7 +164,7 @@ function Movimento({
       <span className="flex shrink-0 flex-col items-end gap-1">
         <span
           className={`text-sm font-semibold tabular-nums ${
-            perdido || usado ? "text-areia-400" : "text-emerald-700"
+            perdido || usado ? "text-areia-500" : "text-emerald-700"
           }`}
         >
           +{formatarMinutos(minutos)}
