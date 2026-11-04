@@ -1,27 +1,106 @@
-# Módulo base: login, navegação, Painel, Configurações e Histórico
+# Módulo base: login, navegação, Início, Configurações e Histórico
 
-Versão de 29/10/2026. Faz parte da migração das telas para o modelo novo
-(`docs/MODELO-E-TELAS.md`, seção 2: Login, Painel, Configurações, Histórico e
-"Em todas as telas").
+Versão de 29/10/2026, atualizada em 04/11/2026 com o redesign (Início com as
+quadras e o mosaico de atalhos, como no sistema antigo do cliente, e a
+navegação nova). Faz parte da migração das telas para o modelo novo
+(`docs/MODELO-E-TELAS.md`, seção 2: Login, Painel — hoje **Início** —,
+Configurações, Histórico e "Em todas as telas").
 
 ## O que o módulo faz
 
 | Parte | Onde | O que faz |
 | --- | --- | --- |
-| Login | `/` | Escolhe quem entra (a equipe de `banco.colaboradores`, com cargo, perfil e o que o perfil vê). A senha é só de demonstração: qualquer uma serve. Cada perfil cai na primeira área que pode abrir (dono e recepção no Painel, professor na Agenda). |
-| Navegação | barra do topo e barra do celular | Mostra só as áreas que o perfil pode abrir (H9). Configurações e Histórico ficam no menu do usuário (clique no nome ou na foto, no canto direito), para não encher a barra. |
+| Login | `/` | Escolhe quem entra (a equipe de `banco.colaboradores`, com cargo, perfil e o que o perfil vê). A senha é só de demonstração: qualquer uma serve. Cada perfil cai na primeira área que pode abrir (dono e recepção no Início, professor na Agenda). Com o Supabase, e-mail e senha (`LoginComEmail`). As duas telas usam a paleta nova (botão laranja) e a faixa de saibro com a linha branca no alto. |
+| Navegação | barra do topo e barra do celular | Mostra só as áreas que o perfil pode abrir (H9): Início, Agenda, Clientes (inclui Professores), Financeiro, Estoque e Ranking / Torneio. Configurações e Histórico ficam no menu do usuário (clique no nome ou na foto, no canto direito) e no mosaico do Início. Detalhes em "A navegação", abaixo. |
 | Busca rápida de aluno | barra do topo | Campo com sugestões enquanto se digita: nome (sem precisar de acento), pedaços do nome ("gui lim") ou números do telefone. Setas escolhem, Enter abre a ficha, Esc fecha. A tecla `/` leva o cursor para a busca. No celular é um botão de lupa que abre a busca em tela cheia. O professor só encontra os próprios alunos. |
-| Proteção de rota | todas as telas internas | Se o perfil não pode abrir a área da página atual (por exemplo, alguém volta pelo navegador depois de trocar de usuário), aparece "Sem acesso a esta área" com o atalho para o painel (ou para a primeira área do perfil). |
-| Painel | `/dashboard` | Quadras de hoje em 3D (mais escuro = mais cheia), com o que está acontecendo agora, a próxima ocupação e a próxima faixa livre; indicadores do dia; próximos horários; quadro "Precisa de atenção". |
+| Proteção de rota | todas as telas internas | Se o perfil não pode abrir a área da página atual (por exemplo, alguém volta pelo navegador depois de trocar de usuário), aparece "Sem acesso a esta área" com o botão **Voltar ao Início** (ou "Ir para" a primeira área do perfil, como a Agenda do professor). |
+| Início | `/dashboard` (o endereço não mudou) | De cima para baixo: a faixa das quadras (quem está jogando agora em cada quadra), o mosaico de atalhos laranja e o quadro "Precisa de atenção". Detalhes em "O Início", abaixo. |
 | Configurações | `/configuracoes` (só dono) | Todas as regras ajustáveis: siglas de reposição, validade da reposição, reservas, agenda, ranking, torneios, formas de pagamento, prazo do consumo, preços de locação, catálogo de planos e permissões. Cada item explica a regra e mostra o selo da hipótese (H#). |
 | Histórico de alterações | `/historico` (só dono) | Tudo o que foi criado, alterado ou apagado: quem, quando, o quê e a operação. Filtros por pessoa, período, tipo de registro e ação. "Ver detalhes" mostra os campos que mudaram (antes e depois). |
+
+### O Início
+
+O dono pediu que a tela inicial lembre a do sistema antigo, que ele usa há
+anos: as quadras desenhadas no topo e um mosaico de botões grandes laranja.
+A tela continua no endereço `/dashboard`; o nome em todo lugar é **Início**
+(aba, barra do celular, Configurações › Permissões e o botão "Voltar ao
+Início"). Saíram os cartões de indicadores, os cartões de ocupação do dia e a
+lista "Próximos horários" (a Diária da agenda mostra o dia inteiro).
+
+**1. Faixa das quadras** (`components/inicio/FaixaDasQuadras.tsx` e
+`QuadraAgora.tsx`). Faixa verde com as 4 quadras e o paredão (um pouco menor)
+desenhados em perspectiva, com cores fixas e vivas: Quadra 1 de cimento azul,
+2 a 4 e paredão de saibro laranja (`PISO` em `lib/paleta.ts`). No alto:
+"Agora nas quadras · 14:32", quantas estão em uso ("3 de 5 em uso") e o botão
+**Abrir Diária** (só para quem abre a agenda). Cada quadra mostra:
+
+| Situação | Selo | O que aparece |
+| --- | --- | --- |
+| Alguém jogando agora | **Em jogo** (amarelo) e uma bola amarela no piso | Até 2 nomes e "+n" (sem quem avisou a falta ou faltou), o tipo na cor da legenda, "até 18:00" e o professor |
+| Bloqueio agora | **Bloqueada** (piso apagado) | O motivo do bloqueio e até que horas |
+| Livre | **Livre** | "Livre agora" e a próxima aula ("Próxima: 17:00 · Dupla") ou "Sem mais horários hoje" |
+| Antes das 07h ou depois das 22h | **Fechada** (piso apagado) | "Abre às 07:00" e o primeiro horário, ou "Fechada por hoje" |
+
+Clicar numa quadra abre a agenda dela (`/agenda?visao=quadra&quadra=<id>`).
+No celular e em telas médias a faixa rola para o lado, parando em cada
+quadra; a página não rola para o lado. Os dados vêm de `ocupacaoDasQuadras`
+(`lib/consultas/painel.ts`), que ganhou `emQuadra` (alunos de agora) e
+`professorAgora`.
+
+**2. Mosaico de atalhos** (`components/inicio/MosaicoDeAtalhos.tsx`, dados em
+`components/layout/atalhos.ts`, ícones próprios em
+`components/inicio/IconesDoMosaico.tsx`). Botões grandes laranja com textura
+de saibro, rótulo branco grande e ícone de dois tons, em 2 colunas no celular,
+3 em telas médias e 4 no tablet e no computador. O primeiro (Diária) fica mais
+largo quando sobra espaço na última linha, para a grade fechar sem buraco. Só
+aparecem as telas que o perfil pode abrir (a mesma permissão das abas, H9):
+
+| Atalho | Abre | Permissão | Dono | Recepção | Professor* |
+| --- | --- | --- | --- | --- | --- |
+| Diária | `/agenda` | Agenda | sim | sim | sim |
+| Agenda Professores | `/agenda?visao=professor` | Agenda | sim | sim | sim |
+| Financeiro | `/financeiro` | Financeiro | sim | sim | não |
+| Estoque | `/estoque` | Estoque | sim | sim | não |
+| Histórico | `/historico` | Histórico | sim | não | não |
+| Clientes | `/alunos` | Alunos | sim | sim | sim |
+| Professores | `/professores` | Professores | sim | sim | não |
+| Configurações | `/configuracoes` | Configurações | sim | não | não |
+| Ranking | `/ranking` | Ranking | sim | sim | não |
+| Torneio | `/ranking?aba=torneios` | Ranking | sim | sim | não |
+| LAP | `/agenda?tipo=LAP` (agenda filtrada por LAP, hipótese a confirmar) | Agenda | sim | sim | sim |
+| Site | endereço de `SITE_DA_ARENA` em `src/lib/branding.ts`, em nova aba | nenhuma | — | — | — |
+
+\* O professor não abre o Início (não tem a permissão do módulo): ele cai
+direto na Agenda. A coluna mostra o que o filtro devolveria se a permissão
+fosse liberada. **Site:** a constante está **vazia** até o cliente confirmar
+o endereço (o site atual não tem HTTPS); vazia, o atalho não aparece. A ordem
+dos atalhos é a da lista combinada para o Início; vale conferir com o dono se
+é a mesma do sistema antigo.
+
+**3. Precisa de atenção** (embaixo), descrito a seguir.
+
+### A navegação
+
+- **Barra do topo** em vidro translúcido (o conteúdo passa por baixo,
+  desfocado) e, embaixo dela, uma faixa laranja de saibro com uma linha branca
+  no meio, como a linha pintada na quadra. A marca "RED TENNIS" continua em
+  vermelho (é o letreiro da arena).
+- **Abas** (computador e tablet): Início, Agenda, Clientes, Financeiro,
+  Estoque e Ranking / Torneio. Uma pílula laranja desliza até a aba ativa
+  (`components/layout/AbasComIndicador.tsx`); a tela de Professores marca a
+  aba Clientes. Configurações e Histórico (menu do usuário) não marcam aba.
+  Quem pede "menos movimento" no sistema operacional vê a pílula pular direto.
+- **Barra do celular** (abaixo de 768 px), também em vidro: ícone e rótulo,
+  com uma pílula laranja clara atrás do ícone da aba ativa. A busca vira o
+  botão de lupa no topo.
 
 ### O quadro "Precisa de atenção"
 
 Junta o que pede uma ação hoje. Cada grupo mostra a contagem da lista
 inteira; os três primeiros itens aparecem e "Mostrar todos" abre o resto. O
-cartão **Pendências**, em cima, é a soma dos grupos (o MVP dizia 12 no cartão
-e mostrava 6 na lista; agora os números são os mesmos).
+número no topo do quadro ("28 itens") é a soma dos grupos (o MVP dizia 12 no
+cartão e mostrava 6 na lista; agora os números são os mesmos). No computador e
+no tablet os grupos ficam em duas colunas.
 
 | Grupo | O que entra | Para onde o item leva |
 | --- | --- | --- |
@@ -42,11 +121,11 @@ Configurações. Os valores iniciais são os de `CONFIGURACOES_INICIAIS`.
 | H1 | Configurações › Reposição | Lista de siglas: código, nome, descrição, se gera crédito e onde vale (aula inteira, um aluno ou os dois). |
 | H2 | Configurações › Planos | "Plano de locação" (amarelo) mantém nome e cor; significado a confirmar. |
 | H3 | Configurações › Planos | Cada plano é da tabela nova ou da antiga. Mudar o valor do plano não muda as matrículas: o aluno mantém o valor combinado. |
-| H5 | Configurações › Reservas e Painel | Prazo para pagar a reserva (24 h) e "liberar o horário sozinho" (desligado: a reserva vencida só fica em alerta e a recepção decide). |
+| H5 | Configurações › Reservas e Início | Prazo para pagar a reserva (24 h) e "liberar o horário sozinho" (desligado: a reserva vencida só fica em alerta e a recepção decide). |
 | H6 | Configurações › Repasse | Só mostra a regra de cada professor; ela é ajustada na ficha do professor. |
 | H7 | Configurações › Ranking | Pontos por vitória (10) e por derrota (2), valores de teste. |
 | H8 | Configurações › Ranking | Classificados por grupo (2) e ordem dos critérios de desempate. |
-| H9 | Permissões, navegação, Painel, busca | Dono vê tudo; recepção vê agenda, alunos, financeiro a receber, estoque e ranking; professor vê agenda e alunos. A matriz é editável. |
+| H9 | Permissões, navegação, Início (mosaico e quadro), busca | Dono vê tudo; recepção vê agenda, alunos, financeiro a receber, estoque e ranking; professor vê agenda e alunos. A matriz é editável. |
 | H10 | Configurações › Reservas e agenda | Impedir professor em duas aulas ao mesmo tempo (desligado: só avisa). |
 | H12 | Configurações › Reservas e agenda | Semanas da agenda criadas à frente (12). |
 | H13 | Configurações › Financeiro | Prazo para pagar o consumo do balcão (7 dias). |
@@ -76,13 +155,17 @@ Regras que este módulo aplica (todas nas operações, com mensagem clara):
 
 Escolhas do módulo que valem conferir com a arena:
 
-- **Reservas no Painel:** aparecem todas as reservas aguardando pagamento, não
+- **Reservas no Início:** aparecem todas as reservas aguardando pagamento, não
   só as "perto de vencer". Com o prazo de 24 h, toda reserva em aberto já está a
   menos de um dia do vencimento. Se a arena aumentar o prazo e achar a lista
   longa demais, dá para acrescentar um parâmetro "avisar com N horas de
   antecedência".
 - **Alunos do professor** (busca rápida): os que têm o professor como principal
   ou estão num horário fixo dele que ainda vale.
+- **Perguntas do redesign para o cliente:** o endereço do site (atalho
+  "Site"); o que é LAP e se o atalho deve abrir a agenda filtrada por LAP; se o
+  professor deve ver o Início; se "Clientes" substitui "Alunos" em todo o
+  sistema; se a ordem do mosaico é a do sistema antigo.
 
 Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
 
@@ -110,68 +193,84 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
    uma com o que o perfil vê. Embaixo, o aviso "Demonstração: qualquer senha
    serve".
 2. Escolha **Francisco Menezes**, digite qualquer senha e clique em
-   **Entrar como Francisco**. Deve abrir o **Painel**.
-3. No Painel, confira o cartão **Pendências** (ex.: 32). Desça até
-   **Precisa de atenção**: os números dos quatro grupos (ex.: 6 + 14 + 7 + 5)
-   somam o mesmo valor do cartão.
-4. No grupo **Mensalidades em atraso**, clique em **Mostrar todos os 14**:
-   devem aparecer exatamente 14 linhas. Clique numa delas: abre a ficha do aluno.
-5. Volte ao Painel. Na **Ocupação de hoje**, cada quadra mostra a porcentagem,
-   as horas ocupadas, o que está acontecendo agora ou a próxima aula, e quando
-   fica livre. Clique numa quadra: abre a Agenda.
-6. Na barra do topo, clique no campo **Buscar aluno…** e digite `gui lim`.
+   **Entrar como Francisco**. Deve abrir o **Início**: no topo, a faixa verde
+   **Agora nas quadras** com a hora atual e as 5 quadras desenhadas (a Quadra 1
+   azul, as outras laranja); no meio, o mosaico laranja; embaixo, **Precisa de
+   atenção**. Na barra do topo, a aba **Início** está com a pílula laranja.
+3. Na faixa, confira uma quadra **Em jogo**: aparecem até dois nomes (com "+n"
+   se houver mais gente), o tipo na cor da legenda, "até HH:MM" e o professor.
+   Abra a **Diária** em outra aba e confira que é o mesmo horário. Clique na
+   quadra: abre a agenda daquela quadra (visão Quadra). Volte.
+4. Conte os botões do mosaico: o dono vê **11** (Diária, Agenda Professores,
+   Financeiro, Estoque, Histórico, Clientes, Professores, Configurações,
+   Ranking, Torneio e LAP). O **Site** não aparece enquanto o endereço não for
+   confirmado. Clique em **Torneio**: abre o Ranking na aba de torneios. Volte e
+   clique em **LAP**: abre a agenda filtrada por LAP.
+5. Em **Precisa de atenção**, o número no topo (ex.: 28 itens) é a soma dos
+   quatro grupos (ex.: 9 + 5 + 7 + 7). No grupo **Mensalidades em atraso**,
+   clique em **Mostrar todos**: aparecem todas as linhas do número do grupo.
+   Clique numa delas: abre a ficha do aluno.
+6. Clique nas abas **Agenda**, **Clientes** e **Ranking / Torneio**: a pílula
+   laranja desliza até a aba clicada. Abra **Professores** (pelo mosaico): a
+   aba **Clientes** fica marcada.
+7. Na barra do topo, clique no campo **Buscar aluno…** e digite `gui lim`.
    Deve aparecer **Guilherme Lima** com "Gui" e "Lim" em destaque. Aperte
    **Enter**: abre a ficha dele. (Quando há mais de um resultado, as setas para
    cima e para baixo escolhem a linha antes do Enter.)
-7. Na busca, digite os quatro últimos números de um telefone (ex.: `2210`):
+8. Na busca, digite os quatro últimos números de um telefone (ex.: `2210`):
    aparece o aluno dono do telefone.
-8. Clique no seu nome, no canto direito da barra. O menu mostra o perfil,
+9. Clique no seu nome, no canto direito da barra. O menu mostra o perfil,
    **Configurações**, **Histórico de alterações** e **Sair e trocar de
    usuário**. Clique em **Configurações**.
-9. Em **Reservas e agenda**, troque o prazo para pagar a reserva para `0` e
+10. Em **Reservas e agenda**, troque o prazo para pagar a reserva para `0` e
    clique em **Salvar alterações**. Deve aparecer o erro "O prazo para pagar a
    reserva precisa ser maior que zero (em horas inteiras)." e nada é salvo.
-10. Troque o prazo para `48`, ligue **Liberar o horário sozinho** e salve.
+11. Troque o prazo para `48`, ligue **Liberar o horário sozinho** e salve.
     Deve aparecer "Regras de reserva e agenda salvas.".
-11. Em **Reposição de aulas**, clique em **Incluir sigla**. Preencha o código
+12. Em **Reposição de aulas**, clique em **Incluir sigla**. Preencha o código
     `CH`, o nome "Atestado médico" e clique em **Incluir sigla**. Deve aparecer
     o erro "Já existe a sigla "CH". Escolha outro código.". Troque o código para
     `AT` e inclua de novo: a sigla aparece na lista.
-12. Na sigla **TIP**, clique em **Desativar** e confirme. Ela fica com o selo
+13. Na sigla **TIP**, clique em **Desativar** e confirme. Ela fica com o selo
     "Desativada" e o botão vira **Reativar**.
-13. Em **Planos**, clique na lixeira de **Individual · 1x por semana** e
+14. Em **Planos**, clique na lixeira de **Individual · 1x por semana** e
     confirme. Deve aparecer o erro dizendo que o plano tem matrículas vigentes e
     não pode ser apagado. Cancele.
-14. Clique em **Novo plano**, preencha "Individual · 2x por semana", valor
+15. Clique em **Novo plano**, preencha "Individual · 2x por semana", valor
     `1280`, 2 aulas por semana e inclua. Depois apague esse plano novo pela
     lixeira: como não tem matrícula, ele sai do catálogo.
-15. Em **Permissões**, marque **Recepção** na linha **Histórico de
+16. Em **Permissões**, marque **Recepção** na linha **Histórico de
     alterações** e clique em **Salvar permissões**. Repare que a célula do Dono
     em **Configurações** está travada (cadeado).
-16. Abra o menu do usuário e vá em **Histórico de alterações**. Devem aparecer
+17. Abra o menu do usuário e vá em **Histórico de alterações**. Devem aparecer
     as mudanças feitas acima, da mais recente para a mais antiga, com
     "por Francisco Menezes". Na linha "Prazo para pagar a reserva (horas) e
     Liberar reserva vencida sozinho", clique em **Ver detalhes**: aparecem os
     campos com o valor de antes e o de depois (24 → 48; não → sim). Nas
     alterações de permissões e de siglas, o detalhe vem em frases ("Recepção:
     passou a ver Histórico de alterações").
-17. No filtro **Tipo de registro**, escolha **Planos**: sobram só as
+18. No filtro **Tipo de registro**, escolha **Planos**: sobram só as
     alterações de planos.
-18. Recarregue a página do Histórico: ele volta vazio, com a explicação de que
+19. Recarregue a página do Histórico: ele volta vazio, com a explicação de que
     a demonstração recomeça a cada visita.
-19. Abra o menu do usuário e clique em **Sair e trocar de usuário**. Entre como
+20. Abra o menu do usuário e clique em **Sair e trocar de usuário**. Entre como
     **Lucas Ferreira** (Recepção). A barra mostra as mesmas abas, mas o menu do
     usuário não tem Configurações nem Histórico.
-20. Aperte o botão **Voltar** do navegador duas vezes, até a página do
+21. Aperte o botão **Voltar** do navegador duas vezes, até a página do
     Histórico que o Francisco tinha aberto. Como a página foi recarregada no
-    passo 18, as permissões voltaram ao início e a recepção não abre o
+    passo 19, as permissões voltaram ao início e a recepção não abre o
     Histórico: deve aparecer **Sem acesso a esta área**, com o botão **Voltar ao
-    painel**.
-21. Saia e entre como **Renata Coelho** (Professor). Ela cai direto na Agenda e
-    só vê as abas **Agenda** e **Alunos**. A busca diz "Buscar entre meus
-    alunos…".
-22. No celular (ou com a janela estreita), a navegação fica na barra de baixo e
-    a busca é o botão de lupa no topo, que abre em tela cheia.
+    Início**. No Início, o mosaico da recepção tem **9** botões (sem Histórico
+    nem Configurações) e a Diária ocupa a primeira linha inteira.
+22. Saia e entre como **Renata Coelho** (Professor). Ela cai direto na Agenda e
+    só vê as abas **Agenda** e **Clientes**. A busca diz "Buscar entre meus
+    alunos…". Digite `/dashboard` no endereço: aparece **Sem acesso a esta
+    área** com o botão **Ir para Agenda**.
+23. No celular (ou com a janela estreita), a navegação fica na barra de baixo e
+    a busca é o botão de lupa no topo, que abre em tela cheia. A aba ativa
+    tem uma pílula laranja clara atrás do ícone. No Início, a faixa das quadras
+    rola para o lado com o dedo (uma quadra por vez) e o mosaico fica em duas
+    colunas; a página não rola para o lado.
 
 ## Notas para a migração ao Supabase
 
@@ -187,7 +286,7 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
 | "Só o dono" | Função `perfil_atual()` (a partir de `auth.uid()` e `colaboradores`) usada nas políticas de `update/insert/delete` dessas tabelas. |
 | Login | Supabase Auth (e-mail e senha). `colaboradores` ganha `user_id` ligado a `auth.users`. A proteção de rota passa a ser o middleware + RLS; o aviso "Sem acesso a esta área" continua igual. |
 | Histórico (`filtrarHistorico`, `descreverRegistro`) | Lê a tabela `auditoria` preenchida pelo gatilho único. Índices em `em`, `usuario_id` e `tabela`. A tradução dos nomes de tabelas e campos continua no front. |
-| Painel (`ocupacaoDasQuadras`, `precisaDeAtencao`...) | Viram consultas ou funções (`rpc`): ocupação do dia por quadra, reservas aguardando pagamento, mensalidades em atraso (view com a situação do lançamento), saldo de estoque (view sobre os movimentos) e créditos a vencer (view `saldo_reposicao`). As telas não mudam. |
+| Início (`ocupacaoDasQuadras`, `precisaDeAtencao`...) | Viram consultas ou funções (`rpc`): ocupação do dia por quadra (com quem está em quadra agora e o professor), reservas aguardando pagamento, mensalidades em atraso (view com a situação do lançamento), saldo de estoque (view sobre os movimentos) e créditos a vencer (view `saldo_reposicao`). As telas não mudam. |
 | Busca rápida (`buscarAlunosRapido`) | `select` em `alunos` com `unaccent(nome) ilike` e telefone só com dígitos; índice trigram (`pg_trgm`) para ficar rápido. |
 
 ## Para os outros módulos
@@ -201,9 +300,14 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
   é de cada módulo. A busca rápida já faz isso com `alunosDoProfessor`.
 - Rota nova de primeiro nível precisa entrar em `MODULO_DA_ROTA`
   (`components/layout/abas.ts`) para a proteção de rota valer nela.
-- Links que o Painel e a busca abrem: `/agenda?quadra=<id>`,
-  `/agenda?data=AAAA-MM-DD&quadra=<id>` e `/alunos?busca=<termo>`. Se a agenda e
-  a lista de alunos lerem esses parâmetros, os atalhos já chegam filtrados.
+- Links que o Início e a busca abrem: `/agenda?visao=quadra&quadra=<id>`
+  (faixa das quadras), `/agenda?visao=professor`, `/agenda?tipo=LAP`,
+  `/agenda?data=AAAA-MM-DD&quadra=<id>` (reservas do "Precisa de atenção"),
+  `/ranking?aba=torneios` e `/alunos?busca=<termo>`. Se a agenda, o ranking e a
+  lista de clientes lerem esses parâmetros, os atalhos já chegam filtrados.
+- Tela nova que deva ganhar um botão no mosaico: acrescente em
+  `components/layout/atalhos.ts` (com a permissão), um ícone em
+  `components/inicio/IconesDoMosaico.tsx` e o caso em `atalhos.test.ts`.
 - Parâmetro novo em `Configuracoes` precisa ganhar um campo na tela de
   Configurações (`components/base/configuracoes/`).
 - `useHoraAtual()` (`components/base/useHoraAtual.ts`) dá a hora da arena sem

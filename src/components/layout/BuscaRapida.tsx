@@ -129,7 +129,7 @@ function destacar(nome: string, termo: string): ReactNode {
     const trecho = nome.slice(i, fim);
     partes.push(
       marcado[i] ? (
-        <mark key={i} className="bg-transparent font-semibold text-tijolo-700">
+        <mark key={i} className="bg-transparent font-semibold text-saibro-700">
           {trecho}
         </mark>
       ) : (
@@ -340,7 +340,7 @@ function CaixaDeBusca({
                 limpar();
                 aoTerminar?.();
               }}
-              className="font-semibold text-tijolo-700 hover:underline"
+              className="font-semibold text-saibro-700 underline-offset-2 hover:underline"
             >
               Ver os {resultado.total} na lista de alunos
             </Link>

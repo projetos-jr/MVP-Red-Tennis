@@ -1,6 +1,7 @@
 /**
- * Testes das consultas do Painel: os numeros dos cartoes tem de bater com as
- * listas e com os dados (o MVP mostrava 12 atrasadas no cartao e 6 na lista).
+ * Testes das consultas do Inicio: o total do "Precisa de atencao" tem de bater
+ * com as listas e com os dados (o MVP mostrava 12 atrasadas no cartao e 6 na
+ * lista), e a faixa das quadras mostra quem esta jogando agora.
  */
 
 import { describe, expect, it } from "vitest";
@@ -23,8 +24,6 @@ import {
   descricaoDaArena,
   ocupacaoDasQuadras,
   precisaDeAtencao,
-  proximosHorarios,
-  resumoDoDia,
   type GrupoDeAtencao,
   type PrecisaDeAtencao,
 } from "./painel";
@@ -233,8 +232,9 @@ describe("reposicoes a vencer", () => {
   });
 });
 
-describe("ocupacao das quadras e indicadores do dia", () => {
+describe("ocupacao das quadras (faixa do Inicio)", () => {
   const data = "2030-01-07";
+  const professor = banco.professores[0];
   const ocupacao = (parcial: Partial<Ocupacao>): Ocupacao => ({
     id: "x",
     quadraId: "1",
@@ -255,7 +255,7 @@ describe("ocupacao das quadras e indicadores do dia", () => {
   const dia: Banco = {
     ...banco,
     ocupacoes: [
-      ocupacao({ id: "aula" }),
+      ocupacao({ id: "aula", professorId: professor.id }),
       ocupacao({ id: "cancelada", horaInicio: "10:00", horaFim: "11:00", situacao: "cancelada", motivoCancelamento: "CH" }),
       ocupacao({ id: "bloqueio", horaInicio: "11:00", horaFim: "12:00", tipo: "Bloqueio", descricao: "Manutenção" }),
       ocupacao({ id: "locacao", quadraId: "2", horaInicio: "18:00", horaFim: "19:00", tipo: "Locação Avulsa" }),
@@ -264,9 +264,12 @@ describe("ocupacao das quadras e indicadores do dia", () => {
       participante("aula", "a01", "a_marcar"),
       participante("locacao", "a02", "a_marcar"),
       participante("locacao", "a03", "falta_avisada"),
+      participante("locacao", "a05", "presente"),
+      participante("locacao", "a06", "falta"),
       participante("cancelada", "a04", "a_marcar"),
     ],
   };
+  const nome = (id: string) => banco.alunos.find((a) => a.id === id)?.nome;
 
   it("a taxa conta aulas e bloqueios ativos; cancelada libera a faixa", () => {
     const [quadra1] = ocupacaoDasQuadras(dia, data, "10:30");
@@ -274,47 +277,52 @@ describe("ocupacao das quadras e indicadores do dia", () => {
     expect(quadra1.minutosOcupados).toBe(180);
     expect(quadra1.taxa).toBeCloseTo(180 / 900);
     expect(quadra1.emAndamento).toBeUndefined();
+    expect(quadra1.emQuadra).toEqual([]);
+    expect(quadra1.professorAgora).toBeUndefined();
     expect(quadra1.livreAgora).toBe(true);
     expect(quadra1.proximaFaixaLivre).toBe("10:00");
     expect(quadra1.proxima?.id).toBe("bloqueio");
   });
 
-  it("durante uma aula, mostra a aula e a próxima faixa livre depois dela", () => {
-    const [quadra1] = ocupacaoDasQuadras(dia, data, "08:15");
+  it("durante uma aula, mostra quem está em quadra, o professor e a próxima faixa livre", () => {
+    const [quadra1, quadra2] = ocupacaoDasQuadras(dia, data, "08:15");
     expect(quadra1.emAndamento?.id).toBe("aula");
+    expect(quadra1.emQuadra).toEqual([{ id: "a01", nome: nome("a01"), fotoUrl: banco.alunos.find((a) => a.id === "a01")?.fotoUrl }]);
+    expect(quadra1.professorAgora).toBe(professor.nome);
     expect(quadra1.livreAgora).toBe(false);
     expect(quadra1.proximaFaixaLivre).toBe("10:00");
+    // A outra quadra esta livre: ninguem em quadra.
+    expect(quadra2.emAndamento).toBeUndefined();
+    expect(quadra2.emQuadra).toEqual([]);
   });
 
-  it("sem saber a hora, olha o dia todo; depois das 22h, a arena está fechada", () => {
-    expect(ocupacaoDasQuadras(dia, data, null)[0].proximaFaixaLivre).toBe("07:00");
+  it("em quadra fica de fora quem avisou a falta ou faltou; locação sem professor", () => {
+    const quadra2 = ocupacaoDasQuadras(dia, data, "18:15")[1];
+    expect(quadra2.emAndamento?.id).toBe("locacao");
+    expect(quadra2.emQuadra.map((a) => a.id)).toEqual(["a02", "a05"]);
+    expect(quadra2.professorAgora).toBeUndefined();
+  });
+
+  it("bloqueio em andamento: a quadra está ocupada, mas sem ninguém em quadra", () => {
+    const [quadra1] = ocupacaoDasQuadras(dia, data, "11:30");
+    expect(quadra1.emAndamento?.tipo).toBe("Bloqueio");
+    expect(quadra1.emQuadra).toEqual([]);
+  });
+
+  it("o horário que termina às 10:00 já não está em quadra às 10:00", () => {
+    const [quadra1] = ocupacaoDasQuadras(dia, data, "10:00");
+    expect(quadra1.emAndamento).toBeUndefined();
+    expect(quadra1.emQuadra).toEqual([]);
+  });
+
+  it("sem saber a hora, olha o dia todo e ninguém está em quadra; depois das 22h, a arena está fechada", () => {
+    const [semHora] = ocupacaoDasQuadras(dia, data, null);
+    expect(semHora.proximaFaixaLivre).toBe("07:00");
+    expect(semHora.emAndamento).toBeUndefined();
+    expect(semHora.emQuadra).toEqual([]);
     const [quadra1] = ocupacaoDasQuadras(dia, data, "22:30");
     expect(quadra1.encerrado).toBe(true);
     expect(quadra1.proximaFaixaLivre).toBeNull();
-  });
-
-  it("indicadores: bloqueio e cancelada fora do total; quem avisou a falta fora dos alunos", () => {
-    const quadras = ocupacaoDasQuadras(dia, data, "07:00");
-    const resumo = resumoDoDia(dia, quadras);
-    expect(resumo).toMatchObject({ total: 2, aulas: 1, locacoes: 1, partidas: 0, alunosEmQuadra: 2 });
-    expect(resumo.quadraMaisCheia).toBe("Quadra 1");
-    expect(resumo.ocupacaoMedia).toBeCloseTo((180 / 900 + 60 / 900) / quadras.length);
-  });
-
-  it("próximos horários incluem o que está acontecendo; depois do fim do dia, os últimos", () => {
-    const quadras = ocupacaoDasQuadras(dia, data, "08:30");
-    const agora = proximosHorarios(dia, quadras, "08:30");
-    expect(agora.modo).toBe("proximos");
-    expect(agora.itens.map((h) => [h.ocupacao.id, h.emAndamento])).toEqual([
-      ["aula", true],
-      ["bloqueio", false],
-      ["locacao", false],
-    ]);
-    expect(agora.itens[0].alunos.map((a) => a.id)).toEqual(["a01"]);
-
-    const noite = proximosHorarios(dia, ocupacaoDasQuadras(dia, data, "21:00"), "21:00", 2);
-    expect(noite.modo).toBe("ultimos");
-    expect(noite.itens.map((h) => h.ocupacao.id)).toEqual(["bloqueio", "locacao"]);
   });
 });
 
