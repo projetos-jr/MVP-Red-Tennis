@@ -31,7 +31,6 @@ import {
 import { diasEmAtraso, situacaoLancamento, type SituacaoLancamento } from "../banco/regras/financeiro";
 import { calcularRanking, type LinhaRanking } from "../banco/regras/ranking";
 import { extratoReposicao } from "../banco/regras/reposicao";
-import { TIPOS_DE_LOCACAO } from "./painel";
 import type {
   Aluno,
   Banco,
@@ -44,8 +43,12 @@ import type {
   Plano,
   Presenca,
   Professor,
+  TipoOcupacao,
   TipoPlano,
 } from "../banco/tipos";
+
+/** Tipos de ocupacao que sao locacao de quadra (para a categoria "Aluguel"). */
+const TIPOS_DE_LOCACAO: TipoOcupacao[] = ["Locação Mensal", "Locação Avulsa", "Plano de locação"];
 
 export {
   CATEGORIAS_RANKING,
@@ -57,6 +60,7 @@ export {
   podeAlterarRepasse,
   type SituacaoAluno,
 } from "../banco/regras/alunos";
+
 export type { SituacaoLancamento } from "../banco/regras/financeiro";
 
 function agrupar<T>(lista: T[], chave: (item: T) => string): Map<string, T[]> {
