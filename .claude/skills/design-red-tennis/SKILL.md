@@ -42,6 +42,8 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
 - Fundo com textura/gradiente: declare `data-fundo-de-contraste="#hex"` no elemento, para a
   conferência automática saber com que cor medir.
 - Escolher texto sobre uma cor calculada: `textoLegivelSobre(fundo)` em `src/lib/cores.ts`.
+- Criou uma combinação nova de texto e fundo (um destaque, um hover colorido, uma faixa)?
+  Acrescente o par em `src/lib/cores.test.ts`: assim o CI avisa se alguém recalibrar a paleta.
 
 ## Tipografia
 
@@ -90,6 +92,8 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
   navegação vai para o rodapé e as tabelas viram cartões.
 - Em toque (`pointer: coarse`), todo alvo tem pelo menos **44px** de altura (`.btn`, `.campo`,
   `.alvo-de-toque` já fazem isso).
+- Tabela larga não rola dentro do cartão no celular: abaixo de 768px vira lista ou cartões
+  (como `ListaDeLancamentos` e `TabelaDeClientes`).
 
 ## Conferência (antes de entregar)
 
