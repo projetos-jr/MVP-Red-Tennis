@@ -1,106 +1,192 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState, type CSSProperties } from "react";
+import { useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 import { FormularioAluno } from "@/components/aluno/FormularioAluno";
+import { ModalInativar } from "@/components/aluno/ModaisCadastro";
 import {
-  ESTILO_SITUACAO_ALUNO,
-  ESTILO_TABELA,
-  ORDEM_SITUACOES,
-} from "@/components/aluno/estilos";
-import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
+  CLIENTES_POR_VEZ,
+  TabelaDeClientes,
+  type OrdemDosClientes,
+} from "@/components/aluno/TabelaDeClientes";
+import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card } from "@/components/ui/Card";
 import { Carregando } from "@/components/ui/Carregando";
-import { IconeBusca, IconeCheck, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
-import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
+import { IconeBusca, IconeMais, IconeUsuarios } from "@/components/ui/Icons";
+import { Segmentado } from "@/components/ui/Segmentado";
 import { HOJE } from "@/lib/banco/constantes";
+import type { Aluno } from "@/lib/banco/tipos";
 import {
+  ORDEM_CATEGORIAS,
+  ROTULO_CATEGORIA,
   filtrarAlunos,
   linhasDaListaDeAlunos,
   opcoesDePlano,
   podeAlterarCadastros,
   professoresAtivos,
+  type EstadoDoCliente,
+  type FiltroDeCategoria,
   type FiltroDeSituacao,
-  type LinhaDaListaDeAlunos,
   type SituacaoAluno,
 } from "@/lib/consultas/alunos";
-import { formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
 
-export default function PaginaAlunos() {
+export default function PaginaClientes() {
   return (
     <Suspense fallback={<Carregando />}>
-      <ListaDeAlunos />
+      <ListaDeAlunosPelaUrl />
     </Suspense>
   );
 }
 
-function situacaoDaUrl(valor: string | null): FiltroDeSituacao {
-  return valor && (ORDEM_SITUACOES as string[]).includes(valor) ? (valor as SituacaoAluno) : "todas";
+/**
+ * Le os filtros do endereco. Quando o endereco muda com a tela aberta (a busca
+ * rapida do topo leva para /alunos?busca=ana), a `key` monta a lista de novo
+ * com os filtros novos. A lista nao escreve no endereco: os filtros escolhidos
+ * na tela ficam so no estado dela.
+ */
+function ListaDeAlunosPelaUrl() {
+  const parametros = useSearchParams();
+  return <ListaDeClientes key={parametros.toString()} parametros={parametros} />;
 }
 
+/** Situacoes de quem esta ativo; "inativo" vira o botao Inativos. */
+const SITUACOES_DOS_ATIVOS: { valor: SituacaoAluno; rotulo: string }[] = [
+  { valor: "ativo", rotulo: "Com plano valendo" },
+  { valor: "congelado", rotulo: "Plano congelado" },
+  { valor: "avulso", rotulo: "Sem plano mensal" },
+];
+
+const ESTADOS: { valor: EstadoDoCliente; rotulo: string }[] = [
+  { valor: "ativos", rotulo: "Ativos" },
+  { valor: "inativos", rotulo: "Inativos" },
+  { valor: "todos", rotulo: "Todos" },
+];
+
+interface Filtros {
+  busca: string;
+  plano: string;
+  professor: string;
+  situacao: FiltroDeSituacao;
+  estado: EstadoDoCliente;
+  categoria: FiltroDeCategoria;
+}
+
+const PADRAO: Filtros = {
+  busca: "",
+  plano: "todos",
+  professor: "todos",
+  situacao: "todas",
+  estado: "ativos",
+  categoria: "todas",
+};
+
 /**
- * Lista de alunos: busca (nome, telefone ou e-mail), filtros por plano,
- * professor e situacao, contadores e cadastro de aluno novo. Os filtros podem
- * vir na URL (/alunos?professor=prof-1&situacao=congelado).
+ * Filtros que vem no endereco: /alunos?busca=ana, ?professor=prof-1,
+ * ?situacao=congelado, ?plano=tipo:Dupla, ?estado=inativos, ?categoria=torneio.
+ * Quem chega pela busca rapida ve ativos e inativos (como a busca do topo).
  */
-function ListaDeAlunos() {
-  const parametros = useSearchParams();
+function filtrosDaUrl(parametros: ReadonlyURLSearchParams): Filtros {
+  const busca = parametros.get("busca") ?? "";
+  const situacaoUrl = parametros.get("situacao");
+  const estadoUrl = parametros.get("estado");
+  const categoriaUrl = parametros.get("categoria");
+  const situacao: FiltroDeSituacao =
+    SITUACOES_DOS_ATIVOS.find((s) => s.valor === situacaoUrl)?.valor ?? "todas";
+  const estado: EstadoDoCliente =
+    ESTADOS.find((e) => e.valor === estadoUrl)?.valor ??
+    (situacaoUrl === "inativo" ? "inativos" : busca.trim() ? "todos" : "ativos");
+  return {
+    busca,
+    plano: parametros.get("plano") ?? "todos",
+    professor: parametros.get("professor") ?? "todos",
+    situacao: estado === "inativos" ? "todas" : situacao,
+    estado,
+    categoria: ORDEM_CATEGORIAS.find((c) => c === categoriaUrl) ?? "todas",
+  };
+}
+
+/** Numero pequeno ao lado do rotulo de um filtro. */
+function Contagem({ valor, ativo }: { valor: number; ativo: boolean }) {
+  return (
+    <span
+      className={`ml-1.5 inline-block min-w-[1.5rem] rounded-full px-1.5 text-center text-[11px] font-semibold leading-5 tabular-nums ${
+        ativo ? "bg-saibro-800 text-white" : "bg-white text-areia-700 ring-1 ring-inset ring-areia-200"
+      }`}
+    >
+      {valor}
+    </span>
+  );
+}
+
+type AcaoNaLista = { tipo: "editar" | "inativar"; aluno: Aluno };
+
+/**
+ * Clientes (rota /alunos): Ativos/Inativos/Todos, grupos (Ranking, Alunos,
+ * Aluguel, Torneio — Hipotese H15), busca, plano, professor e situacao, e a
+ * tabela densa com editar e inativar para quem pode alterar cadastros.
+ */
+function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }) {
   const router = useRouter();
   const { banco, colaborador } = useApp();
   const podeEditar = podeAlterarCadastros(colaborador);
+  // Hipotese H9: o professor ve so os proprios alunos.
+  const soDoProfessorId = colaborador.perfil === "professor" ? colaborador.professorId : undefined;
 
-  const [busca, setBusca] = useState("");
-  const [plano, setPlano] = useState(parametros.get("plano") ?? "todos");
-  const [professor, setProfessor] = useState(parametros.get("professor") ?? "todos");
-  const [situacao, setSituacao] = useState<FiltroDeSituacao>(() =>
-    situacaoDaUrl(parametros.get("situacao")),
-  );
-  const [formularioAberto, setFormularioAberto] = useState(false);
-  // A lista mostra 20 alunos por vez e volta ao começo quando um filtro muda.
-  const [limite, setLimite] = useState(ITENS_POR_PAGINA);
+  const [filtros, setFiltros] = useState<Filtros>(() => filtrosDaUrl(parametros));
+  const [ordem, setOrdem] = useState<OrdemDosClientes>("asc");
+  const [limite, setLimite] = useState(CLIENTES_POR_VEZ);
+  const [novoAberto, setNovoAberto] = useState(false);
+  const [acao, setAcao] = useState<AcaoNaLista | null>(null);
 
   const linhas = useMemo(() => linhasDaListaDeAlunos(banco, HOJE), [banco]);
   const resultado = useMemo(
-    () =>
-      filtrarAlunos(
-        banco,
-        linhas,
-        {
-          busca,
-          plano,
-          professor,
-          situacao,
-          // Hipotese H9: o professor ve so os proprios alunos.
-          soDoProfessorId: colaborador.perfil === "professor" ? colaborador.professorId : undefined,
-        },
-        HOJE,
-      ),
-    [banco, linhas, busca, plano, professor, situacao, colaborador],
+    () => filtrarAlunos(banco, linhas, { ...filtros, soDoProfessorId }, HOJE),
+    [banco, linhas, filtros, soDoProfessorId],
+  );
+  // Resumo do cabecalho: todos os clientes que o perfil enxerga, sem filtro.
+  const geral = useMemo(
+    () => filtrarAlunos(banco, linhas, { ...PADRAO, estado: "todos", soDoProfessorId }, HOJE),
+    [banco, linhas, soDoProfessorId],
   );
   const { tipos, planos } = useMemo(() => opcoesDePlano(banco), [banco]);
   const professores = useMemo(() => professoresAtivos(banco), [banco]);
+  const ordenadas = useMemo(
+    () => (ordem === "asc" ? resultado.linhas : [...resultado.linhas].reverse()),
+    [resultado.linhas, ordem],
+  );
 
-  const filtrando = busca.trim() !== "" || plano !== "todos" || professor !== "todos" || situacao !== "todas";
+  const filtrando = (Object.keys(PADRAO) as (keyof Filtros)[]).some((k) => filtros[k] !== PADRAO[k]);
+
+  /** Muda um filtro e volta a lista para o começo. */
+  function mudar(novos: Partial<Filtros>) {
+    setFiltros((atual) => ({ ...atual, ...novos }));
+    setLimite(CLIENTES_POR_VEZ);
+  }
 
   function limparFiltros() {
-    setBusca("");
-    setPlano("todos");
-    setProfessor("todos");
-    setSituacao("todas");
-    setLimite(ITENS_POR_PAGINA);
+    setFiltros(PADRAO);
+    setLimite(CLIENTES_POR_VEZ);
   }
+
+  const { contagem } = geral;
+  const descricao = [
+    `${geral.total} ${geral.total === 1 ? "cliente" : "clientes"}`,
+    `${contagem.ativo} com plano`,
+    contagem.congelado > 0 && `${contagem.congelado} ${contagem.congelado === 1 ? "congelado" : "congelados"}`,
+    contagem.avulso > 0 && `${contagem.avulso} sem plano`,
+    contagem.inativo > 0 && `${contagem.inativo} ${contagem.inativo === 1 ? "inativo" : "inativos"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="space-y-5">
       <CabecalhoDaPagina
-        titulo="Alunos"
-        descricao={`${banco.alunos.length} cadastrados · ${
-          linhas.filter((l) => l.situacao === "ativo").length
-        } com plano ativo`}
+        titulo="Clientes"
+        descricao={descricao}
         acoes={
           <>
             <Link href="/professores" className="btn-secundario">
@@ -108,58 +194,62 @@ function ListaDeAlunos() {
               Professores
             </Link>
             {podeEditar && (
-              <button type="button" onClick={() => setFormularioAberto(true)} className="btn-primario">
+              <button type="button" onClick={() => setNovoAberto(true)} className="btn-primario">
                 <IconeMais className="h-4 w-4" />
-                Novo aluno
+                Novo cliente
               </button>
             )}
           </>
         }
       />
 
-      {/* Contadores, que tambem filtram por situacao */}
-      <div
-        role="group"
-        aria-label="Filtrar por situação"
-        className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
-      >
-        {ORDEM_SITUACOES.map((chave) => (
-          <Contador
-            key={chave}
-            situacao={chave}
-            quantidade={resultado.contagem[chave]}
-            selecionado={situacao === chave}
-            aoClicar={() => {
-              setSituacao(situacao === chave ? "todas" : chave);
-              setLimite(ITENS_POR_PAGINA);
-            }}
-          />
-        ))}
-      </div>
-
-      <Card>
-        <div className="grid gap-3 border-b border-areia-200 p-4 md:grid-cols-[minmax(0,1fr)_14rem_13rem]">
-          <div className="relative">
-            <IconeBusca className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
-            <input
-              type="search"
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setLimite(ITENS_POR_PAGINA);
-              }}
-              placeholder="Buscar por nome, telefone ou e-mail…"
-              className="campo py-2 pl-9"
-              aria-label="Buscar aluno por nome, telefone ou e-mail"
+      <Card className="overflow-hidden">
+        <div className="space-y-3 border-b border-areia-200 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
+            <Segmentado
+              aria="Ativos ou inativos"
+              valor={filtros.estado}
+              aoMudar={(estado) =>
+                mudar(estado === "inativos" ? { estado, situacao: "todas" } : { estado })
+              }
+              opcoes={ESTADOS.map(({ valor, rotulo }) => ({
+                valor,
+                rotulo: (
+                  <span className="inline-flex items-center">
+                    {rotulo}
+                    <Contagem valor={resultado.porEstado[valor]} ativo={filtros.estado === valor} />
+                  </span>
+                ),
+              }))}
             />
+            <div role="group" aria-label="Grupo de clientes" className="flex flex-wrap gap-1.5">
+              {(["todas", ...ORDEM_CATEGORIAS] as FiltroDeCategoria[]).map((categoria) => {
+                const ativo = filtros.categoria === categoria;
+                return (
+                  <BotaoFiltro key={categoria} ativo={ativo} aoClicar={() => mudar({ categoria })}>
+                    {categoria === "todas" ? "Todos" : ROTULO_CATEGORIA[categoria]}
+                    <Contagem valor={resultado.porCategoria[categoria]} ativo={ativo} />
+                  </BotaoFiltro>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:contents">
+
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-[minmax(0,1fr)_12.5rem_12.5rem_12.5rem]">
+            <div className="relative col-span-2 md:col-span-3 lg:col-span-1">
+              <IconeBusca className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
+              <input
+                type="search"
+                value={filtros.busca}
+                onChange={(e) => mudar({ busca: e.target.value })}
+                placeholder="Buscar por nome, telefone ou e-mail…"
+                className="campo py-2 pl-9"
+                aria-label="Buscar cliente por nome, telefone ou e-mail"
+              />
+            </div>
             <select
-              value={plano}
-              onChange={(e) => {
-                setPlano(e.target.value);
-                setLimite(ITENS_POR_PAGINA);
-              }}
+              value={filtros.plano}
+              onChange={(e) => mudar({ plano: e.target.value })}
               className="campo py-2"
               aria-label="Filtrar por plano"
             >
@@ -181,11 +271,8 @@ function ListaDeAlunos() {
               </optgroup>
             </select>
             <select
-              value={professor}
-              onChange={(e) => {
-                setProfessor(e.target.value);
-                setLimite(ITENS_POR_PAGINA);
-              }}
+              value={filtros.professor}
+              onChange={(e) => mudar({ professor: e.target.value })}
               className="campo py-2"
               aria-label="Filtrar por professor principal"
             >
@@ -197,177 +284,79 @@ function ListaDeAlunos() {
                 </option>
               ))}
             </select>
+            <select
+              value={filtros.situacao}
+              onChange={(e) => {
+                const situacao = e.target.value as FiltroDeSituacao;
+                // Escolher uma situacao de quem esta ativo sai de "Inativos".
+                mudar(
+                  situacao !== "todas" && filtros.estado === "inativos"
+                    ? { situacao, estado: "ativos" }
+                    : { situacao },
+                );
+              }}
+              className="campo col-span-2 py-2 md:col-span-1"
+              aria-label="Filtrar por situação do plano"
+            >
+              <option value="todas">Todas as situações</option>
+              {SITUACOES_DOS_ATIVOS.map((s) => (
+                <option key={s.valor} value={s.valor}>
+                  {s.rotulo} ({resultado.contagem[s.valor]})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-areia-100 px-4 py-2 text-xs text-areia-500">
+        <div className="flex min-h-[2.25rem] flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-areia-200 px-4 py-1.5 text-xs text-areia-600">
           <span aria-live="polite">
-            {resultado.linhas.length === 1
-              ? "1 aluno encontrado"
-              : `${resultado.linhas.length} alunos encontrados`}
-            {situacao !== "todas" && ` · ${ESTILO_SITUACAO_ALUNO[situacao].rotulo.toLowerCase()}`}
+            <strong className="font-semibold text-areia-900">{resultado.linhas.length}</strong>{" "}
+            {resultado.linhas.length === 1 ? "cliente encontrado" : "clientes encontrados"}
           </span>
           {filtrando && (
-            <button
-              type="button"
-              onClick={limparFiltros}
-              className="link-acao"
-            >
+            <button type="button" onClick={limparFiltros} className="link-acao alvo-de-toque">
               Limpar filtros
             </button>
           )}
         </div>
 
-        {/* Cabecalho das colunas (so no computador) */}
-        <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)_minmax(0,1.1fr)_7.5rem] gap-4 border-b border-areia-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-areia-500 md:grid">
-          <span>Aluno</span>
-          <span>Plano</span>
-          <span>Professor</span>
-          <span className="text-right">Situação</span>
-        </div>
-
-        <ul className="divide-y divide-areia-100">
-          {resultado.linhas.slice(0, limite).map((linha) => (
-            <LinhaDoAluno key={linha.aluno.id} linha={linha} />
-          ))}
-          {resultado.linhas.length === 0 && (
-            <li className="px-4 py-10 text-center text-sm text-areia-500">
-              Nenhum aluno encontrado com esses filtros.
+        <TabelaDeClientes
+          linhas={ordenadas}
+          limite={limite}
+          ordem={ordem}
+          podeAlterar={podeEditar}
+          aoAlternarOrdem={() => setOrdem((atual) => (atual === "asc" ? "desc" : "asc"))}
+          aoMostrarMais={() => setLimite((atual) => atual + CLIENTES_POR_VEZ)}
+          aoEditar={(aluno) => setAcao({ tipo: "editar", aluno })}
+          aoInativar={(aluno) => setAcao({ tipo: "inativar", aluno })}
+          vazio={
+            <>
+              Nenhum cliente encontrado com esses filtros.
               {filtrando && (
                 <>
                   {" "}
-                  <button
-                    type="button"
-                    onClick={limparFiltros}
-                    className="link-acao"
-                  >
+                  <button type="button" onClick={limparFiltros} className="link-acao">
                     Limpar filtros
                   </button>
                 </>
               )}
-            </li>
-          )}
-        </ul>
-        <MostrarMais
-          mostrando={Math.min(limite, resultado.linhas.length)}
-          total={resultado.linhas.length}
-          aoMostrarMais={() => setLimite((atual) => atual + ITENS_POR_PAGINA)}
+            </>
+          }
         />
       </Card>
 
       <FormularioAluno
-        aberto={formularioAberto}
-        aoFechar={() => setFormularioAberto(false)}
+        aberto={novoAberto}
+        aoFechar={() => setNovoAberto(false)}
         aoSalvar={(id) => router.push(`/alunos/${id}`)}
       />
+      {/* Montados so quando abertos: o formulario comeca com os dados do cliente clicado. */}
+      {acao?.tipo === "editar" && (
+        <FormularioAluno aberto aoFechar={() => setAcao(null)} aluno={acao.aluno} />
+      )}
+      {acao?.tipo === "inativar" && (
+        <ModalInativar aberto aoFechar={() => setAcao(null)} aluno={acao.aluno} />
+      )}
     </div>
-  );
-}
-
-function Contador({
-  situacao,
-  quantidade,
-  selecionado,
-  aoClicar,
-}: {
-  situacao: SituacaoAluno;
-  quantidade: number;
-  selecionado: boolean;
-  aoClicar: () => void;
-}) {
-  const estilo = ESTILO_SITUACAO_ALUNO[situacao];
-  return (
-    <button
-      type="button"
-      onClick={aoClicar}
-      aria-pressed={selecionado}
-      className={`flex items-start justify-between gap-2 rounded-2xl border bg-white p-3 text-left shadow-card transition-colors sm:p-4 ${
-        selecionado ? "ring-2 ring-offset-1" : "hover:border-areia-300"
-      }`}
-      // A cor da borda e do anel acompanha a situacao.
-      style={
-        {
-          borderColor: selecionado ? estilo.cor : undefined,
-          "--tw-ring-color": estilo.cor,
-        } as CSSProperties
-      }
-    >
-      <span className="min-w-0">
-        <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-areia-500">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: estilo.cor }} />
-          {estilo.rotulo}
-        </span>
-        <span className="mt-1 block text-xl font-semibold leading-none text-areia-900 sm:text-2xl sm:leading-none">
-          {quantidade}
-        </span>
-        <span className="mt-1.5 hidden text-xs text-areia-600 sm:block">{estilo.descricao}</span>
-      </span>
-      {selecionado && <IconeCheck className="h-5 w-5 shrink-0" style={{ color: estilo.cor }} />}
-    </button>
-  );
-}
-
-function LinhaDoAluno({ linha }: { linha: LinhaDaListaDeAlunos }) {
-  const { aluno, plano, professor, situacao, saldoReposicao, valorEmAtraso } = linha;
-  const estilo = ESTILO_SITUACAO_ALUNO[situacao];
-  return (
-    <li>
-      <Link
-        href={`/alunos/${aluno.id}`}
-        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-areia-50 md:grid md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.6fr)_minmax(0,1.1fr)_7.5rem] md:gap-4"
-      >
-        <span className="flex min-w-0 flex-1 items-center gap-3">
-          <Avatar id={aluno.id} nome={aluno.nome} src={aluno.fotoUrl} tamanho="sm" />
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-areia-900">{aluno.nome}</span>
-            {/* No celular, plano e professor vao embaixo do nome */}
-            <span className="block truncate text-xs text-areia-500 md:hidden">
-              {plano?.nome ?? "Sem plano mensal"}
-              {professor && ` · ${professor.nome}`}
-            </span>
-            <span className="hidden truncate text-xs tabular-nums text-areia-500 md:block">
-              {aluno.telefone || aluno.email || "Sem contato"}
-            </span>
-          </span>
-        </span>
-
-        <span className="hidden min-w-0 md:block">
-          <span className="block truncate text-sm text-areia-800">
-            {plano?.nome ?? <span className="text-areia-500">Sem plano mensal</span>}
-          </span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            {plano?.tabela === "antiga" && (
-              <Badge
-                cor={ESTILO_TABELA.antiga.cor}
-                fundo={ESTILO_TABELA.antiga.fundo}
-                className="px-2 py-0.5 text-[10px]"
-              >
-                {ESTILO_TABELA.antiga.rotulo}
-              </Badge>
-            )}
-            {saldoReposicao > 0 && (
-              <span className="text-[11px] text-areia-500">
-                Reposição: {formatarMinutos(saldoReposicao)}
-              </span>
-            )}
-          </span>
-        </span>
-
-        <span className="hidden truncate text-sm text-areia-700 md:block">
-          {professor?.nome ?? <span className="text-areia-400">—</span>}
-        </span>
-
-        <span className="flex shrink-0 flex-col items-end gap-1">
-          <Badge cor={estilo.cor} fundo={estilo.fundo} borda={estilo.borda}>
-            {estilo.rotulo}
-          </Badge>
-          {valorEmAtraso > 0 && (
-            <span className="text-[11px] font-semibold text-tijolo-700">
-              {formatarMoeda(valorEmAtraso)} em atraso
-            </span>
-          )}
-        </span>
-      </Link>
-    </li>
   );
 }

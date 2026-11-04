@@ -31,6 +31,7 @@ import {
 import { diasEmAtraso, situacaoLancamento, type SituacaoLancamento } from "../banco/regras/financeiro";
 import { calcularRanking, type LinhaRanking } from "../banco/regras/ranking";
 import { extratoReposicao } from "../banco/regras/reposicao";
+import { TIPOS_DE_LOCACAO } from "./painel";
 import type {
   Aluno,
   Banco,
@@ -77,12 +78,41 @@ function porDataEHora(a: Ocupacao, b: Ocupacao): number {
 // Lista de alunos
 // ---------------------------------------------------------------------------
 
+/**
+ * Grupos de cliente da lista "Clientes", como as abas do sistema antigo da
+ * arena (Hipotese H15). Um cliente pode estar em varios grupos ao mesmo tempo
+ * (ex.: aluno que tambem joga o ranking). Nada disso fica guardado: sai do
+ * cadastro, da matricula, da agenda e dos torneios.
+ *  - ranking: inscrito no ranking;
+ *  - alunos : plano vigente de aula (Individual, Dupla ou LAP);
+ *  - aluguel: plano vigente de locacao (Locacao Mensal ou Plano de locacao)
+ *             ou tem/teve alguma locacao na agenda (avulsa, mensal ou plano
+ *             de locacao), sem contar as canceladas;
+ *  - torneio: inscrito em algum torneio (qualquer situacao).
+ */
+export type CategoriaDoCliente = "ranking" | "alunos" | "aluguel" | "torneio";
+
+export const ORDEM_CATEGORIAS: CategoriaDoCliente[] = ["ranking", "alunos", "aluguel", "torneio"];
+
+/** Nome de cada grupo nos filtros da lista. */
+export const ROTULO_CATEGORIA: Record<CategoriaDoCliente, string> = {
+  ranking: "Ranking",
+  alunos: "Alunos",
+  aluguel: "Aluguel",
+  torneio: "Torneio",
+};
+
+const PLANOS_DE_AULA: TipoPlano[] = ["Individual", "Dupla", "LAP"];
+const PLANOS_DE_LOCACAO: TipoPlano[] = ["Locação Mensal", "Plano de locação"];
+
 export interface LinhaDaListaDeAlunos {
   aluno: Aluno;
   situacao: SituacaoAluno;
   matricula?: Matricula;
   plano?: Plano;
   professor?: Professor;
+  /** Grupos do cliente (Hipotese H15), na ordem de `ORDEM_CATEGORIAS`. */
+  categorias: CategoriaDoCliente[];
   /** Minutos de reposicao disponiveis hoje. */
   saldoReposicao: number;
   /** Soma das cobrancas do aluno que passaram do vencimento sem pagamento. */
@@ -103,17 +133,50 @@ export function linhasDaListaDeAlunos(banco: Banco, hoje: string): LinhaDaListaD
     atrasoPorAluno.set(l.pessoaId, (atrasoPorAluno.get(l.pessoaId) ?? 0) + l.valor);
   });
 
+  // Quem tem ou teve locacao na agenda como titular (o primeiro da lista, quem
+  // paga a locacao), sem as canceladas e sem as reposicoes. Convidados e
+  // reposicoes nao contam: na semente quase todo aluno ja foi convidado de
+  // alguma locacao (ou repos uma aula num horario de locacao), e o grupo
+  // perderia o sentido.
+  const reposicoes = new Set(
+    banco.reposicoes.flatMap((r) => (r.ocupacaoUsoId ? [r.ocupacaoUsoId] : [])),
+  );
+  const locacoes = new Set(
+    banco.ocupacoes
+      .filter(
+        (o) =>
+          o.situacao !== "cancelada" && TIPOS_DE_LOCACAO.includes(o.tipo) && !reposicoes.has(o.id),
+      )
+      .map((o) => o.id),
+  );
+  const titulares = new Map<string, string>();
+  banco.ocupacaoAlunos.forEach((oa) => {
+    if (locacoes.has(oa.ocupacaoId) && !titulares.has(oa.ocupacaoId)) {
+      titulares.set(oa.ocupacaoId, oa.alunoId);
+    }
+  });
+  const locatarios = new Set(titulares.values());
+  const emTorneio = new Set(banco.torneioInscritos.flatMap((i) => i.alunosIds));
+
   return banco.alunos
     .map((aluno) => {
       const matricula = matriculaVigente(banco.matriculas, aluno.id, hoje);
+      const plano = matricula ? planoPorId.get(matricula.planoId) : undefined;
+      const grupos: Record<CategoriaDoCliente, boolean> = {
+        ranking: aluno.inscritoRanking,
+        alunos: Boolean(plano && PLANOS_DE_AULA.includes(plano.tipo)),
+        aluguel: Boolean(plano && PLANOS_DE_LOCACAO.includes(plano.tipo)) || locatarios.has(aluno.id),
+        torneio: emTorneio.has(aluno.id),
+      };
       return {
         aluno,
         situacao: situacaoDoAluno(banco, aluno, hoje),
         matricula,
-        plano: matricula ? planoPorId.get(matricula.planoId) : undefined,
+        plano,
         professor: aluno.professorPrincipalId
           ? professorPorId.get(aluno.professorPrincipalId)
           : undefined,
+        categorias: ORDEM_CATEGORIAS.filter((c) => grupos[c]),
         saldoReposicao: extratoReposicao(reposicoesPorAluno.get(aluno.id) ?? [], aluno.id, hoje)
           .saldo,
         valorEmAtraso: atrasoPorAluno.get(aluno.id) ?? 0,
@@ -125,6 +188,11 @@ export function linhasDaListaDeAlunos(banco: Banco, hoje: string): LinhaDaListaD
 
 export type FiltroDeSituacao = SituacaoAluno | "todas";
 
+/** Ativos = todos menos os inativos (com plano, congelados e sem plano). */
+export type EstadoDoCliente = "ativos" | "inativos" | "todos";
+
+export type FiltroDeCategoria = CategoriaDoCliente | "todas";
+
 export interface FiltroDeAlunos {
   busca: string;
   /** "todos", "sem" (sem plano mensal), "tipo:Individual" ou "plano:<id>". */
@@ -132,16 +200,24 @@ export interface FiltroDeAlunos {
   /** "todos", "sem" (sem professor principal) ou o id do professor. */
   professor: string;
   situacao: FiltroDeSituacao;
+  /** Ativos, inativos ou todos (sem o campo: todos). */
+  estado?: EstadoDoCliente;
+  /** Um grupo de cliente (Hipotese H15) ou todos (sem o campo: todos). */
+  categoria?: FiltroDeCategoria;
   /** Perfil de professor (Hipotese H9): so os alunos dele. */
   soDoProfessorId?: string;
 }
 
 export interface ResultadoDaListaDeAlunos {
   linhas: LinhaDaListaDeAlunos[];
-  /** Alunos em cada situacao, com a busca e os demais filtros aplicados. */
+  /** Alunos em cada situacao, com todos os filtros menos o de situacao. */
   contagem: Record<SituacaoAluno, number>;
-  /** Total com a busca e os demais filtros (sem o filtro de situacao). */
+  /** Total com todos os filtros menos o de situacao. */
   total: number;
+  /** Para os botoes Ativos/Inativos/Todos: todos os filtros menos o de estado. */
+  porEstado: Record<EstadoDoCliente, number>;
+  /** Para as pilulas de grupo: todos os filtros menos o de grupo. */
+  porCategoria: Record<FiltroDeCategoria, number>;
 }
 
 /**
@@ -170,6 +246,8 @@ export function filtrarAlunos(
   hoje: string,
 ): ResultadoDaListaDeAlunos {
   const termo = chaveDeNome(filtro.busca);
+  // "gui lim" acha "Guilherme Lima": cada pedaco precisa aparecer (como na busca rapida).
+  const pedacos = termo.split(" ").filter(Boolean);
   const digitos = filtro.busca.replace(/\D/g, "");
   const doProfessor = filtro.soDoProfessorId
     ? idsDosAlunosDoProfessor(banco, filtro.soDoProfessorId, hoje)
@@ -179,7 +257,7 @@ export function filtrarAlunos(
     if (doProfessor && !doProfessor.has(linha.aluno.id)) return false;
     if (
       termo &&
-      !linha.chaveDeBusca.includes(termo) &&
+      !pedacos.every((pedaco) => linha.chaveDeBusca.includes(pedaco)) &&
       !(digitos.length >= 4 && linha.chaveDeBusca.includes(digitos))
     ) {
       return false;
@@ -200,16 +278,41 @@ export function filtrarAlunos(
     return true;
   });
 
+  // Estado, grupo e situacao: cada contador aplica os outros dois filtros.
+  const estado = filtro.estado ?? "todos";
+  const categoria = filtro.categoria ?? "todas";
+  const noEstado = (l: LinhaDaListaDeAlunos, e: EstadoDoCliente) =>
+    e === "todos" || (e === "inativos") === (l.situacao === "inativo");
+  const naCategoria = (l: LinhaDaListaDeAlunos, c: FiltroDeCategoria) =>
+    c === "todas" || l.categorias.includes(c);
+  const naSituacao = (l: LinhaDaListaDeAlunos) =>
+    filtro.situacao === "todas" || l.situacao === filtro.situacao;
+
+  const semSituacao = passam.filter((l) => noEstado(l, estado) && naCategoria(l, categoria));
   const contagem: Record<SituacaoAluno, number> = { ativo: 0, congelado: 0, avulso: 0, inativo: 0 };
-  passam.forEach((linha) => {
+  semSituacao.forEach((linha) => {
     contagem[linha.situacao] += 1;
   });
 
+  const semEstado = passam.filter((l) => naCategoria(l, categoria) && naSituacao(l));
+  const porEstado: Record<EstadoDoCliente, number> = {
+    ativos: semEstado.filter((l) => noEstado(l, "ativos")).length,
+    inativos: semEstado.filter((l) => noEstado(l, "inativos")).length,
+    todos: semEstado.length,
+  };
+
+  const semCategoria = passam.filter((l) => noEstado(l, estado) && naSituacao(l));
+  const porCategoria = { todas: semCategoria.length } as Record<FiltroDeCategoria, number>;
+  ORDEM_CATEGORIAS.forEach((c) => {
+    porCategoria[c] = semCategoria.filter((l) => naCategoria(l, c)).length;
+  });
+
   return {
-    linhas:
-      filtro.situacao === "todas" ? passam : passam.filter((l) => l.situacao === filtro.situacao),
+    linhas: semSituacao.filter(naSituacao),
     contagem,
-    total: passam.length,
+    total: semSituacao.length,
+    porEstado,
+    porCategoria,
   };
 }
 

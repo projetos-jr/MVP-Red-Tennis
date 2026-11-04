@@ -8,7 +8,7 @@ professor").
 
 | Tela | Rota | O que tem |
 | --- | --- | --- |
-| Lista de alunos | `/alunos` | Busca por nome, telefone ou e-mail; filtros por plano (tipo ou plano exato), professor principal e situação; contadores de ativos, congelados, sem plano e inativos (clicar num contador filtra); valor em atraso e saldo de reposição de cada aluno; botão **Novo aluno**; link para os professores. Os filtros também podem vir no endereço: `/alunos?professor=prof-1&situacao=congelado`. |
+| Clientes (lista de alunos) | `/alunos` | Como no sistema antigo da arena: **Ativos / Inativos / Todos** e os grupos **Todos / Ranking / Alunos / Aluguel / Torneio**, cada botão com a contagem; busca por nome (aceita pedaços: "gui lim"), telefone ou e-mail; filtros por plano (tipo ou plano exato), professor principal e situação do plano (com plano, congelado, sem plano); **Limpar filtros**. Tabela densa (nome com foto e link para a ficha, celular, plano, professor, grupos, situação, valor em atraso), ordenada por nome (clique em "Nome" para inverter), 50 por vez; no celular e no tablet em pé, um cartão por cliente. Ícones **Editar** e **Inativar** em cada cliente ativo (só dono e recepção); botão **Novo cliente**; link para os professores. Os filtros também podem vir no endereço (ver "Endereço da lista"). |
 | Ficha do aluno | `/alunos/[id]` | Cabeçalho (situação, plano, professor, contato); **Editar cadastro**, **Congelar/Reativar plano**, **Inativar aluno** (ou **Reativar cadastro**); indicadores (aulas, frequência, faltas, pagos, em aberto, ranking); **Matrícula** com histórico de planos; **Reposição** (extrato); **Congelamento** com histórico; **Horários fixos** e próximas aulas; **Histórico de aulas**; **Pagamentos**; consumo do balcão; comentários; histórico de alterações. |
 | Lista de professores | `/professores` | Um cartão por professor: regra de repasse, alunos principais, aulas e horas da semana, repasse previsto do mês; **Novo professor**. |
 | Ficha do professor | `/professores/[id]` | Cadastro e **Editar cadastro** (com a regra de repasse); **Ver agenda deste professor** (`/agenda?professor=<id>`); indicadores da semana; **Agenda da semana** (aulas reais, com setas para outras semanas); **Repasse** (previsto x pago, mês a mês); alunos; consumo; comentários; histórico. |
@@ -37,6 +37,58 @@ Como está montado (ver `docs/ARQUITETURA.md`):
 
 Toda gravação é "tudo ou nada", mostra o aviso de sucesso ou o erro da regra
 e fica no histórico de alterações (auditoria automática).
+
+## Clientes: grupos e endereço da lista
+
+A tela se chama **Clientes** (o nome do sistema antigo); a rota continua
+`/alunos` e o cadastro continua sendo o de aluno. Nada disso muda o banco: os
+grupos são calculados na hora, em `linhasDaListaDeAlunos`
+(`src/lib/consultas/alunos.ts`), a partir do que já está gravado.
+
+**Hipótese H15 — grupos de cliente** (a confirmar com a arena). Um cliente
+pode estar em mais de um grupo (o aluno que também joga o ranking aparece nos
+dois):
+
+| Grupo | Quem entra |
+| --- | --- |
+| Ranking | Quem está inscrito no ranking (cadastro do aluno). A etiqueta mostra a categoria: "Ranking B". |
+| Alunos | Quem tem plano de aula valendo hoje: Individual, Dupla ou LAP (congelado também conta). |
+| Aluguel | Quem tem plano de locação valendo (Locação Mensal ou Plano de locação) **ou** é o titular (o primeiro nome, quem paga) de alguma locação da agenda (avulsa, mensal ou plano de locação), passada ou marcada, sem contar as canceladas e as reposições. |
+| Torneio | Quem está inscrito em algum torneio, de qualquer situação (inscrições, em andamento ou encerrado). |
+
+Por que o titular e não todos os participantes da locação: nos dados de
+exemplo quase todo aluno já foi convidado de alguma locação (ou repôs uma aula
+num horário de locação), e o grupo Aluguel teria 82 dos 93 clientes. Contando
+só o titular, ficam os 14 que de fato alugam quadra (6 com locação mensal e 8
+avulsos). Perguntas para a arena: o grupo "Aluguel" do sistema antigo é isso?
+Convidado de uma locação conta? Quem jogou torneio há muito tempo continua em
+"Torneio"?
+
+**Ativos e Inativos.** "Inativos" são os que saíram da arena (Inativar
+aluno). "Ativos" são todos os outros: com plano valendo, congelados e sem plano
+mensal. A situação do plano (com plano, congelado, sem plano) é o filtro
+"Todas as situações". Cada contagem nos botões considera os outros filtros
+(busca, plano, professor, grupo), menos o próprio.
+
+**Endereço da lista.** Os filtros podem vir no endereço e valem ao abrir a
+tela (também com a tela já aberta, por exemplo pela busca rápida do topo):
+
+| Endereço | Abre |
+| --- | --- |
+| `/alunos?busca=ana` | A busca preenchida, em **Todos** (ativos e inativos, como a busca do topo). É o link "Ver os N na lista" da busca rápida. |
+| `/alunos?professor=prof-1` | Os alunos do professor (link da ficha do professor). |
+| `/alunos?situacao=congelado` | Os congelados (`ativo`, `congelado` e `avulso` funcionam; `inativo` abre **Inativos**). |
+| `/alunos?plano=tipo:Dupla` | Os de plano Dupla (ou `plano:<id>`, ou `sem`). |
+| `/alunos?estado=inativos` | Ativos, inativos ou todos. |
+| `/alunos?categoria=torneio` | Um grupo: `ranking`, `alunos`, `aluguel` ou `torneio`. |
+
+A tela não escreve no endereço: os filtros escolhidos nela não mudam o link.
+
+**Editar e Inativar pela lista.** Os ícones abrem os mesmos formulários da
+ficha (`FormularioAluno` e `ModalInativar`), com as mesmas regras e a mesma
+gravação. Só aparecem para quem pode alterar cadastros (dono e recepção, H9) e
+só nos clientes ativos; reativar um cadastro continua sendo pela ficha. Não
+há "excluir" (o histórico do cliente fica guardado) nem envio de foto.
 
 ## Regras e hipóteses usadas
 
@@ -146,78 +198,99 @@ horários são feitos de novo.
 
 Use o computador. Tudo volta ao início ao recarregar a página.
 
-1. Abra **Alunos**. Devem aparecer quatro contadores (Ativo, Congelado, Sem
-   plano, Inativo) e a lista com plano, professor e situação de cada aluno.
-2. Clique no contador **Congelado**. A lista mostra só os congelados. Clique
-   de novo para voltar a todos.
-3. Digite **joao xuxa** (sem acento) na busca. Deve aparecer "João Xuxa".
+1. Abra **Clientes** (a aba "Alunos" do menu). O título é "Clientes", o botão
+   **Ativos** está marcado e a tabela mostra 93 clientes, 50 por vez, com
+   celular, plano, professor, grupos, situação e o valor em atraso.
+2. Clique na pílula **Aluguel**: aparecem 14 clientes, todos com a etiqueta
+   "Aluguel" (quem tem locação mensal e quem aluga quadra avulsa, como o
+   Lucas Freitas). Escolha **Sem plano mensal** em "Todos os planos": ficam 8.
+   Repare que os números dos botões mudam junto. Clique em **Limpar filtros**.
+3. Escolha **Plano congelado** em "Todas as situações": a lista mostra só os
+   congelados. Clique em **Limpar filtros**.
+4. Digite **joao xuxa** (sem acento) na busca. Deve aparecer "João Xuxa".
    Apague e digite **98812** (parte de um telefone): aparece "Guilherme Lima".
-4. Escolha **Dupla** em "Todos os planos" e **Márcio Bueno** em "Todos os
+   Digite **gui lim**: também aparece "Guilherme Lima".
+5. Escolha **Dupla** em "Todos os planos" e **Márcio Bueno** em "Todos os
    professores". A lista mostra só as duplas do Márcio. Clique em **Limpar
    filtros**.
-5. Clique em **Novo aluno** e depois em **Cadastrar aluno** sem preencher
+6. Com a lista aberta, digite **caio** na busca do topo da tela e clique em
+   "Ver os ... na lista" (ou abra o endereço `/alunos?busca=caio`). A busca da
+   lista vem preenchida com "caio" e o botão **Todos** marcado.
+7. Clique em **Nome** no cabeçalho laranja da tabela: a ordem passa a ser de Z
+   a A. Clique de novo para voltar. No fim da lista, clique em **Mostrar
+   mais**.
+8. Na linha da Adriana Monteiro, clique no lápis (**Editar**): abre o mesmo
+   formulário da ficha, preenchido. Mude o nome e salve: a lista mostra o nome
+   novo e continua aberta.
+9. Na linha da Adriana Xavier, clique no ícone de saída (**Inativar**): abre o
+   mesmo "Inativar aluno" da ficha. Confirme. Ela some de **Ativos** e aparece
+   em **Inativos**, sem os ícones. (Recarregue a página para voltar ao início.)
+10. Clique em **Novo cliente** e depois em **Cadastrar aluno** sem preencher
    nada. Deve aparecer "Informe o nome do aluno."
-6. Digite **guilherme lima** no nome. Deve aparecer o aviso "Possível cadastro
+11. Digite **guilherme lima** no nome. Deve aparecer o aviso "Possível cadastro
    repetido" com o link para a ficha do Guilherme.
-7. Troque o nome para **Paula Teste**, digite **123** no telefone e
+12. Troque o nome para **Paula Teste**, digite **123** no telefone e
    **paula@** no e-mail e clique em **Cadastrar aluno**: aparecem os dois
    erros. Corrija o telefone para **11 91234 5678** e o e-mail para
    **paula@email.com**. Os erros somem. Clique em **Cadastrar aluno**.
-8. Abre a ficha nova, com o aviso "Aluno cadastrado" e o telefone já
+13. Abre a ficha nova, com o aviso "Aluno cadastrado" e o telefone já
    formatado como (11) 91234-5678.
-9. No bloco **Matrícula**, clique em **Nova matrícula**, escolha **Dupla · 1x
+14. No bloco **Matrícula**, clique em **Nova matrícula**, escolha **Dupla · 1x
    por semana**, o dia de vencimento **12** e clique em **Criar matrícula**.
    Aparece "Matrícula criada." e o plano no cabeçalho.
-10. Clique em **Congelar plano** (no cabeçalho). Escolha o motivo **Viagem**
+15. Clique em **Congelar plano** (no cabeçalho). Escolha o motivo **Viagem**
     (botão de sugestão) e clique em **Congelar plano**. O cabeçalho passa a
     mostrar "Congelado".
-11. **Erro de regra:** clique em **Trocar de plano**, escolha **LAP** e clique
+16. **Erro de regra:** clique em **Trocar de plano**, escolha **LAP** e clique
     em **Trocar plano**. Deve aparecer o erro "O plano atual está congelado
     (ou tem congelamento marcado)...". Nada é gravado. Feche o formulário.
-12. Clique em **Reativar plano** e confirme com a data de hoje. Como a volta é
+17. Clique em **Reativar plano** e confirme com a data de hoje. Como a volta é
     no dia do início, o congelamento é cancelado ("Congelamento cancelado.").
-13. Clique em **Trocar de plano**, escolha **LAP**, valor **350,00** e a data
+18. Clique em **Trocar de plano**, escolha **LAP**, valor **350,00** e a data
     do dia 1º do mês que vem. O texto embaixo diz em que dia o plano atual
     termina. Clique em **Trocar plano**: aparece a faixa "Troca de plano
     marcada" e o histórico de planos fica com duas linhas.
-14. Na faixa amarela, clique em **Desmarcar** e confirme. A troca some e o
+19. Na faixa amarela, clique em **Desmarcar** e confirme. A troca some e o
     plano atual volta a não ter data de fim.
-15. Volte para **Alunos** e abra **Guilherme Lima**. Clique em **Congelar
+20. Volte para **Clientes** e abra **Guilherme Lima**. Clique em **Congelar
     plano**, ponha o início daqui a 3 dias e o fim daqui a um mês. A caixa azul
     lista as aulas que ficam suspensas e diz que nenhuma reposição é gerada.
     Escreva um motivo e confirme. O bloco **Congelamento** mostra
     "Congelamento marcado" e, em **Próximas aulas**, as aulas aparecem como
     "Suspensa".
-16. Clique em **Desmarcar congelamento**: a tela lista as aulas que voltam.
+21. Clique em **Desmarcar congelamento**: a tela lista as aulas que voltam.
     Confirme: elas voltam a aparecer normais em **Próximas aulas**.
-17. Congele de novo começando hoje, por 40 dias. Depois clique em **Reativar
+22. Congele de novo começando hoje, por 40 dias. Depois clique em **Reativar
     plano** e ponha a data de volta daqui a 14 dias: a tela mostra quantas
     aulas voltam e quantas, antes da volta, continuam suspensas. Confirme.
-18. No **Histórico de aulas**, clique em **Mostrar mais 12** e no filtro
+23. No **Histórico de aulas**, clique em **Mostrar mais 12** e no filtro
     **Faltas**. Cada falta mostra a sigla (24h, TIP...) e os minutos de
     crédito.
-19. No **Histórico de alterações**, clique em **Matrícula**: aparecem os
+24. No **Histórico de alterações**, clique em **Matrícula**: aparecem os
     congelamentos e matrículas mexidos, com quem fez e quando.
-20. Abra a ficha da Paula de novo (busca na lista), clique em **Inativar
+25. Abra a ficha da Paula de novo (busca na lista), clique em **Inativar
     aluno**, escreva o motivo **Mudou de cidade** e confirme. A ficha mostra
     "Aluno inativo" e o motivo aparece nos comentários. Clique em **Reativar
     cadastro** e confirme.
-21. Volte para **Alunos** e clique em **Professores**. Abra **Alexandre
+26. Volte para **Clientes** e clique em **Professores**. Abra **Alexandre
     Pires**. Use as setas da **Agenda da semana** para ver a semana seguinte.
     Clique em **Ver agenda deste professor**: abre a Agenda filtrada por ele.
     (O endereço leva o id do professor, `/agenda?professor=prof-1`; o filtro
     funciona com a Agenda do modelo novo. A agenda antiga, enquanto não for
     migrada, procura pelo nome e pode mostrar a grade vazia.)
-22. Na ficha do professor, clique em **Editar cadastro**, escolha
+27. Na ficha do professor, clique em **Editar cadastro**, escolha
     **Percentual** e digite **120**. Ao salvar aparece "O percentual vai de 0
     a 100." Troque para **30** e salve: o cabeçalho mostra "Repasse: 30% das
     mensalidades".
-23. Em **Professores**, clique em **Novo professor**, digite **Renata Coelho**
+28. Em **Professores**, clique em **Novo professor**, digite **Renata Coelho**
     e um valor por hora e salve: aparece o erro "Já existe um professor
     chamado Renata Coelho." Troque o nome e salve: abre a ficha nova.
-24. Saia, entre como **Lucas Ferreira** (recepção), abra Alunos >
+29. Saia, entre como **Lucas Ferreira** (recepção), abra Clientes >
     Professores: não há botão "Novo professor" e, ao editar um professor, a
     regra de repasse fica travada ("Só o dono altera...").
+30. Saia e entre como **Renata Coelho** (professora). Em **Clientes**
+    aparecem só os alunos dela (28), sem **Novo cliente** e sem os ícones de
+    editar e inativar.
 
 ## Notas para a migração ao Supabase
 
@@ -246,6 +319,12 @@ Use o computador. Tudo volta ao início ao recarregar a página.
 - **Financeiro:** a matrícula vigente (valor combinado, dia de vencimento,
   início e fim) é a base para gerar mensalidades; congelar não muda a
   mensalidade (H4).
+- **Início e navegação:** a lista aceita `?categoria=` e `?estado=` no
+  endereço (ex.: `/alunos?categoria=torneio`), para um atalho abrir um grupo
+  de clientes. Os rótulos dos grupos estão em `ROTULO_CATEGORIA`
+  (`consultas/alunos.ts`). A tela se chama "Clientes"; a aba da navegação, o
+  link da busca rápida ("Ver os N na lista de alunos") e o formulário ("Novo
+  aluno", "Cadastrar aluno") ainda dizem "aluno" (são de outros arquivos).
 - **Base:** a aba "Alunos" da navegação não fica marcada em `/professores`
   (a regra é `startsWith("/alunos")`). O `HistoricoDoRegistro` mostra valores
   crus (datas ISO, ids de professor e plano); um formatador por campo deixaria
