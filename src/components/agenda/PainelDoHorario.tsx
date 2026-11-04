@@ -25,6 +25,7 @@ import {
   formatarDataExtenso,
   formatarDataHora,
 } from "@/lib/date";
+import { PALETA } from "@/lib/paleta";
 import { ESTILO_OCUPACAO, formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
 import {
@@ -147,7 +148,7 @@ function ConteudoDoPainel({
           <span
             className="mt-1 h-12 w-1.5 shrink-0 rounded-full"
             style={{
-              backgroundColor: item.cancelada ? "#B3A897" : estilo.cor,
+              backgroundColor: item.cancelada ? PALETA.areia[400] : estilo.cheia,
               backgroundImage: bloqueio ? FUNDO_BLOQUEIO : undefined,
             }}
             aria-hidden="true"

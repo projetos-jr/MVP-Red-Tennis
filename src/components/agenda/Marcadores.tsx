@@ -36,14 +36,18 @@ const PAGAMENTO = {
   },
 } as const;
 
-/** Versao so com icones, para os chips pequenos da grade (o texto fica no title e para leitor de tela). */
+/**
+ * Versao so com icones, para os blocos da grade (o texto fica no title e para
+ * leitor de tela). O anel branco separa a marca do fundo vivo do bloco.
+ */
 export function MarcadoresMini({ item }: { item: ItemAgenda }) {
   const pagamento = item.estadoReserva ? PAGAMENTO[item.estadoReserva] : undefined;
+  if (!pagamento && !item.reposicao && !item.cancelada) return null;
   return (
     <span className="ml-auto flex shrink-0 items-center gap-0.5">
       {item.reposicao && !item.cancelada && (
         <span
-          className="flex h-4 w-4 items-center justify-center rounded bg-violet-100 text-violet-800"
+          className="flex h-4 w-4 items-center justify-center rounded bg-violet-100 text-violet-800 ring-1 ring-white"
           title="Reposição"
         >
           <IconeReposicao className="h-3 w-3" />
@@ -52,7 +56,7 @@ export function MarcadoresMini({ item }: { item: ItemAgenda }) {
       )}
       {pagamento && (
         <span
-          className={`flex h-4 w-4 items-center justify-center rounded border ${pagamento.classe}`}
+          className={`flex h-4 w-4 items-center justify-center rounded border ring-1 ring-white ${pagamento.classe}`}
           title={pagamento.rotulo}
         >
           <pagamento.Icone className="h-3 w-3" />
