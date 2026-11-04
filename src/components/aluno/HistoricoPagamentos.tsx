@@ -40,7 +40,7 @@ export function HistoricoPagamentos({ pagamentos }: { pagamentos: PagamentosDoAl
         {visiveis.map((pagamento) => (
           <li
             key={pagamento.lancamento.id}
-            className={`px-4 py-3 ${pagamento.situacao === "cancelado" ? "opacity-60" : ""}`}
+            className={`px-4 py-3 ${pagamento.situacao === "cancelado" ? "bg-areia-50" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -76,7 +76,7 @@ export function HistoricoPagamentos({ pagamentos }: { pagamentos: PagamentosDoAl
             {visiveis.map((pagamento) => (
               <tr
                 key={pagamento.lancamento.id}
-                className={`align-top hover:bg-areia-50 ${pagamento.situacao === "cancelado" ? "opacity-60" : ""}`}
+                className={`align-top hover:bg-areia-50 ${pagamento.situacao === "cancelado" ? "bg-areia-50" : ""}`}
               >
                 <td className="whitespace-nowrap px-5 py-2.5 font-medium tabular-nums text-areia-800">
                   {formatarData(pagamento.lancamento.vencimento)}
@@ -163,7 +163,7 @@ function Situacao({ pagamento }: { pagamento: PagamentoDoAluno }) {
 
 function Forma({ pagamento }: { pagamento: PagamentoDoAluno }) {
   const { formaPagamento, valorConvenio, valor } = pagamento.lancamento;
-  if (!formaPagamento) return <span className="text-areia-400">—</span>;
+  if (!formaPagamento) return <span className="text-areia-500">—</span>;
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
       <EtiquetaNeutra>{formaPagamento}</EtiquetaNeutra>

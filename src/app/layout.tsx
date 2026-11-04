@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { AvisosProvider } from "@/components/ui/Avisos";
 import { AppProvider } from "@/store/AppStore";
+// Fontes empacotadas com o site (funcionam offline): Inter no texto e
+// Barlow Semi Condensed nos titulos, numeros e botoes do mosaico.
+import "@fontsource-variable/inter";
+import "@fontsource/barlow-semi-condensed/600.css";
+import "@fontsource/barlow-semi-condensed/700.css";
+import { PALETA } from "@/lib/paleta";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#B95A28",
+  themeColor: PALETA.saibro[600],
 };
 
 export default function RootLayout({

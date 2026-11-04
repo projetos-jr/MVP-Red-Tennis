@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Campo, RodapeDoFormulario } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { Modal } from "@/components/ui/Modal";
 import { editarPlano, incluirPlano } from "@/lib/banco/operacoes/configuracoes";
 import { TIPOS_DE_PLANO, type DadosDoPlano } from "@/lib/banco/regras/configuracoes";
@@ -146,7 +147,7 @@ export function ModalPlano({
                   key={tabela}
                   className={`cursor-pointer rounded-xl border px-3 py-2.5 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-saibro-600 ${
                     rascunho.tabela === tabela
-                      ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
+                      ? "border-saibro-600 bg-saibro-50 ring-1 ring-saibro-600"
                       : "border-areia-200 hover:border-saibro-300"
                   }`}
                 >
@@ -168,20 +169,13 @@ export function ModalPlano({
             </div>
           </fieldset>
 
-          <label className="flex items-start gap-3 rounded-xl border border-areia-200 px-3.5 py-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-tijolo-600"
-              checked={rascunho.ativo}
-              onChange={(e) => mudar("ativo", e.target.checked)}
-            />
-            <span className="text-sm">
-              <span className="block font-medium text-areia-900">Plano ativo</span>
-              <span className="block text-xs text-areia-500">
-                Só os planos ativos são oferecidos em matrículas novas. Quem já tem o plano continua com ele.
-              </span>
-            </span>
-          </label>
+          <OpcaoSimNao
+            ligado={rascunho.ativo}
+            aoMudar={(ligado) => mudar("ativo", ligado)}
+            titulo="Plano ativo"
+            descricao="Só os planos ativos são oferecidos em matrículas novas. Quem já tem o plano continua com ele."
+            className="rounded-xl border border-areia-200 px-3.5 py-2"
+          />
 
           {plano && (
             <p className="rounded-xl bg-areia-50 px-3.5 py-3 text-xs leading-relaxed text-areia-600">

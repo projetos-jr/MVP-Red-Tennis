@@ -65,7 +65,7 @@ export function AvisosProvider({ children }: { children: ReactNode }) {
           <div
             key={aviso.id}
             role={aviso.tipo === "erro" ? "alert" : "status"}
-            className={`pointer-events-auto flex w-full animate-fade-up items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-card-hover ${ESTILO[aviso.tipo]}`}
+            className={`pointer-events-auto flex w-full motion-safe:animate-fade-up items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-card-hover ${ESTILO[aviso.tipo]}`}
           >
             {aviso.tipo === "erro" ? (
               <IconeAlerta className="mt-0.5 h-4 w-4 shrink-0" />

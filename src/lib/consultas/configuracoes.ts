@@ -40,7 +40,7 @@ export const NOMES_DOS_MODULOS: Record<
   ModuloSistema,
   { nome: string; curto: string; descricao: string }
 > = {
-  painel: { nome: "Painel", curto: "Painel", descricao: "Quadras do dia e o que precisa de atenção." },
+  painel: { nome: "Início", curto: "Início", descricao: "Quadras agora, atalhos e o que precisa de atenção." },
   agenda: { nome: "Agenda", curto: "Agenda", descricao: "Aulas, reservas e bloqueios de quadra." },
   alunos: { nome: "Alunos", curto: "Alunos", descricao: "Lista e fichas dos alunos." },
   professores: {

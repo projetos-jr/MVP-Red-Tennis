@@ -1,6 +1,7 @@
 # Módulo Agenda
 
-Versão de 29/10/2026. A agenda do MVP mostrava um molde semanal ("toda terça
+Versão de 29/10/2026, com o redesign das visões de 04/11/2026 (Diária,
+Quadra, Professor e Mês). A agenda do MVP mostrava um molde semanal ("toda terça
 às 10h"). Agora ela mostra **as aulas de cada data**, lidas de
 `banco.ocupacoes`: cancelar a aula do dia 10 não mexe nas outras semanas, e
 dá para bloquear uma quadra num dia, marcar presença e falta e ver o
@@ -13,36 +14,96 @@ histórico de verdade. A especificação é a seção 2 ("Agenda") de
 
 | Endereço | Para que serve |
 | --- | --- |
-| `/agenda` | A agenda: semana, dia e mês no computador; dia e mês no celular. |
+| `/agenda` | A agenda, em quatro visões: **Diária** (padrão), **Quadra**, **Professor** e **Mês**. |
 | `/agenda/quadra?quadra=2` | Modo quadra: as aulas do dia de uma quadra, com botões grandes de presença e falta, para o tablet na beira da quadra. |
 | `/agenda/imprimir?data=2026-10-29` | A agenda de um dia em formato de papel (uma coluna por quadra), com botão **Imprimir**. |
 
-**Na agenda**
+**As visões** (redesign de novembro, pedido do cliente: "como o sistema
+antigo", com cores vivas)
 
-- **Semana** (computador): dias × faixas de 1 hora, como no MVP. Um horário
-  mais longo que 1 hora aparece na faixa em que começa e deixa uma marca
-  "↳ até 13:00" nas faixas seguintes. Clicar no nome do dia abre o dia.
-- **Dia** (computador, novo): uma coluna por quadra, cada horário com a
-  altura da sua duração e uma linha vermelha no "agora" quando o dia é hoje.
-  Uma aula cancelada aparece ao lado da que ocupou o lugar dela.
-- **Dia** (celular): régua com os dias da semana e a lista do dia, faixa a
-  faixa, como no MVP.
+- **Diária** (padrão): **hoje e amanhã lado a lado**, uma coluna por quadra
+  (Quadra 1 a 4 e Paredão) e **linhas de 30 em 30 minutos**, das 07h às 22h,
+  como no sistema antigo da arena. O cabeçalho de cada coluna tem a cor do
+  piso (Quadra 1 de cimento em azul; as de saibro em laranja) e quantos
+  horários ela tem. A partir de 1024 px de largura aparecem as 10 colunas; no
+  tablet em pé (768 a 1023 px), um dia por vez com **Hoje | Amanhã**; no
+  celular, a **lista do dia**, com uma régua para trocar entre os dois dias.
+- **Quadra**: a semana inteira de uma quadra (pílulas Q1 a Q4 e Paredão; abre
+  na Quadra 1). Clicar no cabeçalho de um dia abre a Diária daquele dia com a
+  coluna da quadra realçada.
+- **Professor**: a semana de um professor (escolhido numa lista dos
+  professores ativos). Cada bloco mostra a quadra (Q1, Q2…). O professor
+  logado (perfil de professor) abre direto nesta visão, travado nas aulas
+  dele.
 - **Mês**: quantos horários cada dia tem, a divisão por tipo e o que pede
-  atenção (canceladas, chuva, bloqueio, reservas a pagar). Clicar abre o dia.
-- **Filtros**: quadra, professor, tipo e "Mostrar canceladas". As
-  canceladas aparecem apagadas e riscadas, com a sigla (CH, FP, IAC…).
-- **Legenda**: cores de cada tipo (as combinadas com a arena, mais o
-  bloqueio, listrado) e as marcas: aguardando pagamento (relógio), prazo
-  vencido (alerta vermelho), pago (✓) e reposição. Toda marca tem ícone e
-  texto; a cor nunca é o único sinal.
-- **Contadores do topo**: aulas e reservas, alunos, ocupação das quadras,
-  canceladas e reservas aguardando pagamento — sempre do período que está na
-  tela (no celular, do dia escolhido).
-- **Nome do aluno** abre a ficha (`/alunos/<id>`); o resto do cartão abre o
-  painel do horário. Um espaço livre abre o "Novo horário" já preenchido.
-- **Endereço (URL)**: aceita `?quadra=<id>`, `?professor=<id>` (e, como no
-  MVP, o nome do professor), `?data=AAAA-MM-DD`, `?visao=dia|semana|mes` e
-  `?ocupacao=<id>` (abre o painel daquele horário).
+  atenção (canceladas, chuva, bloqueio, reservas a pagar). Clicar abre a
+  Diária do dia.
+
+**Na grade (Diária, Quadra e Professor)**
+
+- Cada horário é um **bloco na cor cheia do tipo** (as cores da legenda
+  combinada com a arena), posicionado com precisão de minuto e com a altura
+  da duração. Quanto texto aparece depende da altura: hora, tipo, alunos e
+  professor; o que não cabe termina em "…" (a turma inteira está no painel).
+- **Situações**: prazo de pagamento vencido = anel duplo (branco e vermelho)
+  e ⚠; **cancelada** = fundo branco, borda tracejada na cor do tipo, nomes
+  riscados e a sigla (CH, FP, IAC…); **bloqueio** = cinza listrado; uma aula
+  cancelada aparece ao lado da que ocupou o lugar dela. Sozinha, a cancelada
+  ocupa meia coluna: a outra metade continua livre para marcar no lugar.
+- **Linha do "agora"** (vermelha, com a bolinha amarela) nas colunas de hoje,
+  e uma **película cinza** sobre o que já passou. Ao abrir, a grade rola até
+  o agora (ou até o primeiro horário do período).
+- **Meia hora livre**: clicar (ou tocar) abre o **Novo horário** já com a
+  data, a hora (inclusive :30) e a quadra; na visão Professor, com o
+  professor (e a primeira quadra livre naquele horário). O término sugerido
+  é 1 hora depois, mas para no início do próximo horário daquela coluna (no
+  mínimo 30 min): o formulário nunca abre já em conflito. Só aparece de hoje
+  em diante, como a regra de gravação.
+- **Voltar do navegador (ou do tablet)** com o painel de um horário aberto:
+  fecha o painel e continua na agenda. Trocar de data, visão ou filtro não
+  cria passos no "Voltar" (o endereço muda no lugar).
+- **Virada do dia**: com a tela aberta de um dia para o outro (o tablet da
+  quadra), a página recarrega sozinha depois da meia-noite para "hoje"
+  passar a ser o dia novo.
+- **Nome do aluno** (com mouse) abre a ficha; o resto do bloco abre o painel
+  do horário. No toque (tablet e celular) o bloco inteiro abre o painel, e lá
+  cada nome abre a ficha: um nome dentro de um bloco seria um alvo pequeno
+  demais para o dedo.
+- Com toque, cada meia hora tem 45 px de altura (alvo mínimo de 44 px); com
+  mouse, 36 px.
+
+**Em todas as visões**
+
+- **Filtros**: professor (menos na visão Professor), tipo e **Mostrar
+  canceladas** (interruptor com a bola de tênis).
+- **Legenda**: um quadradinho na cor de cada tipo (mais o bloqueio, listrado)
+  e as marcas: aguardando pagamento (relógio), prazo vencido (alerta), pago
+  (✓) e reposição. Toda marca tem ícone e texto; a cor nunca é o único sinal.
+- **Contadores numa linha** embaixo do título: horários, alunos, ocupação das
+  quadras (na visão Professor, horas de aula), canceladas e reservas a pagar,
+  sempre do período que está na tela.
+- **Navegação** ‹ ›: um dia na Diária, uma semana na Quadra e na Professor,
+  um mês no Mês. **Hoje** volta para hoje.
+
+**Endereço (URL)**: o endereço é quem manda na tela. Cada clique que muda a
+visão, a data, a quadra, o professor, um filtro ou abre um horário reescreve
+o endereço (`/agenda?visao=diaria&data=…&ocupacao=…`), então "recarregar" e
+um link mandado para alguém abrem exatamente a mesma tela. Os links antigos
+continuam valendo:
+
+| Endereço recebido | Abre |
+| --- | --- |
+| `/agenda` | Diária de hoje (professor logado: visão Professor) |
+| `?visao=dia&data=AAAA-MM-DD` | Diária a partir da data |
+| `?visao=semana&quadra=2` | Quadra 2 (a semana com todas as quadras saiu) |
+| `?quadra=2` | Quadra 2 |
+| `?data=AAAA-MM-DD&quadra=2` (link do Início) | Diária da data com a coluna da Quadra 2 realçada |
+| `?professor=prof-2` (ou o nome) | Professor |
+| `?visao=professor` | Professor (o primeiro da lista) |
+| `?tipo=LAP` (atalho LAP do Início) | Diária filtrada por LAP |
+| `?visao=mes` | Mês |
+| `?ocupacao=<id>` | Abre o painel daquele horário (na data dele) |
+| `?canceladas=nao` | Esconde as canceladas |
 
 **Painel do horário** (abre ao clicar num horário)
 
@@ -71,11 +132,13 @@ histórico de verdade. A especificação é a seção 2 ("Agenda") de
 | Parte | Arquivo |
 | --- | --- |
 | Telas | `src/app/(app)/agenda/page.tsx`, `quadra/page.tsx`, `imprimir/page.tsx` |
-| Componentes | `src/components/agenda/` |
+| Componentes | `src/components/agenda/` (grade: `GradeDeColunas.tsx`; blocos e cartões: `CartaoOcupacao.tsx`; celular: `ListaDoDia.tsx`; mês: `VisaoMensal.tsx`; `SeletorDaVisao.tsx`, `FiltrosDaAgenda.tsx`) |
+| Lógica da grade (sem tela) | `src/components/agenda/grade.ts` (colunas, posições, meias horas, agora, o que pode ser marcado) e `estilos.ts` (`estiloDoBloco`) |
+| Endereço | `src/lib/consultas/enderecoDaAgenda.ts` (`estadoDaAgendaPelaUrl`, `enderecoDaAgenda`, `trocarVisao`) |
 | Leitura (consultas) | `src/lib/consultas/agenda.ts` |
 | Gravação (operações) | `src/lib/banco/operacoes/agenda.ts` |
 | Regras | `src/lib/banco/regras/agenda.ts` e `regras/reposicao.ts` |
-| Testes | `src/lib/banco/operacoes/agenda.test.ts` (48 testes) |
+| Testes | `src/lib/banco/operacoes/agenda.test.ts` (48 testes), `src/components/agenda/grade.test.ts` (grade) e `src/lib/consultas/enderecoDaAgenda.test.ts` (todos os links da tabela acima) |
 | Dados de exemplo | `src/lib/banco/semente/agenda.ts` |
 
 A tela lê só por funções de `consultas/agenda.ts`. `montarAgenda` faz uma
@@ -113,7 +176,7 @@ crédito.
 **H5 – Reserva sem pagamento.** Locação avulsa nasce "aguardando pagamento",
 com prazo de `prazoPagamentoReservaHoras` horas e a cobrança a receber
 (categoria "Locação", ligada à ocupação, valor de `precoDaLocacao`).
-Vencido o prazo, a reserva **só entra em alerta** (marca vermelha, faixa no
+Vencido o prazo, a reserva **só entra em alerta** (anel vermelho no bloco, aviso no
 topo da agenda e a lista de reservas): quem decide liberar é a recepção.
 "Liberar horário" cancela a reserva com o motivo "Sem pagamento no prazo"
 (sem crédito) e anula a cobrança. Se a opção
@@ -182,83 +245,113 @@ desse limite é uma rotina do banco real (ver "Migração").
 
 ## Roteiro de teste (para fazer na tela)
 
-Os dados voltam ao início a cada recarga da página. Faça os passos em
-sequência, navegando pelos botões da própria agenda (sem recarregar).
+Os dados voltam ao início a cada recarga da página (modo demonstração). Faça
+os passos em sequência, navegando pelos botões da própria agenda.
 
-1. Entre no sistema e clique em **Agenda**. Deve aparecer a semana atual,
-   com o dia de hoje destacado e os contadores do topo ("Aulas e reservas",
-   "Ocupação das quadras", "Canceladas", "Aguardando pagamento").
-2. Clique em **Dia**. Deve aparecer uma coluna por quadra (Quadra 1 a 4 e
-   Paredão), com uma linha vermelha na hora atual.
-3. Clique em **Mês** e depois num dia qualquer: deve abrir o dia escolhido.
-   Os dias de chuva dos dados de exemplo (4, 19 e 33 dias atrás) mostram
-   "Chuva".
-4. Clique em **Quadra 2** nos filtros: só a quadra 2 aparece. Volte em
-   **Todas**. Desmarque **Mostrar canceladas**: as aulas riscadas somem e o
-   contador "Canceladas" avisa que elas estão escondidas.
-5. Clique no **nome de um aluno** num cartão: deve abrir a ficha dele. Volte.
-6. Clique num cartão (fora do nome): abre o **painel do horário**. Em uma
+1. **Diária**: entre como **Recepção** e clique em **Agenda**. Deve aparecer
+   a **Diária**: hoje e amanhã lado a lado, cinco colunas em cada dia
+   (Quadra 1 em azul; 2, 3, 4 e Paredão em laranja), linhas de 30 em 30
+   minutos, a linha vermelha do agora com a bolinha amarela, o que já passou
+   com uma película cinza e a grade rolada até o agora. Embaixo do título, a
+   linha com os contadores ("… horários hoje e amanhã · … alunos · …% de
+   ocupação · … canceladas · … a pagar").
+2. **Clique às 07:30**: amanhã, passe o mouse numa meia hora livre que começa
+   às **07:30** (aparece "+ 07:30") e clique. O **Novo horário** abre com a
+   data de amanhã, início **07:30**, término 08:30 e a quadra daquela coluna
+   já marcada. Feche.
+3. **Quadra**: clique em **Quadra**. Aparece a semana da Quadra 1 (cabeçalho
+   azul); clique em **Paredão**: a semana do paredão. Clique no cabeçalho de
+   um dia: abre a **Diária** daquele dia com a coluna do paredão realçada em
+   amarelo.
+4. **Professor**: clique em **Professor** e escolha **Renata Coelho**. Aparece
+   a semana dela, com a quadra em cada bloco (Q2, PAR…). Clique numa meia
+   hora livre: o Novo horário abre com **Individual**, a Renata como
+   professora e a primeira quadra livre naquele horário.
+5. **Mês e filtros**: clique em **Mês** e depois num dia: abre a Diária do
+   dia. Os dias de chuva dos dados de exemplo (4, 19 e 33 dias atrás) mostram
+   "Chuva" no mês e, na Diária, blocos brancos tracejados com a sigla **CH**.
+   Desligue **Mostrar canceladas**: elas somem e o contador diz
+   "(escondidas)".
+6. **LAP**: abra `/agenda?tipo=LAP` (ou o atalho LAP do Início): a Diária
+   mostra só as aulas LAP, com "LAP" no filtro de tipo.
+7. **Link antigo**: abra `/agenda?data=<uma data>&quadra=2` (o link do
+   "Precisa de atenção" do Início): abre a Diária daquela data com a coluna
+   da Quadra 2 realçada. `/agenda?visao=semana&quadra=3` abre a visão Quadra
+   da Quadra 3. Recarregue a página: a tela continua igual.
+8. **Nome do aluno** (computador): clique no nome de um aluno num bloco:
+   abre a ficha. Volte.
+9. Clique num bloco (fora do nome): abre o **painel do horário** (o endereço
+   ganha `&ocupacao=…`; recarregar mantém o painel aberto). Em uma
    aula de hoje, clique em **Presente** de um aluno: aparece "Presença de …
    marcada." e a aula passa a "Realizada". Clique em **Avisou** de outro
    aluno, escolha **24h** e confirme: aparece "Falta avisada (24h)
    registrada. … ganhou 1h de reposição." e o crédito aparece em
    **Reposição**. Abra **Histórico** para ver a alteração.
-7. Ainda no painel, clique em **Cancelar aula**, escolha **FP — Falta do
+10. Ainda no painel, clique em **Cancelar aula**, escolha **FP — Falta do
    professor**: antes de confirmar aparecem os minutos de cada aluno. Confirme:
-   a aula fica riscada na grade, com a sigla FP.
-8. **Erro de regra (conflito)**: clique em **Novo horário** → **Avulso** →
+   a aula fica branca e tracejada na grade, riscada, com a sigla FP.
+11. **Erro de regra (conflito)**: clique em **Novo horário** → **Avulso** →
    tipo **Individual**, a data de hoje, início **19:00** e uma quadra marcada
    como "ocupada" (o aviso vermelho já diz quem ocupa). Escolha um aluno e
    clique em **Salvar horário**. Deve aparecer o erro "Quadra … já está
    ocupada em … (… · nome do aluno)" e nada é gravado.
-9. **Locação avulsa**: no mesmo formulário, troque para **Locação Avulsa**,
+12. **Locação avulsa**: no mesmo formulário, troque para **Locação Avulsa**,
    escolha uma quadra "livre" e salve. Aparece "Reserva marcada (…). Ela
    aguarda pagamento por até 24 h." e o cartão ganha o relógio de
    "aguardando pagamento".
-10. **Horário fixo com conflito**: **Novo horário** → **Fixo** → Individual,
+13. **Horário fixo com conflito**: **Novo horário** → **Fixo** → Individual,
     primeira aula no **sábado desta semana**, início **12:00**, **Quadra 2**,
     professora **Renata Coelho**, aluno **Gustavo**. A lista de datas mostra
     o sábado da semana que vem em conflito com o bloqueio do torneio interno
     (e quem ocupa), e o botão fica desabilitado. Marque **Pular esta data** e
     clique em **Criar horário fixo (… aulas)**: aparece "Horário fixo criado:
     todo sábado, 12:00–13:00, Quadra 2".
-11. **Reposição sem saldo (erro de regra)**: abra uma aula futura, clique em
+14. **Reposição sem saldo (erro de regra)**: abra uma aula futura, clique em
     **Incluir aluno**, escolha alguém com "(sem saldo)" e clique em **Usar
     reposição**: aparece "Saldo de reposição insuficiente: o aluno tem 0
     minutos e a aula precisa de 60." Agora use o aluno que ganhou crédito
     no passo 6: ele entra na aula e o saldo diminui.
-12. **Remarcar**: no painel de uma aula futura, clique em **Remarcar**,
+15. **Remarcar**: no painel de uma aula futura, clique em **Remarcar**,
     escolha um horário ocupado (o aviso vermelho diz quem ocupa) e depois
     um livre, e salve.
-13. **Encerrar horário fixo**: no painel de uma aula fixa futura, clique em
+16. **Encerrar horário fixo**: no painel de uma aula fixa futura, clique em
     **Encerrar horário fixo**. A janela mostra quantas aulas saem da agenda.
     Confirme e veja que as semanas seguintes ficaram sem a aula.
-14. **Bloquear quadra**: clique em **Bloquear quadra**, escolha **Quadra 3**,
+17. **Bloquear quadra**: clique em **Bloquear quadra**, escolha **Quadra 3**,
     amanhã, 07:00 às 10:00, descrição "Manutenção do saibro". A prévia
     lista as aulas e os minutos. Confirme duas vezes: as aulas ficam
     canceladas com **IAC** e a quadra aparece listrada como bloqueada.
-15. **Chuva**: clique em **Cancelar por chuva**, deixe a data de hoje,
+18. **Chuva**: clique em **Cancelar por chuva**, deixe a data de hoje,
     escolha **Faixa de horário** 17:00 às 19:00 e todas as quadras. Confirme:
     aparece o resumo com o número de aulas, de alunos e as horas de
     reposição.
-16. **Reservas sem pagamento**: clique no botão (ou em **Ver reservas** na
-    faixa vermelha). A reserva com prazo vencido vem primeiro; clique em
+19. **Reservas sem pagamento**: clique no botão (ou no aviso vermelho "… passaram
+    do prazo de pagamento · Ver", ao lado dos botões). A reserva com prazo vencido vem primeiro; clique em
     **Liberar horário** e confirme: ela é cancelada com "Sem pagamento no
     prazo".
-17. **Modo quadra** (no tablet): clique em **Modo quadra**, escolha a quadra
+20. **Modo quadra** (no tablet): clique em **Modo quadra**, escolha a quadra
     e marque **Presente** e **Falta** nos botões grandes.
-18. **Imprimir**: clique em **Imprimir o dia** e depois em **Imprimir**. A
+21. **Imprimir**: clique em **Imprimir o dia** e depois em **Imprimir**. A
     folha sai deitada, uma coluna por quadra, sem os menus do sistema.
-19. **Perfil de professor**: saia, entre como **Renata Coelho** e abra a
-    Agenda: aparecem só as aulas dela, sem botões de alteração, e o aviso
-    de que o perfil só consulta.
+22. **Perfil de professor**: saia, entre como **Renata Coelho** e abra a
+    Agenda: abre a visão **Professor** com só as aulas dela ("Só as suas
+    aulas"), sem botões de alteração nem meias horas clicáveis, e o aviso
+    de que o perfil só consulta. Na Diária e no Mês também só aparecem as
+    aulas dela.
+23. **Tablet e celular**: no tablet deitado (1180 px) a Diária mostra as 10
+    colunas e cada meia hora tem 45 px; no tablet em pé, **Hoje | Amanhã**;
+    no celular, a lista do dia com a régua "Hoje | Amanhã" (nas visões Quadra
+    e Professor, a régua com os 7 dias). Nenhuma tela rola para o lado.
 
 ## Para os outros módulos
 
 - **Painel (dashboard)**: lê `banco.ocupacoes` direto; nenhum campo foi
   renomeado. As ocupações criadas na sessão entram **no fim** da lista (ela
   não fica ordenada). Ocupação "Bloqueio" é a quadra fechada. Para abrir um
-  horário específico: `/agenda?data=AAAA-MM-DD&visao=dia&ocupacao=<id>`.
+  horário específico: `/agenda?ocupacao=<id>` (abre na data dele); a semana
+  de uma quadra: `/agenda?visao=quadra&quadra=<id>`; o dia com uma quadra
+  realçada: `/agenda?data=AAAA-MM-DD&quadra=<id>`. Os endereços são montados
+  e lidos em `consultas/enderecoDaAgenda.ts` (testado).
 - **Financeiro**: a locação avulsa cria um `Lancamento` a receber
   (categoria "Locação", `ocupacaoId`, vencimento = data do prazo). Ao pagar,
   mude a ocupação para "agendada" (convenção). Quando a agenda cancela,
@@ -270,8 +363,8 @@ sequência, navegando pelos botões da própria agenda (sem recarregar).
   `ocupacaoUsoId`. Desfazer a falta avisada apaga o crédito; tirar o aluno
   da aula apaga o uso (os minutos voltam); encerrar horário fixo apaga
   créditos e usos das aulas que saem. A auditoria guarda tudo.
-- **Professores**: o atalho "Ver agenda deste professor" pode usar
-  `/agenda?professor=<id>` (o nome também funciona).
+- **Professores**: o atalho "Ver agenda deste professor" usa
+  `/agenda?professor=<id>` (o nome também funciona): abre a visão Professor.
 - **Configurações**: a agenda lê `siglas`, `validadeReposicaoMeses`,
   `prazoPagamentoReservaHoras`, `liberarReservaAutomaticamente`,
   `semanasGeradasAFrente`, `bloquearProfessorEmDuasAulas`,

@@ -11,6 +11,7 @@ mesmo sem formação técnica.
 | `revisar-pr` | Revisar um pull request pela definição de pronto, com parecer em linguagem simples |
 | `pedido-do-cliente` | Classificar um pedido do cliente quanto ao escopo e preparar a resposta |
 | `status-semanal` | Rascunho do e-mail de status de sexta para o cliente |
+| `design-red-tennis` | Qualquer tela, componente ou ajuste visual: cores vivas da paleta, contraste, peças comuns, agenda colorida, conferência por capturas |
 
 Cada skill de texto tem casos de teste em `evals/` (pedido, o que se espera e
 os critérios). Para rodar os mesmos testes com o Claude Code:

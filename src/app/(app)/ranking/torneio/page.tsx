@@ -69,7 +69,7 @@ function ListaDeInscricoes({ inscricoes, comGrupo }: { inscricoes: InscricaoNaTe
           <AvataresDoLado alunos={alunos} tamanho="sm" />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-areia-900">
             {alunos.length === 1 ? (
-              <Link href={`/alunos/${alunos[0].id}`} className="hover:text-tijolo-700 hover:underline">
+              <Link href={`/alunos/${alunos[0].id}`} className="hover:text-saibro-700 hover:underline">
                 {nome}
               </Link>
             ) : (
@@ -106,16 +106,17 @@ function ListaDeInscricoes({ inscricoes, comGrupo }: { inscricoes: InscricaoNaTe
 
 function BannerDoCampeao({ campeao, duplas }: { campeao: InscricaoNaTela; duplas: boolean }) {
   return (
-    <div className="flex items-center gap-4 border-t border-saibro-200 bg-gradient-to-r from-saibro-50 via-white to-saibro-50 px-5 py-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-saibro-600 text-white shadow-card">
-        <IconeTrofeu className="h-7 w-7" />
+    // Campeao em destaque: faixa laranja cheia, trofeu na cor da bola.
+    <div className="flex items-center gap-4 rounded-b-2xl bg-saibro-600 px-5 py-4 text-white">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-saibro-800 shadow-card">
+        <IconeTrofeu className="h-7 w-7 text-bola-300" />
       </span>
       <AvataresDoLado alunos={campeao.alunos} tamanho="md" />
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-saibro-700">
+        <p className="text-xs font-semibold uppercase tracking-wide text-white">
           {duplas ? "Dupla campeã" : "Campeão"}
         </p>
-        <p className="truncate text-lg font-bold text-areia-900">{campeao.nome}</p>
+        <p className="truncate font-display text-2xl font-bold leading-tight text-white">{campeao.nome}</p>
       </div>
     </div>
   );
@@ -225,7 +226,7 @@ function ConteudoDoTorneio() {
         <div className="flex flex-wrap items-start justify-between gap-4 p-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-areia-900">{torneio.nome}</h1>
+              <h1 className="font-display text-3xl font-bold leading-tight text-areia-900">{torneio.nome}</h1>
               <SituacaoDoTorneio situacao={torneio.situacao} />
             </div>
             <p className="mt-1.5 text-sm text-areia-600">
@@ -248,7 +249,7 @@ function ConteudoDoTorneio() {
                   aria-label="Jogos com resultado"
                 >
                   <div
-                    className="h-full rounded-full bg-saibro-500"
+                    className="h-full rounded-full bg-saibro-600"
                     style={{ width: `${Math.round((detalhe.jogadas / detalhe.total) * 100)}%` }}
                   />
                 </div>

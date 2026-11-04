@@ -28,7 +28,7 @@ function nomeDoMes(competencia: string): string {
 
 /** Diferenca pago - previsto: negativo = falta pagar; o mes corrente ainda nao fechou. */
 function Diferenca({ repasse }: { repasse: RepasseDoMes }) {
-  if (repasse.situacao === "em_andamento") return <span className="text-areia-400">—</span>;
+  if (repasse.situacao === "em_andamento") return <span className="text-areia-500">—</span>;
   if (Math.abs(repasse.diferenca) < 0.01) {
     return <span className="font-medium text-emerald-700">Em dia</span>;
   }
@@ -69,21 +69,21 @@ export function RepasseDoProfessor({
             <p className="text-xs font-medium uppercase tracking-wide text-areia-500">
               {nomeDoMes(atual.competencia)}
             </p>
-            <p className="mt-1 text-lg font-bold text-areia-900">
+            <p className="mt-1 font-display text-xl font-bold leading-tight text-areia-900">
               {atual.aulasDadas} {atual.aulasDadas === 1 ? "aula dada" : "aulas dadas"}
             </p>
             <p className="text-xs text-areia-500">{formatarMinutos(atual.minutosDados)} até hoje</p>
           </div>
           <div className="bg-white px-5 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-areia-500">Previsto até hoje</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-saibro-800">
+            <p className="mt-1 font-display text-xl font-bold leading-tight tabular-nums text-saibro-800">
               {formatarMoeda(atual.previsto)}
             </p>
             <p className="text-xs text-areia-500">Pela regra do professor</p>
           </div>
           <div className="bg-white px-5 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-areia-500">Pago no mês</p>
-            <p className="mt-1 text-lg font-bold tabular-nums text-areia-900">{formatarMoeda(atual.pago)}</p>
+            <p className="mt-1 font-display text-xl font-bold leading-tight tabular-nums text-areia-900">{formatarMoeda(atual.pago)}</p>
             <p className="text-xs text-areia-500">
               {atual.aPagar > 0 ? `${formatarMoeda(atual.aPagar)} lançado a pagar` : "Fecha no início do mês seguinte"}
             </p>

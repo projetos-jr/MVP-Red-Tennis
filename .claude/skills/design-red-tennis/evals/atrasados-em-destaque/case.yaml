@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: atrasados-em-destaque
+expected_outcome: |
+  Destaca os lançamentos em atraso com o vermelho de alerta da paleta (tijolo), sem hex solto, mantendo a etiqueta com ícone e texto, com contraste de pelo menos 4,5:1, e confere com npm test e o script de telas.

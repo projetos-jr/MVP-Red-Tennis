@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PALETA } from "@/lib/paleta";
 
 interface BadgeProps {
   children: ReactNode;
@@ -12,8 +13,8 @@ interface BadgeProps {
 /** Chip de status/rotulo. Aceita cores livres para refletir a legenda do cliente. */
 export function Badge({
   children,
-  cor = "#4F483E",
-  fundo = "#F4F1EC",
+  cor = PALETA.areia[700],
+  fundo = PALETA.areia[100],
   borda,
   className = "",
   title,

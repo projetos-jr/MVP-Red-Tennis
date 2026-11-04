@@ -39,10 +39,10 @@ export function EstadoVazio({
   const Titulo = tituloDaPagina ? "h1" : "h2";
   return (
     <Card className={`px-6 py-10 text-center sm:px-12 ${className}`}>
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-saibro-50 text-saibro-700">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-saibro-600 text-white">
         {icone}
       </span>
-      <Titulo className="mt-4 text-lg font-semibold text-areia-900">{titulo}</Titulo>
+      <Titulo className="mt-4 font-display text-xl font-bold text-areia-900">{titulo}</Titulo>
       {children && (
         <div className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-areia-600">{children}</div>
       )}

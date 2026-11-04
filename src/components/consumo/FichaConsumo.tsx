@@ -106,7 +106,7 @@ export function FichaConsumo({ pessoaId, tipoPessoa, nomePessoa }: FichaConsumoP
           <p className="text-xs font-medium uppercase tracking-wide text-areia-500">Em aberto</p>
           <p
             className={`mt-1 text-xl font-bold tabular-nums ${
-              resumo.emAberto > 0 ? "text-tijolo-700" : "text-areia-900"
+              resumo.emAberto > 0 ? "text-saibro-700" : "text-areia-900"
             }`}
           >
             {formatarMoeda(resumo.emAberto)}
@@ -163,7 +163,7 @@ export function FichaConsumo({ pessoaId, tipoPessoa, nomePessoa }: FichaConsumoP
 
               <span
                 className={`w-20 shrink-0 text-right text-sm font-semibold tabular-nums ${
-                  situacao === "anulado" ? "text-areia-400 line-through" : "text-areia-800"
+                  situacao === "anulado" ? "text-areia-500 line-through" : "text-areia-800"
                 }`}
               >
                 {formatarMoeda(valor)}

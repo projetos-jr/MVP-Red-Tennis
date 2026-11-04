@@ -154,7 +154,7 @@ export function RegistroDoHistorico({
           {tela && (
             <Link
               href={tela}
-              className="inline-flex items-center gap-1 px-1 text-xs font-semibold text-tijolo-700 hover:underline"
+              className="inline-flex items-center gap-1 px-1 text-xs font-semibold text-saibro-700 hover:underline"
             >
               Abrir <IconeSeta className="h-3.5 w-3.5" />
             </Link>

@@ -151,8 +151,14 @@ semana de desempenho (meta: agenda semanal em menos de 2 segundos).
 
 ## Estilo e acessibilidade
 
-- Tokens em `tailwind.config.ts` (`saibro`, `tijolo`, `areia`) e
-  `src/lib/theme.ts` (cores por tipo de ocupação, siglas, formatadores).
+- Cores num arquivo só: `src/lib/paleta.ts` (`saibro`, `tijolo`, `areia`,
+  `cimento`, `quadra`, `bola`), lido pelo `tailwind.config.ts` e pelos
+  componentes. `src/lib/theme.ts` traz as cores por tipo de ocupação (`cheia` e
+  `sobreCheia` para os blocos vivos da agenda; tons claros para etiquetas e
+  impressão), siglas e formatadores. `src/lib/cores.ts` calcula contraste e o
+  teste `cores.test.ts` confere todos os pares de cor no CI.
+- O sistema visual (onde vai cor viva, peças comuns, o que não fazer) está na
+  skill `.claude/skills/design-red-tennis/SKILL.md`.
 - A cor nunca é o único indicador: todo estado tem rótulo ou ícone com texto.
 - Campos com rótulo, botões só com ícone com `aria-label`, ações destrutivas
   com confirmação (botão `btn-perigo`).
@@ -162,7 +168,11 @@ semana de desempenho (meta: agenda semanal em menos de 2 segundos).
 - Em telas de toque (tablet e celular) botões, campos e filtros têm 44px de
   altura (`@media (pointer: coarse)` em `globals.css`; para outro elemento
   clicável, a classe `alvo-de-toque`). O computador com mouse não muda.
-- Nenhuma fonte externa é carregada: o projeto roda offline.
+- Fontes empacotadas com o site (`@fontsource`: Inter e Barlow Semi Condensed):
+  nada é baixado de fora e o projeto roda offline.
+- Conferência visual: `scripts/visual/conferir-telas.cjs` fotografa as telas
+  em 3 tamanhos e 3 perfis e conta erros no console, rolagem lateral, contraste
+  e alvos de toque (instruções no arquivo).
 
 ## Versão para celular e tablet
 

@@ -5,7 +5,15 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { ListaDePresenca } from "@/components/agenda/ListaDePresenca";
 import { Marcadores } from "@/components/agenda/Marcadores";
-import { FUNDO_BLOQUEIO, ROTULO_SITUACAO, intervalo, plural } from "@/components/agenda/estilos";
+import {
+  CLASSE_DO_PISO,
+  COR_BLOQUEIO,
+  FUNDO_BLOQUEIO,
+  ROTULO_SITUACAO,
+  estiloDoBloco,
+  intervalo,
+  plural,
+} from "@/components/agenda/estilos";
 import { useAgora } from "@/components/agenda/useAgora";
 import { CabecalhoDaPagina, LinkDeVolta } from "@/components/ui/CabecalhoDaPagina";
 import { Carregando } from "@/components/ui/Carregando";
@@ -19,7 +27,6 @@ import {
   type ItemAgenda,
 } from "@/lib/consultas/agenda";
 import { DIAS_SEMANA_LONGO, diaDaSemana, formatarData, somarDias } from "@/lib/date";
-import { ESTILO_OCUPACAO } from "@/lib/theme";
 import { useApp } from "@/store/AppStore";
 
 export default function PaginaModoQuadra() {
@@ -121,12 +128,18 @@ function ModoQuadra({
             key={q.id}
             href={`/agenda/quadra?quadra=${q.id}${data !== HOJE ? `&data=${data}` : ""}`}
             aria-current={q.id === quadraId ? "page" : undefined}
-            className={`flex min-h-[52px] min-w-[120px] flex-1 items-center justify-center rounded-2xl border px-4 text-base font-semibold transition-colors sm:flex-none ${
+            className={`flex min-h-[52px] min-w-[120px] flex-1 items-center justify-center gap-2 rounded-2xl border px-4 font-display text-lg font-semibold transition-colors sm:flex-none ${
               q.id === quadraId
-                ? "border-saibro-600 bg-saibro-600 text-white shadow-card"
+                ? `border-transparent shadow-card ${CLASSE_DO_PISO[q.piso]}`
                 : "border-areia-200 bg-white text-areia-800 hover:border-saibro-300 hover:bg-saibro-50"
             }`}
           >
+            {q.id !== quadraId && (
+              <span
+                className={`h-3 w-3 rounded-sm ${q.piso === "cimento" ? "bg-cimento-600" : "bg-saibro-600"}`}
+                aria-hidden="true"
+              />
+            )}
             {q.nome}
           </Link>
         ))}
@@ -176,15 +189,16 @@ function AulaNaQuadra({
   agora: boolean;
 }) {
   const { ocupacao } = item;
-  const estilo = ESTILO_OCUPACAO[ocupacao.tipo];
+  const visual = estiloDoBloco(item);
 
   if (ocupacao.tipo === "Bloqueio") {
     return (
       <li
-        className={`rounded-2xl border border-areia-300 px-5 py-4 ${item.cancelada ? "opacity-60" : ""}`}
-        style={{ backgroundColor: "#F4F1EC", backgroundImage: FUNDO_BLOQUEIO }}
+        className={`rounded-2xl border border-areia-300 px-5 py-4 text-areia-800 ${item.cancelada ? "line-through" : ""}`}
+        style={{ backgroundColor: COR_BLOQUEIO, backgroundImage: FUNDO_BLOQUEIO }}
+        data-fundo-de-contraste={COR_BLOQUEIO}
       >
-        <p className="text-lg font-semibold text-areia-800">
+        <p className="text-lg font-semibold">
           {intervalo(ocupacao)} · Quadra bloqueada
           {ocupacao.descricao ? ` · ${ocupacao.descricao}` : ""}
         </p>
@@ -194,30 +208,26 @@ function AulaNaQuadra({
   }
 
   return (
-    <li
-      className={`card overflow-hidden ${agora ? "ring-4 ring-saibro-400/60" : ""} ${item.cancelada ? "opacity-70" : ""}`}
-    >
+    <li className={`card overflow-hidden ${agora ? "ring-4 ring-bola-300" : ""}`}>
       <div className="flex flex-col md:flex-row">
+        {/* Faixa do horario na cor cheia do tipo (como os blocos da grade). */}
         <div
-          className="flex shrink-0 flex-row items-center gap-4 border-b border-areia-200 px-5 py-4 md:w-56 md:flex-col md:items-start md:gap-1 md:border-b-0 md:border-r"
-          style={{
-            backgroundColor: estilo.fundo,
-            borderLeft: `6px solid ${item.cancelada ? "#B3A897" : estilo.cor}`,
-          }}
+          className="flex shrink-0 flex-row items-center gap-4 px-5 py-4 md:w-56 md:flex-col md:items-start md:gap-1"
+          style={visual.style}
         >
-          <p className="text-3xl font-bold tabular-nums text-areia-900">{ocupacao.horaInicio}</p>
+          <p className="font-display text-4xl font-bold tabular-nums leading-none">
+            {visual.alerta && <span aria-hidden="true">⚠ </span>}
+            {ocupacao.horaInicio}
+          </p>
           <div className="space-y-1">
-            <p className="text-sm text-areia-600">até {ocupacao.horaFim}</p>
-            <p
-              className="text-sm font-semibold uppercase tracking-wide"
-              style={{ color: estilo.texto }}
-            >
+            <p className="text-sm font-medium">até {ocupacao.horaFim}</p>
+            <p className={`inline-block rounded px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide ${visual.selo}`}>
               {ocupacao.tipo}
             </p>
-            {item.professor && <p className="text-sm text-areia-700">{item.professor.nome}</p>}
-            <p className="text-xs text-areia-500">{ROTULO_SITUACAO[ocupacao.situacao]}</p>
+            {item.professor && <p className="text-sm font-medium">{item.professor.nome}</p>}
+            <p className="text-xs font-medium">{ROTULO_SITUACAO[ocupacao.situacao]}</p>
             {agora && (
-              <span className="inline-block rounded-md bg-saibro-600 px-2 py-0.5 text-xs font-bold text-white">
+              <span className="inline-block rounded-md bg-bola-300 px-2 py-0.5 text-xs font-bold text-areia-900">
                 Agora
               </span>
             )}

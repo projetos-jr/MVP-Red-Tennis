@@ -16,7 +16,12 @@ function LinhaDoLado({
 }) {
   const definido = Boolean(lado.inscricao);
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    // Quem venceu ganha um filete laranja na esquerda (alem do trofeu e do negrito).
+    <div
+      className={`-ml-1.5 flex min-w-0 items-center gap-2 border-l-[3px] pl-1 ${
+        lado.venceu ? "border-saibro-600" : "border-transparent"
+      }`}
+    >
       <AvataresDoLado alunos={lado.inscricao?.alunos ?? []} />
       <span
         className={`min-w-0 flex-1 truncate text-[13px] leading-tight ${
@@ -91,7 +96,7 @@ export function CaixaDaPartida({
       type="button"
       onClick={() => aoAbrir(partida.id)}
       aria-label={descreverCaixa(caixa)}
-      className={`block w-full rounded-xl border bg-white px-3 py-2 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-saibro-300 hover:shadow-card-hover ${
+      className={`block w-full rounded-xl border bg-white px-3 py-2 text-left shadow-sm transition-all motion-safe:hover:-translate-y-0.5 hover:border-saibro-300 hover:shadow-card-hover ${
         pronta && !partida.vencedor ? "border-saibro-300" : "border-areia-200"
       }`}
     >

@@ -124,7 +124,7 @@ export function ModalSigla({
                   key={opcao.rotulo}
                   className={`cursor-pointer rounded-xl border px-3 py-2.5 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-saibro-600 ${
                     dados.geraCredito === opcao.valor
-                      ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
+                      ? "border-saibro-600 bg-saibro-50 ring-1 ring-saibro-600"
                       : "border-areia-200 hover:border-saibro-300"
                   }`}
                 >
@@ -150,7 +150,7 @@ export function ModalSigla({
                   key={opcao.valor}
                   className={`cursor-pointer rounded-xl border px-3 py-2.5 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-saibro-600 ${
                     dados.aplicaA === opcao.valor
-                      ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
+                      ? "border-saibro-600 bg-saibro-50 ring-1 ring-saibro-600"
                       : "border-areia-200 hover:border-saibro-300"
                   }`}
                 >

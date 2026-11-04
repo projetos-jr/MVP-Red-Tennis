@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { Campo, RodapeDoFormulario } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { IconeAlerta } from "@/components/ui/Icons";
 import { Modal } from "@/components/ui/Modal";
 import { HOJE } from "@/lib/banco/constantes";
@@ -201,15 +202,7 @@ function Conteudo({ aoFechar, aluno, aoSalvar }: FormularioAlunoProps) {
 
         <fieldset className="rounded-xl border border-areia-200 px-3.5 pb-3.5 pt-2">
           <legend className="px-1 text-sm font-medium text-areia-800">Ranking</legend>
-          <label className="flex items-center gap-2.5 text-sm text-areia-800">
-            <input
-              type="checkbox"
-              checked={inscrito}
-              onChange={(e) => setInscrito(e.target.checked)}
-              className="h-4 w-4 accent-tijolo-600"
-            />
-            Inscrito no ranking da arena
-          </label>
+          <OpcaoSimNao ligado={inscrito} aoMudar={setInscrito} titulo="Inscrito no ranking da arena" />
           {inscrito && (
             <Campo rotulo="Categoria" obrigatorio erro={erros.categoria} className="mt-3">
               <select

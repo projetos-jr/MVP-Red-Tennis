@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Campo, RodapeDoFormulario } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { Modal } from "@/components/ui/Modal";
 import { Segmentado } from "@/components/ui/Segmentado";
 import { HOJE } from "@/lib/banco/constantes";
@@ -275,15 +276,7 @@ export function ModalNovoLancamento({
 
           <fieldset className="rounded-xl border border-areia-200 px-4 py-3">
             <legend className="sr-only">Pagamento</legend>
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-areia-800">
-              <input
-                type="checkbox"
-                checked={jaPago}
-                onChange={(e) => setJaPago(e.target.checked)}
-                className="h-4 w-4 rounded border-areia-300 accent-tijolo-600"
-              />
-              Já foi pago
-            </label>
+            <OpcaoSimNao ligado={jaPago} aoMudar={setJaPago} titulo="Já foi pago" />
             {jaPago && (
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <Campo rotulo="Data do pagamento" obrigatorio>

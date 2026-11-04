@@ -1,6 +1,7 @@
 "use client";
 
 import type { LinhaDaMatriz } from "@/lib/consultas/ranking";
+import { PALETA } from "@/lib/paleta";
 import { AvataresDoLado } from "./AvataresDoLado";
 
 /**
@@ -8,6 +9,9 @@ import { AvataresDoLado } from "./AvataresDoLado";
  * contra cada coluna, do ponto de vista da linha (V = venceu, D = perdeu).
  * Clicar numa celula abre o jogo.
  */
+/** Casa do jogador contra ele mesmo: listrada e neutra (nao e jogo). */
+const LISTRAS = `repeating-linear-gradient(135deg, ${PALETA.areia[100]} 0 6px, ${PALETA.areia[200]} 6px 7px)`;
+
 export function MatrizDeConfrontos({
   matriz,
   aoAbrir,
@@ -55,15 +59,17 @@ export function MatrizDeConfrontos({
                     <td
                       key={j}
                       aria-hidden="true"
-                      className="rounded-lg bg-[repeating-linear-gradient(135deg,#F4F1EC,#F4F1EC_6px,#E8E3DB_6px,#E8E3DB_7px)]"
+                      className="rounded-lg"
+                      style={{ backgroundImage: LISTRAS }}
                     />
                   );
                 }
                 const situacao =
                   celula.venceu === undefined ? "pendente" : celula.venceu ? "venceu" : "perdeu";
                 const estilo = {
-                  venceu: "border-emerald-200 bg-emerald-50 text-emerald-900",
-                  perdeu: "border-tijolo-200 bg-tijolo-50 text-tijolo-900",
+                  // A vitoria em destaque (verde de quadra); a derrota neutra: nao e alerta.
+                  venceu: "border-quadra-700 bg-quadra-700 text-white",
+                  perdeu: "border-areia-200 bg-areia-100 text-areia-700",
                   pendente: "border-dashed border-areia-300 bg-white text-areia-500",
                 }[situacao];
                 return (

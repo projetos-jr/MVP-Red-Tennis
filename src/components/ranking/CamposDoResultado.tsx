@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Campo } from "@/components/ui/Formulario";
+import { OpcaoSimNao } from "@/components/ui/InterruptorBola";
 import { lerPlacar, type SetDoPlacar } from "@/lib/banco/regras/ranking";
 
 export interface ValoresDoResultado {
@@ -108,7 +109,7 @@ export function CamposDoResultado({
                 <span
                   className={`block rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-saibro-500 ${
                     escolhido
-                      ? "border-saibro-500 bg-saibro-50 text-saibro-900"
+                      ? "border-saibro-600 bg-saibro-50 text-saibro-900 ring-1 ring-saibro-600"
                       : "border-areia-300 bg-white text-areia-800 hover:border-saibro-300"
                   }`}
                 >
@@ -125,20 +126,12 @@ export function CamposDoResultado({
         </div>
       </fieldset>
 
-      <label className="flex cursor-pointer items-start gap-2.5 text-sm">
-        <input
-          type="checkbox"
-          checked={valores.wo}
-          onChange={(e) => aoMudar({ ...valores, wo: e.target.checked })}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-tijolo-600"
-        />
-        <span>
-          <span className="font-medium text-areia-800">Vitória por W.O.</span>
-          <span className="block text-xs text-areia-500">
-            O adversário não compareceu. Não precisa de placar.
-          </span>
-        </span>
-      </label>
+      <OpcaoSimNao
+        ligado={valores.wo}
+        aoMudar={(wo) => aoMudar({ ...valores, wo })}
+        titulo="Vitória por W.O."
+        descricao="O adversário não compareceu. Não precisa de placar."
+      />
 
       {!valores.wo && (
         <Campo

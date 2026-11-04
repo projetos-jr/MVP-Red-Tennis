@@ -36,7 +36,7 @@ está em "O que ficou de fora".
 | Listas longas de uma vez (93 alunos, 40 lançamentos, 50 alterações, 25 partidas) e cinco jeitos de "ver mais" | Alunos, financeiro, histórico, ranking, fichas, produto | 20 por vez e o mesmo rodapé "Mostrando 20 de 93 · Mostrar mais 20" (`MostrarMais`) |
 | Voltar: link "← Alunos" em umas telas, botão só com ícone no modo quadra e na impressão, "Voltar para o estoque" no produto; botões do cabeçalho com três arranjos no celular | Todas as telas com título | Mesmo cabeçalho e mesmo "← Área" (`CabecalhoDaPagina`, `LinkDeVolta`) |
 | "Sem acesso", "não encontrado" e histórico vazio com quatro desenhos; "Carregando" de três jeitos | Financeiro, estoque, fichas, torneio, histórico | `EstadoVazio` e `Carregando` |
-| Filtro-pílula copiado em três lugares; "Limpar filtros" em três cores; "Ver todos" como botão cinza e "Ver agenda" como link | Agenda, estoque, ranking, alunos, financeiro, histórico, painel | `BotaoFiltro` e a classe `link-acao` (link tijolo) |
+| Filtro-pílula copiado em três lugares; "Limpar filtros" em três cores; "Ver todos" como botão cinza e "Ver agenda" como link | Agenda, estoque, ranking, alunos, financeiro, histórico, painel | `BotaoFiltro` e a classe `link-acao` (link tijolo; laranja desde o redesign de novembro) |
 | Texto de apoio cinza com contraste 3,8:1 (e 2,3:1 em alguns) | Todas | Tom `areia-500` um pouco mais escuro (5,1:1); categorias B e C do ranking com texto mais escuro |
 | No tablet e no celular, botões com 40px, filtros com 28px, abas com 32px | Todas | 44px de altura em telas de toque; no computador com mouse nada muda |
 | Professor com cor sorteada nas Configurações (repasse) | Configurações | A cor dele na agenda, como na lista e na ficha |
@@ -116,3 +116,110 @@ para ícones, traços e placeholders.
 Nota técnica: para capturar tela inteira com toque no Playwright, não use
 `fullPage: true` (ela desliga a emulação de toque durante a foto); aumente a
 janela até a altura da página e tire a foto normal.
+
+## Redesign de novembro: varredura de cores
+
+Novembro de 2026, branch do redesign (pedido do cliente: "cores vivas, nada de
+pastel"). Depois da paleta nova (`src/lib/paleta.ts`), esta varredura passou
+pelas telas que não foram redesenhadas (ficha do aluno e do professor,
+professores, financeiro, estoque e produto, ranking, torneios, Configurações e
+histórico) para aplicar as regras da skill `design-red-tennis`: **vivo onde se
+age, calmo onde se lê**. Nenhuma regra de negócio, consulta ou operação mudou.
+
+### O que mudou
+
+| Antes | Agora |
+| --- | --- |
+| Cores escritas à mão (hex) em componentes: selo do plano, "Falta", aula cancelada, matriz do torneio, ícone de congelado, filtro ativo | Tudo pela paleta (`PALETA`, classes Tailwind) ou pelos tons comuns (`TONS`). Sobram só as cores sugeridas para o professor (são dados) |
+| Tabelas de estilo (`theme.ts`, `TONS`) com hex soltos | Paleta da arena (saibro, tijolo, quadra) e, para âmbar, céu e violeta (sem família na paleta), a tabela `APOIO` em `theme.ts` |
+| Vermelho em coisa que não é alerta: links "Abrir ficha", "Ver os alunos", "Limpar filtros", passar o mouse num nome, "· hoje", categoria A do ranking, selo do perfil Dono, consumo "em aberto", derrota na matriz, avatares vermelhos | Laranja (saibro) nos links e destaques; categorias A–D numa escala de laranja; perfil Dono em azul cimento; derrota neutra. O vermelho ficou para atraso, erro, apagar, inativar e "Falta" |
+| Caixas de seleção sozinhas para sim/não ("Já foi pago", "Reservar quadra", "Vitória por W.O.", "Inscrito no ranking", "Plano ativo", "Lançar conta a pagar", "Só o que precisa repor", "Mostrar inativos") | Interruptor com a bola de tênis (`InterruptorBola`, e `OpcaoSimNao` quando há título e explicação). As permissões (matriz) continuam com caixas |
+| Cabeçalho da ficha com gradiente laranja liso igual para aluno e professor | Aluno: faixa de saibro com textura e a linha de fundo da quadra passando atrás da foto. Professor: faixa na **cor dele na agenda**, com a mesma linha; iniciais na cor mais legível sobre ela |
+| Pódio com 2º e 3º lugar em laranja claro e número branco (contraste 2:1) | 1º com textura de saibro, 2º e 3º em laranja cheio, número grande em fonte de placar; os três primeiros da lista num círculo laranja |
+| Campeão do torneio num cartão bege | Faixa laranja cheia com o troféu na cor da bola (chave e página do torneio); quem venceu cada jogo ganha um filete laranja na caixa da chave; vitória na matriz do todos contra todos em verde de quadra |
+| Indicadores do financeiro com ícone pastel | Ícone em cor cheia e valor em fonte de placar, como os `StatCard` |
+| Títulos das fichas, do torneio, das janelas e dos estados vazios em Inter | Fonte de placar (Barlow Semi Condensed), como os títulos das páginas |
+| Texto apagado com `opacity` (pagamento anulado, opção bloqueada, "Carregando…" piscando) | Fundo neutro ou cor mais clara legível; no "Carregando…" pisca só a bolinha |
+| "—" de campo vazio e "·" entre nomes abaixo do contraste mínimo | "—" em `areia-500`; "·" decorativo escondido do leitor de tela |
+| Animações sem respeitar "reduzir movimento" (janelas, avisos, caixas da chave) | `motion-safe:` em todas |
+
+### Números (mesmo roteiro, mesmas telas, 3 tamanhos e os perfis que abrem cada tela)
+
+Antes = `main` antes do redesign (`telas-para-ver/antes/`); depois =
+`telas-para-ver/agente-varredura/`.
+
+| Tela | Contraste abaixo do mínimo | Conferir à mão (gradiente) | Toque < 44px |
+| --- | --- | --- | --- |
+| Ficha do aluno | 57 → 0 | 0 → 0 | 34 → 18 |
+| Professores | 0 → 0 | 0 → 0 | 8 → 8 |
+| Ficha do professor | 144 → 0 | 0 → 0 | 178 → 174 |
+| Financeiro | 0 → 0 | 0 → 0 | 242 → 242 |
+| Estoque | 0 → 0 | 0 → 0 | 104 → 104 |
+| Produto | 0 → 0 | 0 → 0 | 4 → 4 |
+| Ranking | 0 → 0 | 18 → 0 | 8 → 8 |
+| Torneios (aba) | 0 → 0 | 0 → 0 | 4 → 4 |
+| Torneio | 0 → 0 | 0 → 0 | 20 → 20 |
+| Configurações | 0 → 0 | 0 → 0 | 66 → 60 |
+| Histórico | 0 → 0 | 0 → 0 | 4 → 4 |
+| **Total** | **201 → 0** | **18 → 0** | **672 → 646** |
+
+Erros no console: 0 → 0. Rolagem para o lado no celular: 0 → 0. Também foram
+conferidos, fora do roteiro padrão, a chave do torneio de duplas, o todos
+contra todos encerrado, a aba Partidas e as janelas Novo lançamento,
+Registrar partida, Entrada de estoque e Editar cadastro: 0 falhas de contraste.
+
+O toque que sobra é o mesmo de antes (item 4 de "O que ficou de fora"): nomes
+dentro de listas e tabelas e o topo do sistema.
+
+### Como conferir
+
+1. Ficha de um aluno: a faixa laranja tem uma linha branca passando atrás da
+   foto; "Inativar aluno" continua vermelho (perigo), os links ficam laranja.
+2. Ficha de um professor: a faixa tem a cor dele na agenda.
+3. Ranking: pódio laranja e os três primeiros com número num círculo.
+4. Ranking › Torneios › Copa Red Tennis: faixa do campeão e vitórias em verde.
+5. Financeiro › Novo lançamento: "Já foi pago" é um interruptor; clique no
+   texto ou na bola para ligar.
+6. `npm test` inclui `src/lib/theme.test.ts` (iniciais legíveis em todas as
+   cores de avatar, nenhuma vermelha; categorias do ranking como filtro ativo).
+
+## Redesign de novembro: revisão independente
+
+Depois de juntar as quatro frentes do redesign, um agente que não escreveu o
+código revisou a branch rodando o sistema (Playwright em 1440, tablet 1180
+com toque, 900 e celular 390; perfis dono, recepção e professor; também no
+`next dev`, atrás de avisos do React). Achados e o que foi feito:
+
+| Achado | Gravidade | O que foi feito |
+| --- | --- | --- |
+| Cabeçalho da grade da agenda passava por cima do topo e escondia o menu do usuário ao rolar | Alta | `isolate` no contêiner da grade |
+| Diária com um dia por vez: as setas erravam o dia depois de "Amanhã" | Média | As setas andam a partir do dia na tela; trocar de visão volta ao primeiro dia |
+| Clicar numa meia hora livre antes de uma aula abria o formulário já em conflito | Média | Término sugerido para no próximo horário da coluna (`fimLivre`, com teste) |
+| Aula cancelada cobria a meia hora liberada, que deixava de ser clicável | Média | Cancelada sozinha ocupa meia coluna; a outra metade marca no lugar (com teste) |
+| Busca rápida repetida com a lista de Clientes aberta não reaplicava a busca | Baixa-média | Filtros de Clientes no endereço, como na agenda (com teste) |
+| "Voltar" do navegador saía da agenda com o painel do horário aberto | Baixa | Abrir o painel empilha um endereço: "Voltar" fecha o painel |
+| Lista de Clientes perdeu o saldo de reposição | Baixa | Coluna "Reposição" (violeta, como na agenda) |
+| Professor via o botão "Professores" em Clientes e caía em "Sem acesso" | Baixa (já existia) | O botão só aparece para quem pode abrir |
+| "Hoje" não mudava depois da meia-noite (tablet aberto na quadra) | Baixa (já existia) | A página recarrega sozinha na virada do dia |
+| Textos "Alunos" levando à tela Clientes | Muito baixa | Trocados para "Clientes" |
+| Grupo "Aluguel" dependia da ordem em que o banco entrega os alunos de cada horário (no Supabase ia de 14 para 45) | Suspeita confirmada | Titular = pessoa da cobrança da locação; sem cobrança, quem tem matrícula de locação na data (com teste embaralhando a ordem) |
+| Grade redesenhando inteira ao abrir um horário; abas recriando o observador | Desempenho | Tratadores estáveis; abas dependem só do conjunto |
+| Professor inativo vindo da ficha não aparecia no seletor | Suspeita | Aparece como "(inativo)" |
+| Celular, visões Quadra e Professor: depois de salvar em outro dia, a lista ficava no dia antigo | Suspeita | A lista vai para o dia salvo |
+
+**Ficou para depois (com dono):**
+
+- *Titular guardado no banco* (Consultor 2): o "primeiro aluno do horário"
+  ainda decide o nome mostrado em alguns pontos (`consultas/painel.ts`,
+  `consultas/financeiro.ts`, `consultas/agenda.ts`), e no Supabase a ordem
+  de `ocupacao_alunos` não é garantida. Solução definitiva: migração nova com
+  uma coluna de ordem ou de titular em `ocupacao_alunos`/`horario_alunos`.
+- *Pergunta ao cliente (H15)*: o titular de uma locação mensal sem matrícula
+  de locação conta no grupo "Aluguel"?
+- *Alvos de toque menores que 44px* nas telas que não foram redesenhadas
+  (nomes dentro de tabelas no Financeiro, Estoque e ficha do professor;
+  caixas da matriz de permissões): usáveis, mas abaixo do ideal no tablet.
+- *Gravar demora ~4,6 s no Supabase* (o sistema relê todos os dados depois
+  de cada gravação). Já era assim antes do redesign; entra na semana de
+  desempenho (meta da agenda: menos de 2 s).
+- A mensagem "Alice foi inativado" (concordância de gênero), que já existia.

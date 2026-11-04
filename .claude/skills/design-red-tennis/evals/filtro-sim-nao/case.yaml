@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: filtro-sim-nao
+expected_outcome: |
+  Cria o filtro "Mostrar inativos" com o InterruptorBola (não uma caixa de seleção nem um interruptor novo), com rótulo visível, alvo de toque de 44px no tablet e sem animação fora de motion-safe.

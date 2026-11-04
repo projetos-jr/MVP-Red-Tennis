@@ -1,9 +1,10 @@
 /**
  * ============================================================================
- *  CONSULTAS — Painel (dashboard) e pecas que aparecem em todas as telas
+ *  CONSULTAS — Inicio (rota /dashboard) e pecas que aparecem em todas as telas
  * ============================================================================
- *  - Painel: ocupacao das quadras no dia, indicadores, proximos horarios e o
- *    quadro "Precisa de atencao".
+ *  - Inicio: quem esta em cada quadra agora (faixa das quadras) e o quadro
+ *    "Precisa de atencao". Os atalhos do mosaico ficam em
+ *    `components/layout/atalhos.ts`.
  *  - Barra do topo e login: busca rapida de aluno, equipe que pode entrar e
  *    descricao da arena.
  *
@@ -35,7 +36,6 @@ import type {
   Plano,
   Produto,
   Quadra,
-  TipoOcupacao,
 } from "../banco/tipos";
 import { diferencaEmDias, horaParaMinutos, minutosParaHora, somarDias } from "../date";
 import { nomeDaPessoa, podeAcessar } from "./base";
@@ -46,14 +46,7 @@ const FECHAMENTO = minutosParaHora(HORA_FECHAMENTO * 60);
 /** Creditos que vencem em ate 30 dias entram no "Precisa de atencao" (plano aprovado). */
 export const DIAS_DE_AVISO_DA_REPOSICAO = 30;
 
-export const TIPOS_DE_AULA: TipoOcupacao[] = ["Individual", "Dupla", "LAP"];
-export const TIPOS_DE_LOCACAO: TipoOcupacao[] = [
-  "Locação Mensal",
-  "Locação Avulsa",
-  "Plano de locação",
-];
-
-/** O que as listas do painel mostram de cada aluno. */
+/** O que as listas do Inicio mostram de cada aluno. */
 export type AlunoResumido = Pick<Aluno, "id" | "nome" | "fotoUrl">;
 
 function resumir(aluno: Aluno): AlunoResumido {
@@ -122,6 +115,13 @@ export interface QuadraNoPainel {
   taxa: number;
   /** O que esta acontecendo agora na quadra. */
   emAndamento?: Ocupacao;
+  /**
+   * Alunos em quadra agora (os de `emAndamento`), sem quem avisou a falta ou
+   * faltou. Vazio quando a quadra esta livre, bloqueada ou e locacao sem nomes.
+   */
+  emQuadra: AlunoResumido[];
+  /** Nome do professor da ocupacao de agora, quando houver. */
+  professorAgora?: string;
   /** A proxima ocupacao a comecar. */
   proxima?: Ocupacao;
   /** Inicio da proxima faixa de 1 hora livre (null = cheia ate o fechamento). */
@@ -139,6 +139,11 @@ export function ocupacaoDasQuadras(
 ): QuadraNoPainel[] {
   const doDia = ocupacoesAtivasDoDia(banco, data);
   const referencia = agora ?? "00:00";
+  const agoraNaQuadra = agora
+    ? doDia.filter((o) => o.horaInicio <= agora && agora < o.horaFim)
+    : [];
+  const participantes = participantesPorOcupacao(banco, agoraNaQuadra);
+  const alunoPorId = new Map(banco.alunos.map((a) => [a.id, a]));
 
   return [...banco.quadras]
     .sort((a, b) => a.ordem - b.ordem)
@@ -152,6 +157,14 @@ export function ocupacaoDasQuadras(
           !ocupacoes.some((o) => sobrepoe(o.horaInicio, o.horaFim, inicio, fim))
         );
       });
+      const emAndamento = agoraNaQuadra.find((o) => o.quadraId === quadra.id);
+      const emQuadra = emAndamento
+        ? (participantes.get(emAndamento.id) ?? []).flatMap((p) => {
+            if (p.presenca === "falta" || p.presenca === "falta_avisada") return [];
+            const aluno = alunoPorId.get(p.alunoId);
+            return aluno ? [resumir(aluno)] : [];
+          })
+        : [];
 
       return {
         quadra,
@@ -159,8 +172,10 @@ export function ocupacaoDasQuadras(
         ocupacoes,
         minutosOcupados,
         taxa: Math.min(1, minutosOcupados / MINUTOS_DE_FUNCIONAMENTO),
-        emAndamento: agora
-          ? ocupacoes.find((o) => o.horaInicio <= agora && agora < o.horaFim)
+        emAndamento,
+        emQuadra,
+        professorAgora: emAndamento?.professorId
+          ? nomeDaPessoa(banco, emAndamento.professorId)
           : undefined,
         proxima: ocupacoes.find((o) => o.horaInicio > referencia),
         proximaFaixaLivre: faixaLivre ?? null,
@@ -168,101 +183,6 @@ export function ocupacaoDasQuadras(
         encerrado: agora !== null && agora >= FECHAMENTO,
       };
     });
-}
-
-// ---------------------------------------------------------------------------
-// Indicadores do dia
-// ---------------------------------------------------------------------------
-
-export interface ResumoDoDia {
-  /** Aulas, locacoes e partidas de ranking (bloqueios ficam de fora). */
-  total: number;
-  aulas: number;
-  locacoes: number;
-  partidas: number;
-  /** Alunos diferentes com horario hoje (sem quem ja avisou a falta). */
-  alunosEmQuadra: number;
-  /** Media da ocupacao das quadras, de 0 a 1. */
-  ocupacaoMedia: number;
-  quadraMaisCheia?: string;
-}
-
-/** Recebe a ocupacao ja calculada para nao refazer a conta. */
-export function resumoDoDia(banco: Banco, quadras: QuadraNoPainel[]): ResumoDoDia {
-  const ocupacoes = quadras.flatMap((q) => q.ocupacoes).filter((o) => o.tipo !== "Bloqueio");
-  const participantes = participantesPorOcupacao(banco, ocupacoes);
-  const alunos = new Set<string>();
-  participantes.forEach((lista) =>
-    lista.forEach((p) => {
-      if (p.presenca !== "falta" && p.presenca !== "falta_avisada") alunos.add(p.alunoId);
-    }),
-  );
-  const maisCheia = quadras.reduce<QuadraNoPainel | undefined>(
-    (maior, q) => (!maior || q.taxa > maior.taxa ? q : maior),
-    undefined,
-  );
-
-  return {
-    total: ocupacoes.length,
-    aulas: ocupacoes.filter((o) => TIPOS_DE_AULA.includes(o.tipo)).length,
-    locacoes: ocupacoes.filter((o) => TIPOS_DE_LOCACAO.includes(o.tipo)).length,
-    partidas: ocupacoes.filter((o) => o.tipo === "Ranking").length,
-    alunosEmQuadra: alunos.size,
-    ocupacaoMedia:
-      quadras.length === 0 ? 0 : quadras.reduce((soma, q) => soma + q.taxa, 0) / quadras.length,
-    quadraMaisCheia: maisCheia && maisCheia.taxa > 0 ? maisCheia.rotulo : undefined,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Proximos horarios
-// ---------------------------------------------------------------------------
-
-export interface HorarioDoPainel {
-  ocupacao: Ocupacao;
-  rotuloQuadra: string;
-  alunos: AlunoResumido[];
-  professor?: string;
-  emAndamento: boolean;
-}
-
-export interface HorariosDoPainel {
-  /** "proximos": de agora em diante. "ultimos": o dia ja terminou; mostra o fim dele. */
-  modo: "proximos" | "ultimos";
-  itens: HorarioDoPainel[];
-}
-
-export function proximosHorarios(
-  banco: Banco,
-  quadras: QuadraNoPainel[],
-  agora: string | null,
-  limite = 6,
-): HorariosDoPainel {
-  // As quadras vem em ordem; a ordenacao estavel por horario mantem essa ordem nos empates.
-  const doDia = quadras
-    .flatMap((q) => q.ocupacoes)
-    .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-  const referencia = agora ?? "00:00";
-  const seguintes = doDia.filter((o) => o.horaFim > referencia);
-  const modo = seguintes.length > 0 || doDia.length === 0 ? "proximos" : "ultimos";
-  const escolhidas = modo === "proximos" ? seguintes.slice(0, limite) : doDia.slice(-limite);
-
-  const participantes = participantesPorOcupacao(banco, escolhidas);
-  const alunoPorId = new Map(banco.alunos.map((a) => [a.id, a]));
-
-  return {
-    modo,
-    itens: escolhidas.map((ocupacao) => ({
-      ocupacao,
-      rotuloQuadra: rotuloDaQuadra(ocupacao.quadraId),
-      alunos: (participantes.get(ocupacao.id) ?? []).flatMap((p) => {
-        const aluno = alunoPorId.get(p.alunoId);
-        return aluno ? [resumir(aluno)] : [];
-      }),
-      professor: ocupacao.professorId ? nomeDaPessoa(banco, ocupacao.professorId) : undefined,
-      emAndamento: agora !== null && ocupacao.horaInicio <= agora && agora < ocupacao.horaFim,
-    })),
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -418,7 +338,7 @@ export type GrupoDeAtencao =
 export interface PrecisaDeAtencao {
   /** So os grupos das areas que o colaborador pode abrir (cada item leva a uma delas). */
   grupos: GrupoDeAtencao[];
-  /** Soma dos itens dos grupos: e o numero do cartao "Pendências". */
+  /** Soma dos itens dos grupos (o numero no topo do quadro). */
   total: number;
 }
 

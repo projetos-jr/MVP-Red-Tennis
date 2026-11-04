@@ -93,7 +93,7 @@ export function SeletorDeQuadra({
               {disponibilidade && (
                 <span
                   className={`text-[10px] font-semibold ${
-                    ativo ? "text-white/90" : ocupada ? "text-tijolo-700" : "text-emerald-700"
+                    ativo ? "text-white" : ocupada ? "text-tijolo-700" : "text-emerald-700"
                   }`}
                 >
                   {ocupada ? "● ocupada" : "○ livre"}

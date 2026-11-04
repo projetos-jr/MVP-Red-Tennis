@@ -3,9 +3,11 @@
 @tailwind utilities;
 
 :root {
-  /* Sem dependencia de fonte externa: o projeto roda offline com `npm run dev`. */
-  --font-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+  /* Fontes empacotadas com o site (@fontsource, ver app/layout.tsx): o
+     sistema funciona offline e fica igual em qualquer computador. */
+  --font-sans: "Inter Variable", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", sans-serif;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
 }
 
 @layer base {
@@ -18,28 +20,23 @@
     @apply bg-areia-100 text-areia-900 font-sans;
   }
 
-  /* Fundo levemente texturizado, lembrando o pó de saibro. */
+  /* Fundo das telas: cinza claro e limpo, com um brilho laranja quase
+     imperceptível no topo (lembra o pó de saibro, sem virar pastel). */
   .fundo-arena {
-    background-color: #f4f1ec;
-    background-image:
-      radial-gradient(
-        1200px 600px at 15% -10%,
-        rgba(210, 112, 58, 0.14),
-        transparent 60%
-      ),
-      radial-gradient(
-        900px 500px at 100% 0%,
-        rgba(163, 42, 28, 0.08),
-        transparent 55%
-      );
+    background-color: theme("colors.areia.100");
+    background-image: radial-gradient(
+      1100px 420px at 10% -12%,
+      rgba(238, 106, 31, 0.07),
+      transparent 60%
+    );
   }
 
   ::selection {
-    background-color: rgba(210, 112, 58, 0.25);
+    background-color: rgba(238, 106, 31, 0.28);
   }
 
   *:focus-visible {
-    outline: 2px solid #b95a28;
+    outline: 2px solid theme("colors.saibro.600");
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -63,10 +60,9 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
-  /* Desabilitado: cinza neutro e legível. Antes o vermelho ficava a 50% e o
-     botão parecia apagado, quase sumindo da tela. */
+  /* Ação principal: laranja vivo do saibro. Desabilitado: cinza legível. */
   .btn-primario {
-    @apply btn bg-tijolo-600 text-white shadow-sm hover:bg-tijolo-700 active:scale-[0.98] disabled:bg-areia-200 disabled:text-areia-600 disabled:opacity-100 disabled:shadow-none;
+    @apply btn bg-saibro-600 text-white shadow-sm hover:bg-saibro-700 active:scale-[0.98] disabled:bg-areia-200 disabled:text-areia-600 disabled:opacity-100 disabled:shadow-none;
   }
 
   .btn-secundario {
@@ -77,14 +73,14 @@
     @apply btn text-areia-600 hover:bg-areia-200/70 hover:text-areia-900;
   }
 
-  /* Ação que apaga, libera ou desfaz (ex.: "Liberar horário", confirmação perigosa). */
+  /* Ação que apaga, libera ou desfaz: o vermelho fica só para perigo. */
   .btn-perigo {
     @apply btn bg-tijolo-700 text-white hover:bg-tijolo-800 disabled:bg-areia-200 disabled:text-areia-600 disabled:opacity-100;
   }
 
   /* Link de ação dentro de um texto ou cartão: "Limpar filtros", "Ver todos". */
   .link-acao {
-    @apply font-semibold text-tijolo-700 underline-offset-2 hover:underline;
+    @apply font-semibold text-saibro-700 underline-offset-2 hover:underline;
   }
 
   /* Telas de toque (tablet na quadra e celular): botões, campos e filtros com
@@ -101,26 +97,89 @@
   }
 
   .campo {
-    @apply w-full rounded-xl border border-areia-300 bg-white px-3.5 py-2.5 text-sm text-areia-900 placeholder:text-areia-400 focus:border-saibro-500 focus:outline-none focus:ring-2 focus:ring-saibro-500/20;
+    @apply w-full rounded-xl border border-areia-300 bg-white px-3.5 py-2.5 text-sm text-areia-900 placeholder:text-areia-400 focus:border-saibro-500 focus:outline-none focus:ring-2 focus:ring-saibro-500/25;
   }
 
   /* Barra de rolagem discreta, usada na grade da agenda. */
   .rolagem-suave {
     scrollbar-width: thin;
-    scrollbar-color: #d6cec2 transparent;
+    scrollbar-color: theme("colors.areia.300") transparent;
   }
   .rolagem-suave::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   .rolagem-suave::-webkit-scrollbar-thumb {
-    background-color: #d6cec2;
+    background-color: theme("colors.areia.300");
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: content-box;
   }
   .rolagem-suave::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  /* ------------------------------------------------------------------------
+     Toques de personalidade (usar com moderação; ver a skill design-red-tennis)
+     ------------------------------------------------------------------------ */
+
+  /* Vidro: barra do topo e rodapé do celular. Sem suporte ao desfoque, fica
+     branco quase sólido (nunca transparente demais para ler). */
+  .vidro {
+    background-color: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    backdrop-filter: blur(16px) saturate(1.6);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .vidro {
+      background-color: rgba(255, 255, 255, 0.97);
+    }
+  }
+
+  /* Textura de saibro: laranja vivo com riscos finos ESCUROS (só aumentam o
+     contraste do texto branco por cima). Quem usa declara
+     data-fundo-de-contraste="#D94E0A" para a conferência de contraste. */
+  .textura-saibro {
+    background-color: theme("colors.saibro.600");
+    background-image:
+      repeating-linear-gradient(
+        118deg,
+        rgba(61, 21, 6, 0.05) 0 2px,
+        transparent 2px 7px
+      ),
+      linear-gradient(160deg, #e85d04 0%, theme("colors.saibro.600") 100%);
+  }
+
+  /* Botão grande do mosaico do Início (como no sistema antigo, sem os
+     ícones pixelados): laranja com textura, rótulo branco grande. */
+  .ladrilho {
+    @apply textura-saibro relative flex flex-col justify-between overflow-hidden rounded-2xl p-4 text-white shadow-ladrilho transition-transform duration-150;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ladrilho:hover {
+      transform: translateY(-2px);
+    }
+    .ladrilho:active {
+      transform: translateY(0) scale(0.99);
+    }
+  }
+
+  /* Linha branca de quadra (decorativa) na borda de baixo de um bloco. */
+  .linha-de-quadra {
+    position: relative;
+  }
+  .linha-de-quadra::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.55) 0 1px,
+      transparent 1px
+    );
+    pointer-events: none;
   }
 }
 

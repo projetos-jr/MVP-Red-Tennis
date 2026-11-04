@@ -42,7 +42,7 @@ export function Confronto({
     <div className="rounded-xl border border-areia-200 bg-areia-50/70 px-3 py-3">
       <div className="flex items-start gap-2">
         <Lado lado={a} venceu={vencedor === "A"} />
-        <span className="mt-3 shrink-0 text-xs font-semibold uppercase tracking-wide text-areia-400">
+        <span className="mt-3 shrink-0 text-xs font-semibold uppercase tracking-wide text-areia-500">
           x
         </span>
         <Lado lado={b} venceu={vencedor === "B"} direita />

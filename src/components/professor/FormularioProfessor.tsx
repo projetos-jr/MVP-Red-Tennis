@@ -212,8 +212,8 @@ function Conteudo({ aoFechar, professor, aoSalvar }: FormularioProfessorProps) {
               <label
                 key={valorModo}
                 className={`flex cursor-pointer gap-2.5 rounded-xl border p-3 text-sm ${
-                  modo === valorModo ? "border-saibro-400 bg-saibro-50" : "border-areia-200"
-                } ${podeRepasse ? "" : "cursor-not-allowed opacity-70"}`}
+                  modo === valorModo ? "border-saibro-600 bg-saibro-50 ring-1 ring-saibro-600" : "border-areia-200"
+                } ${podeRepasse ? "" : "cursor-not-allowed bg-areia-50"}`}
               >
                 <input
                   type="radio"
@@ -222,7 +222,7 @@ function Conteudo({ aoFechar, professor, aoSalvar }: FormularioProfessorProps) {
                   checked={modo === valorModo}
                   disabled={!podeRepasse}
                   onChange={() => setModo(valorModo)}
-                  className="mt-0.5 accent-tijolo-600"
+                  className="mt-0.5 accent-saibro-600"
                 />
                 <span>
                   <span className="block font-medium text-areia-900">{rotulo}</span>
