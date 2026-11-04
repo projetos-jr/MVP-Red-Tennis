@@ -206,7 +206,7 @@ function Conteudo({ aoFechar, aluno, aoSalvar }: FormularioAlunoProps) {
               type="checkbox"
               checked={inscrito}
               onChange={(e) => setInscrito(e.target.checked)}
-              className="h-4 w-4 accent-tijolo-600"
+              className="h-4 w-4 accent-saibro-600"
             />
             Inscrito no ranking da arena
           </label>

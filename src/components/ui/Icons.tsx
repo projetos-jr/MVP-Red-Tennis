@@ -242,3 +242,20 @@ export const IconeLixeira = (p: IconeProps) => (
     <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
   </Base>
 );
+
+/** Casa: botão "Início" (tela inicial com as quadras e o mosaico). */
+export const IconeInicio = (p: IconeProps) => (
+  <Base {...p}>
+    <path d="M4 11.5 12 5l8 6.5" />
+    <path d="M6 10v9a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1v-9" />
+  </Base>
+);
+
+/** Seta saindo da caixa: link que abre fora do sistema (nova aba). */
+export const IconeExterno = (p: IconeProps) => (
+  <Base {...p}>
+    <path d="M14 5h5v5" />
+    <path d="M19 5l-8 8" />
+    <path d="M17 13.5V18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4.5" />
+  </Base>
+);

@@ -18,19 +18,19 @@ const TONS = {
     valor: "text-areia-900",
   },
   saibro: {
-    caixa: "border-saibro-200 bg-saibro-50/60",
-    icone: "bg-saibro-100 text-saibro-700",
-    valor: "text-saibro-800",
+    caixa: "border-saibro-200 bg-white",
+    icone: "bg-saibro-600 text-white",
+    valor: "text-saibro-700",
   },
   alerta: {
-    caixa: "border-tijolo-200 bg-tijolo-50/70",
-    icone: "bg-tijolo-100 text-tijolo-700",
+    caixa: "border-tijolo-200 bg-tijolo-50",
+    icone: "bg-tijolo-600 text-white",
     valor: "text-tijolo-700",
   },
   positivo: {
-    caixa: "border-emerald-200 bg-emerald-50/60",
-    icone: "bg-emerald-100 text-emerald-700",
-    valor: "text-emerald-700",
+    caixa: "border-quadra-200 bg-quadra-50",
+    icone: "bg-quadra-700 text-white",
+    valor: "text-quadra-700",
   },
 } as const;
 
@@ -69,7 +69,7 @@ export function StatCard({
         {/* sm:leading-none é necessário: a variante sm:text-2xl traz o
             line-height dela e sobrescreveria o leading-none base. */}
         <p
-          className={`mt-1 text-xl font-semibold leading-none sm:text-2xl sm:leading-none ${estilo.valor}`}
+          className={`mt-1 font-display text-2xl font-bold leading-none sm:text-3xl sm:leading-none ${estilo.valor}`}
         >
           {valor}
         </p>

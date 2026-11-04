@@ -106,7 +106,7 @@ export function SecaoPermissoes() {
                             onChange={(e) => alternar(perfil, modulo, e.target.checked)}
                             aria-label={`${NOMES_DOS_PERFIS[perfil]} abre ${NOMES_DOS_MODULOS[modulo].nome}`}
                             aria-describedby={trava ? `trava-${perfil}` : undefined}
-                            className="h-5 w-5 cursor-pointer accent-tijolo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="h-5 w-5 cursor-pointer accent-saibro-600 disabled:cursor-not-allowed disabled:opacity-60"
                           />
                           {trava && <IconeCadeado className="h-3.5 w-3.5 text-areia-400" aria-hidden="true" />}
                         </span>

@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { Badge } from "./Badge";
+import { PALETA } from "@/lib/paleta";
 import { IconeAlerta, IconeCheck, IconeCongelado, IconeFechar, IconeRelogio } from "./Icons";
 
 /**
@@ -26,11 +27,11 @@ export const TONS: Record<Tom, { cor: string; fundo: string; borda: string }> = 
   /** Em atraso, prazo vencido, esgotado, inativo. */
   alerta: { cor: "#8A2118", fundo: "#FBE3E0", borda: "#EC9A90" },
   /** Anulado, encerrado, a marcar, mês em andamento. */
-  neutro: { cor: "#4F483E", fundo: "#F4F1EC", borda: "#D6CEC2" },
+  neutro: { cor: PALETA.areia[700], fundo: PALETA.areia[100], borda: PALETA.areia[300] },
   /** Congelado (plano pausado), suspensa. */
   info: { cor: "#0369A1", fundo: "#F0FAFF", borda: "#A5DFF7" },
   /** Saibro: plano do aluno, inscrições abertas, repasse fechado a pagar. */
-  destaque: { cor: "#9A4720", fundo: "#FAE8DA", borda: "#F3CEAF" },
+  destaque: { cor: PALETA.saibro[800], fundo: PALETA.saibro[100], borda: PALETA.saibro[200] },
 };
 
 type Icone = ComponentType<SVGProps<SVGSVGElement>>;

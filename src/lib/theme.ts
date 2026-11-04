@@ -4,15 +4,23 @@ import type {
   TipoMovimento,
   TipoOcupacao,
 } from "./banco/tipos";
+import { BRANCO, PALETA, TINTA } from "./paleta";
 
 /**
  * Tokens visuais compartilhados.
- * As cores dos tipos de alocacao seguem exatamente a legenda definida com o
- * cliente na Reuniao Diagnostica e nao devem ser alteradas sem alinhamento.
+ * As cores dos tipos de alocacao seguem a legenda definida com o cliente na
+ * Reuniao Diagnostica (o MATIZ nao muda sem alinhamento). Desde o redesign de
+ * novembro, os blocos da agenda sao pintados com a cor CHEIA e viva (pedido do
+ * cliente: "cores vivas, nao pasteis"); os tons claros ficam para etiquetas e
+ * para a impressao.
  */
 export interface EstiloTipo {
-  /** Cor "cheia" — usada na legenda e na barra lateral do evento. */
+  /** Cor de referencia do tipo (legenda, bolinhas, barras). */
   cor: string;
+  /** Fundo vivo do bloco na agenda. */
+  cheia: string;
+  /** Texto sobre `cheia` (branco ou escuro, o que passar de 4,5:1). */
+  sobreCheia: string;
   /** Fundo suave do chip do evento. */
   fundo: string;
   /** Cor do texto sobre o fundo suave. */
@@ -23,42 +31,56 @@ export interface EstiloTipo {
 
 export const ESTILO_TIPO: Record<Exclude<TipoOcupacao, "Bloqueio">, EstiloTipo> = {
   Individual: {
+    cheia: "#DC2626",
+    sobreCheia: BRANCO,
     cor: "#DC2626",
     fundo: "#FEF2F2",
     texto: "#991B1B",
     borda: "#FCA5A5",
   },
   "Locação Mensal": {
+    cheia: "#1E40AF",
+    sobreCheia: BRANCO,
     cor: "#1E3A8A",
     fundo: "#EFF4FF",
     texto: "#1E3A8A",
     borda: "#A9BEF0",
   },
   Dupla: {
+    cheia: "#15803D",
+    sobreCheia: BRANCO,
     cor: "#16A34A",
     fundo: "#F0FDF4",
     texto: "#15803D",
     borda: "#9DE0B4",
   },
   LAP: {
+    cheia: "#F97316",
+    sobreCheia: TINTA,
     cor: "#EA580C",
     fundo: "#FFF6ED",
     texto: "#C2410C",
     borda: "#FBBF8F",
   },
   "Locação Avulsa": {
+    cheia: "#38BDF8",
+    sobreCheia: TINTA,
     cor: "#38BDF8",
     fundo: "#F0FAFF",
     texto: "#0369A1",
     borda: "#A5DFF7",
   },
   Ranking: {
+    cheia: "#7C3AED",
+    sobreCheia: BRANCO,
     cor: "#7C3AED",
     fundo: "#F7F3FF",
     texto: "#6D28D9",
     borda: "#CBB4F8",
   },
   "Plano de locação": {
+    cheia: "#EAB308",
+    sobreCheia: TINTA,
     cor: "#EAB308",
     fundo: "#FEFBEB",
     texto: "#A16207",
@@ -73,10 +95,12 @@ export const ESTILO_TIPO: Record<Exclude<TipoOcupacao, "Bloqueio">, EstiloTipo> 
 export const ESTILO_OCUPACAO: Record<TipoOcupacao, EstiloTipo> = {
   ...ESTILO_TIPO,
   Bloqueio: {
-    cor: "#6B6255",
-    fundo: "#F4F1EC",
-    texto: "#4F483E",
-    borda: "#D6CEC2",
+    cheia: PALETA.areia[200],
+    sobreCheia: PALETA.areia[800],
+    cor: PALETA.areia[600],
+    fundo: PALETA.areia[100],
+    texto: PALETA.areia[700],
+    borda: PALETA.areia[300],
   },
 };
 
@@ -91,7 +115,7 @@ const ESTILO_SIGLA: Record<string, { cor: string; fundo: string }> = {
 
 /** Siglas novas (cadastradas nas Configuracoes) caem num estilo neutro. */
 export function estiloDaSigla(codigo: string): { cor: string; fundo: string } {
-  return ESTILO_SIGLA[codigo] ?? { cor: "#4F483E", fundo: "#F4F1EC" };
+  return ESTILO_SIGLA[codigo] ?? { cor: PALETA.areia[700], fundo: PALETA.areia[100] };
 }
 
 export const ESTILO_CATEGORIA: Record<
@@ -101,46 +125,46 @@ export const ESTILO_CATEGORIA: Record<
   A: {
     label: "Categoria A",
     descricao: "Avançado",
-    cor: "#8A2118",
-    fundo: "#FBE3E0",
-    borda: "#EC9A90",
+    cor: PALETA.tijolo[800],
+    fundo: PALETA.tijolo[100],
+    borda: PALETA.tijolo[300],
   },
   // B e C: texto um tom mais escuro que o do MVP, para o contraste passar de 4,5:1.
   B: {
     label: "Categoria B",
     descricao: "Intermediário +",
-    cor: "#7C391C",
-    fundo: "#F3CEAF",
-    borda: "#EAAD82",
+    cor: PALETA.saibro[900],
+    fundo: PALETA.saibro[200],
+    borda: PALETA.saibro[300],
   },
   C: {
     label: "Categoria C",
     descricao: "Intermediário",
-    cor: "#9A4720",
-    fundo: "#FAE8DA",
-    borda: "#F3CEAF",
+    cor: PALETA.saibro[800],
+    fundo: PALETA.saibro[100],
+    borda: PALETA.saibro[200],
   },
   D: {
     label: "Categoria D",
     descricao: "Iniciante",
-    cor: "#6B6255",
-    fundo: "#F4F1EC",
-    borda: "#E8E3DB",
+    cor: PALETA.areia[700],
+    fundo: PALETA.areia[100],
+    borda: PALETA.areia[200],
   },
 };
 
 /** Paleta dos avatares placeholder (iniciais sobre fundo colorido). */
 export const CORES_AVATAR = [
-  "#B95A28",
-  "#8A2118",
+  PALETA.saibro[600],
+  PALETA.tijolo[700],
   "#0E7490",
-  "#4D7C0F",
+  PALETA.quadra[700],
   "#6D28D9",
   "#A16207",
-  "#1E3A8A",
+  PALETA.cimento[700],
   "#15803D",
-  "#C43F2F",
-  "#6B6255",
+  PALETA.tijolo[600],
+  PALETA.areia[600],
 ];
 
 export function formatarMoeda(valor: number): string {
@@ -229,5 +253,5 @@ export const ESTILO_MOVIMENTO: Record<
   entrada: { label: "Entrada", sinal: "+", cor: "#15803D", fundo: "#F0FDF4" },
   venda: { label: "Venda", sinal: "−", cor: "#0369A1", fundo: "#F0FAFF" },
   perda: { label: "Perda", sinal: "−", cor: "#8A2118", fundo: "#FBE3E0" },
-  ajuste: { label: "Ajuste", sinal: "±", cor: "#6B6255", fundo: "#F4F1EC" },
+  ajuste: { label: "Ajuste", sinal: "±", cor: PALETA.areia[700], fundo: PALETA.areia[100] },
 };

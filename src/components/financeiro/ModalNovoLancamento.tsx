@@ -280,7 +280,7 @@ export function ModalNovoLancamento({
                 type="checkbox"
                 checked={jaPago}
                 onChange={(e) => setJaPago(e.target.checked)}
-                className="h-4 w-4 rounded border-areia-300 accent-tijolo-600"
+                className="h-4 w-4 rounded border-areia-300 accent-saibro-600"
               />
               Já foi pago
             </label>

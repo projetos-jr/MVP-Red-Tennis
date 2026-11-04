@@ -28,7 +28,7 @@ export function Segmentado<T extends string>({
     <div
       role="tablist"
       aria-label={aria}
-      className={`inline-flex items-center gap-1 rounded-xl border border-areia-200 bg-areia-100/80 p-1 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-xl border border-areia-200 bg-white p-1 shadow-sm ${className}`}
     >
       {opcoes.map((opcao) => {
         const ativo = opcao.valor === valor;
@@ -41,8 +41,8 @@ export function Segmentado<T extends string>({
             onClick={() => aoMudar(opcao.valor)}
             className={`alvo-de-toque rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               ativo
-                ? "bg-white text-saibro-800 shadow-sm"
-                : "text-areia-600 hover:text-areia-900"
+                ? "bg-saibro-600 text-white shadow-sm"
+                : "text-areia-600 hover:bg-saibro-50 hover:text-saibro-800"
             }`}
           >
             {opcao.rotulo}

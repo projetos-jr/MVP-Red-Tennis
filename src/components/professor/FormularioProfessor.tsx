@@ -222,7 +222,7 @@ function Conteudo({ aoFechar, professor, aoSalvar }: FormularioProfessorProps) {
                   checked={modo === valorModo}
                   disabled={!podeRepasse}
                   onChange={() => setModo(valorModo)}
-                  className="mt-0.5 accent-tijolo-600"
+                  className="mt-0.5 accent-saibro-600"
                 />
                 <span>
                   <span className="block font-medium text-areia-900">{rotulo}</span>

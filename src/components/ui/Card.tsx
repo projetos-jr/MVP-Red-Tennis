@@ -30,12 +30,12 @@ export function CardHeader({
     >
       <div className="flex items-start gap-3">
         {icone && (
-          <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-saibro-50 text-saibro-700">
+          <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-saibro-600 text-white">
             {icone}
           </span>
         )}
         <div>
-          <h2 className="text-base font-semibold text-areia-900">{titulo}</h2>
+          <h2 className="font-display text-lg font-bold leading-tight text-areia-900">{titulo}</h2>
           {/* No celular o texto de apoio sai: a tela é curta e o título já
               nomeia o bloco. */}
           {descricao && (

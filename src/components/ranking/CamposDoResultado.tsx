@@ -130,7 +130,7 @@ export function CamposDoResultado({
           type="checkbox"
           checked={valores.wo}
           onChange={(e) => aoMudar({ ...valores, wo: e.target.checked })}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-tijolo-600"
+          className="mt-0.5 h-4 w-4 shrink-0 accent-saibro-600"
         />
         <span>
           <span className="font-medium text-areia-800">Vitória por W.O.</span>

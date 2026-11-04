@@ -171,7 +171,7 @@ export function ModalPlano({
           <label className="flex items-start gap-3 rounded-xl border border-areia-200 px-3.5 py-3">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-tijolo-600"
+              className="mt-0.5 h-4 w-4 accent-saibro-600"
               checked={rascunho.ativo}
               onChange={(e) => mudar("ativo", e.target.checked)}
             />

@@ -2,6 +2,7 @@
 
 import { useId, type FormEvent, type ReactNode } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { InterruptorBola } from "@/components/ui/InterruptorBola";
 
 /**
  * Pecas da tela de Configuracoes: cada parametro aparece com nome, explicacao
@@ -152,7 +153,7 @@ export function EntradaComUnidade({
   );
 }
 
-/** Chave de liga/desliga. O texto "Sim"/"Não" acompanha a posicao (cor nunca sozinha). */
+/** Chave de liga/desliga (bola de tênis). O texto "Sim"/"Não" acompanha a posicao (cor nunca sozinha). */
 export function Interruptor({
   id,
   ligado,
@@ -164,26 +165,10 @@ export function Interruptor({
 }) {
   return (
     <div className="flex items-center gap-3 md:justify-end">
-      <span className={`text-sm font-medium ${ligado ? "text-tijolo-700" : "text-areia-500"}`} aria-hidden="true">
+      <span className={`text-sm font-semibold ${ligado ? "text-quadra-700" : "text-areia-500"}`} aria-hidden="true">
         {ligado ? "Sim" : "Não"}
       </span>
-      <button
-        id={id}
-        type="button"
-        role="switch"
-        aria-checked={ligado}
-        aria-describedby={`${id}-ajuda`}
-        onClick={() => aoMudar(!ligado)}
-        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors ${
-          ligado ? "border-tijolo-600 bg-tijolo-600" : "border-areia-300 bg-areia-200"
-        }`}
-      >
-        <span
-          className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            ligado ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
+      <InterruptorBola id={id} ligado={ligado} aoMudar={aoMudar} descricaoId={`${id}-ajuda`} />
     </div>
   );
 }

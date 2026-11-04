@@ -45,7 +45,7 @@ export function CabecalhoDaPagina({
     <div className={`flex flex-wrap items-end justify-between gap-4 ${className}`}>
       <div className="min-w-0">
         {acima}
-        <h1 className="text-2xl font-bold text-areia-900 sm:text-3xl">{titulo}</h1>
+        <h1 className="font-display text-3xl font-bold leading-tight text-areia-900 sm:text-4xl">{titulo}</h1>
         {descricao && <div className="mt-1 text-sm text-areia-600">{descricao}</div>}
       </div>
       {/* flex-wrap-reverse: se as ações não couberem lado a lado no celular,
@@ -74,7 +74,7 @@ export function LinkDeVolta({
   return (
     <Link
       href={href}
-      className={`alvo-de-toque inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-tijolo-700 ${className}`}
+      className={`alvo-de-toque inline-flex items-center gap-1.5 text-sm font-medium text-areia-600 transition-colors hover:text-saibro-700 ${className}`}
     >
       <IconeVoltar className="h-4 w-4" />
       {children}
