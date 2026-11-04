@@ -182,3 +182,44 @@ dentro de listas e tabelas e o topo do sistema.
    texto ou na bola para ligar.
 6. `npm test` inclui `src/lib/theme.test.ts` (iniciais legíveis em todas as
    cores de avatar, nenhuma vermelha; categorias do ranking como filtro ativo).
+
+## Redesign de novembro: revisão independente
+
+Depois de juntar as quatro frentes do redesign, um agente que não escreveu o
+código revisou a branch rodando o sistema (Playwright em 1440, tablet 1180
+com toque, 900 e celular 390; perfis dono, recepção e professor; também no
+`next dev`, atrás de avisos do React). Achados e o que foi feito:
+
+| Achado | Gravidade | O que foi feito |
+| --- | --- | --- |
+| Cabeçalho da grade da agenda passava por cima do topo e escondia o menu do usuário ao rolar | Alta | `isolate` no contêiner da grade |
+| Diária com um dia por vez: as setas erravam o dia depois de "Amanhã" | Média | As setas andam a partir do dia na tela; trocar de visão volta ao primeiro dia |
+| Clicar numa meia hora livre antes de uma aula abria o formulário já em conflito | Média | Término sugerido para no próximo horário da coluna (`fimLivre`, com teste) |
+| Aula cancelada cobria a meia hora liberada, que deixava de ser clicável | Média | Cancelada sozinha ocupa meia coluna; a outra metade marca no lugar (com teste) |
+| Busca rápida repetida com a lista de Clientes aberta não reaplicava a busca | Baixa-média | Filtros de Clientes no endereço, como na agenda (com teste) |
+| "Voltar" do navegador saía da agenda com o painel do horário aberto | Baixa | Abrir o painel empilha um endereço: "Voltar" fecha o painel |
+| Lista de Clientes perdeu o saldo de reposição | Baixa | Coluna "Reposição" (violeta, como na agenda) |
+| Professor via o botão "Professores" em Clientes e caía em "Sem acesso" | Baixa (já existia) | O botão só aparece para quem pode abrir |
+| "Hoje" não mudava depois da meia-noite (tablet aberto na quadra) | Baixa (já existia) | A página recarrega sozinha na virada do dia |
+| Textos "Alunos" levando à tela Clientes | Muito baixa | Trocados para "Clientes" |
+| Grupo "Aluguel" dependia da ordem em que o banco entrega os alunos de cada horário (no Supabase ia de 14 para 45) | Suspeita confirmada | Titular = pessoa da cobrança da locação; sem cobrança, quem tem matrícula de locação na data (com teste embaralhando a ordem) |
+| Grade redesenhando inteira ao abrir um horário; abas recriando o observador | Desempenho | Tratadores estáveis; abas dependem só do conjunto |
+| Professor inativo vindo da ficha não aparecia no seletor | Suspeita | Aparece como "(inativo)" |
+| Celular, visões Quadra e Professor: depois de salvar em outro dia, a lista ficava no dia antigo | Suspeita | A lista vai para o dia salvo |
+
+**Ficou para depois (com dono):**
+
+- *Titular guardado no banco* (Consultor 2): o "primeiro aluno do horário"
+  ainda decide o nome mostrado em alguns pontos (`consultas/painel.ts`,
+  `consultas/financeiro.ts`, `consultas/agenda.ts`), e no Supabase a ordem
+  de `ocupacao_alunos` não é garantida. Solução definitiva: migração nova com
+  uma coluna de ordem ou de titular em `ocupacao_alunos`/`horario_alunos`.
+- *Pergunta ao cliente (H15)*: o titular de uma locação mensal sem matrícula
+  de locação conta no grupo "Aluguel"?
+- *Alvos de toque menores que 44px* nas telas que não foram redesenhadas
+  (nomes dentro de tabelas no Financeiro, Estoque e ficha do professor;
+  caixas da matriz de permissões): usáveis, mas abaixo do ideal no tablet.
+- *Gravar demora ~4,6 s no Supabase* (o sistema relê todos os dados depois
+  de cada gravação). Já era assim antes do redesign; entra na semana de
+  desempenho (meta da agenda: menos de 2 s).
+- A mensagem "Alice foi inativado" (concordância de gênero), que já existia.
