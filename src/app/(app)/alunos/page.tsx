@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { FormularioAluno } from "@/components/aluno/FormularioAluno";
 import { ModalInativar } from "@/components/aluno/ModaisCadastro";
@@ -19,9 +19,14 @@ import { Segmentado } from "@/components/ui/Segmentado";
 import { HOJE } from "@/lib/banco/constantes";
 import type { Aluno } from "@/lib/banco/tipos";
 import {
+  ESTADOS_DO_CLIENTE,
+  FILTROS_PADRAO_DA_LISTA,
   ORDEM_CATEGORIAS,
   ROTULO_CATEGORIA,
+  SITUACOES_DO_FILTRO,
+  enderecoDaListaDeClientes,
   filtrarAlunos,
+  filtrosDaListaPeloEndereco,
   linhasDaListaDeAlunos,
   opcoesDePlano,
   podeAlterarCadastros,
@@ -29,84 +34,35 @@ import {
   type EstadoDoCliente,
   type FiltroDeCategoria,
   type FiltroDeSituacao,
+  type FiltrosDaListaDeClientes,
   type SituacaoAluno,
 } from "@/lib/consultas/alunos";
+import { podeAcessar } from "@/lib/consultas/base";
 import { useApp } from "@/store/AppStore";
 
 export default function PaginaClientes() {
   return (
     <Suspense fallback={<Carregando />}>
-      <ListaDeAlunosPelaUrl />
+      <ListaDeClientes />
     </Suspense>
   );
 }
 
-/**
- * Le os filtros do endereco. Quando o endereco muda com a tela aberta (a busca
- * rapida do topo leva para /alunos?busca=ana), a `key` monta a lista de novo
- * com os filtros novos. A lista nao escreve no endereco: os filtros escolhidos
- * na tela ficam so no estado dela.
- */
-function ListaDeAlunosPelaUrl() {
-  const parametros = useSearchParams();
-  return <ListaDeClientes key={parametros.toString()} parametros={parametros} />;
-}
-
-/** Situacoes de quem esta ativo; "inativo" vira o botao Inativos. */
-const SITUACOES_DOS_ATIVOS: { valor: SituacaoAluno; rotulo: string }[] = [
-  { valor: "ativo", rotulo: "Com plano valendo" },
-  { valor: "congelado", rotulo: "Plano congelado" },
-  { valor: "avulso", rotulo: "Sem plano mensal" },
-];
-
-const ESTADOS: { valor: EstadoDoCliente; rotulo: string }[] = [
-  { valor: "ativos", rotulo: "Ativos" },
-  { valor: "inativos", rotulo: "Inativos" },
-  { valor: "todos", rotulo: "Todos" },
-];
-
-interface Filtros {
-  busca: string;
-  plano: string;
-  professor: string;
-  situacao: FiltroDeSituacao;
-  estado: EstadoDoCliente;
-  categoria: FiltroDeCategoria;
-}
-
-const PADRAO: Filtros = {
-  busca: "",
-  plano: "todos",
-  professor: "todos",
-  situacao: "todas",
-  estado: "ativos",
-  categoria: "todas",
+const ROTULO_DO_ESTADO: Record<EstadoDoCliente, string> = {
+  ativos: "Ativos",
+  inativos: "Inativos",
+  todos: "Todos",
 };
 
-/**
- * Filtros que vem no endereco: /alunos?busca=ana, ?professor=prof-1,
- * ?situacao=congelado, ?plano=tipo:Dupla, ?estado=inativos, ?categoria=torneio.
- * Quem chega pela busca rapida ve ativos e inativos (como a busca do topo).
- */
-function filtrosDaUrl(parametros: ReadonlyURLSearchParams): Filtros {
-  const busca = parametros.get("busca") ?? "";
-  const situacaoUrl = parametros.get("situacao");
-  const estadoUrl = parametros.get("estado");
-  const categoriaUrl = parametros.get("categoria");
-  const situacao: FiltroDeSituacao =
-    SITUACOES_DOS_ATIVOS.find((s) => s.valor === situacaoUrl)?.valor ?? "todas";
-  const estado: EstadoDoCliente =
-    ESTADOS.find((e) => e.valor === estadoUrl)?.valor ??
-    (situacaoUrl === "inativo" ? "inativos" : busca.trim() ? "todos" : "ativos");
-  return {
-    busca,
-    plano: parametros.get("plano") ?? "todos",
-    professor: parametros.get("professor") ?? "todos",
-    situacao: estado === "inativos" ? "todas" : situacao,
-    estado,
-    categoria: ORDEM_CATEGORIAS.find((c) => c === categoriaUrl) ?? "todas",
-  };
-}
+/** Rotulos do filtro de situacao ("inativo" e o botao Inativos). */
+const ROTULO_DA_SITUACAO: Record<SituacaoAluno, string> = {
+  ativo: "Com plano valendo",
+  congelado: "Plano congelado",
+  avulso: "Sem plano mensal",
+  inativo: "Inativo",
+};
+
+type Filtros = FiltrosDaListaDeClientes;
 
 /** Numero pequeno ao lado do rotulo de um filtro. */
 function Contagem({ valor, ativo }: { valor: number; ativo: boolean }) {
@@ -127,15 +83,31 @@ type AcaoNaLista = { tipo: "editar" | "inativar"; aluno: Aluno };
  * Clientes (rota /alunos): Ativos/Inativos/Todos, grupos (Ranking, Alunos,
  * Aluguel, Torneio — Hipotese H15), busca, plano, professor e situacao, e a
  * tabela densa com editar e inativar para quem pode alterar cadastros.
+ *
+ * O ENDERECO e a fonte da verdade dos filtros (ver `filtrosDaListaPeloEndereco`
+ * em `consultas/alunos.ts`): cada mudanca reescreve o endereco com
+ * `history.replaceState` e a tela acompanha. Assim o "Ver os N na lista" da
+ * busca rapida sempre vale (e outro endereco), e voltar da ficha devolve os
+ * mesmos filtros. Ordem, "Mostrar mais" e janelas abertas ficam so na tela.
  */
-function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }) {
+function ListaDeClientes() {
   const router = useRouter();
+  const parametros = useSearchParams();
   const { banco, colaborador } = useApp();
   const podeEditar = podeAlterarCadastros(colaborador);
+  const podeVerProfessores = podeAcessar(banco, colaborador, "professores");
   // Hipotese H9: o professor ve so os proprios alunos.
   const soDoProfessorId = colaborador.perfil === "professor" ? colaborador.professorId : undefined;
 
-  const [filtros, setFiltros] = useState<Filtros>(() => filtrosDaUrl(parametros));
+  const consulta = parametros.toString();
+  const filtros = useMemo(
+    () => filtrosDaListaPeloEndereco(new URLSearchParams(consulta)),
+    [consulta],
+  );
+  // O Next atualiza o endereco lido pela tela um instante depois do
+  // replaceState. Enquanto a pessoa digita, o campo mostra o que ela digitou
+  // (senao o cursor pularia); fora do campo, mostra a busca do endereco.
+  const [rascunhoDaBusca, setRascunhoDaBusca] = useState<string | null>(null);
   const [ordem, setOrdem] = useState<OrdemDosClientes>("asc");
   const [limite, setLimite] = useState(CLIENTES_POR_VEZ);
   const [novoAberto, setNovoAberto] = useState(false);
@@ -148,7 +120,13 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
   );
   // Resumo do cabecalho: todos os clientes que o perfil enxerga, sem filtro.
   const geral = useMemo(
-    () => filtrarAlunos(banco, linhas, { ...PADRAO, estado: "todos", soDoProfessorId }, HOJE),
+    () =>
+      filtrarAlunos(
+        banco,
+        linhas,
+        { ...FILTROS_PADRAO_DA_LISTA, estado: "todos", soDoProfessorId },
+        HOJE,
+      ),
     [banco, linhas, soDoProfessorId],
   );
   const { tipos, planos } = useMemo(() => opcoesDePlano(banco), [banco]);
@@ -158,16 +136,25 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
     [resultado.linhas, ordem],
   );
 
-  const filtrando = (Object.keys(PADRAO) as (keyof Filtros)[]).some((k) => filtros[k] !== PADRAO[k]);
+  const filtrando = (Object.keys(FILTROS_PADRAO_DA_LISTA) as (keyof Filtros)[]).some(
+    (k) => filtros[k] !== FILTROS_PADRAO_DA_LISTA[k],
+  );
 
-  /** Muda um filtro e volta a lista para o começo. */
-  function mudar(novos: Partial<Filtros>) {
-    setFiltros((atual) => ({ ...atual, ...novos }));
+  /**
+   * Muda filtros (reescreve o endereco; a tela acompanha) e volta a lista
+   * para o começo. Parte do endereco de AGORA, e nao do ultimo desenho: duas
+   * mudancas seguidas, antes de a tela acompanhar, nao se perdem.
+   */
+  function mudar(novos: Partial<Filtros> | ((atual: Filtros) => Partial<Filtros>)) {
+    const atual = filtrosDaListaPeloEndereco(new URLSearchParams(window.location.search));
+    const mudancas = typeof novos === "function" ? novos(atual) : novos;
+    window.history.replaceState(null, "", enderecoDaListaDeClientes({ ...atual, ...mudancas }));
     setLimite(CLIENTES_POR_VEZ);
   }
 
   function limparFiltros() {
-    setFiltros(PADRAO);
+    setRascunhoDaBusca((rascunho) => (rascunho === null ? null : ""));
+    window.history.replaceState(null, "", enderecoDaListaDeClientes(FILTROS_PADRAO_DA_LISTA));
     setLimite(CLIENTES_POR_VEZ);
   }
 
@@ -189,10 +176,13 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
         descricao={descricao}
         acoes={
           <>
-            <Link href="/professores" className="btn-secundario">
-              <IconeUsuarios className="h-4 w-4" />
-              Professores
-            </Link>
+            {/* So para quem abre a tela de professores (o perfil de professor nao abre). */}
+            {podeVerProfessores && (
+              <Link href="/professores" className="btn-secundario">
+                <IconeUsuarios className="h-4 w-4" />
+                Professores
+              </Link>
+            )}
             {podeEditar && (
               <button type="button" onClick={() => setNovoAberto(true)} className="btn-primario">
                 <IconeMais className="h-4 w-4" />
@@ -212,11 +202,11 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
               aoMudar={(estado) =>
                 mudar(estado === "inativos" ? { estado, situacao: "todas" } : { estado })
               }
-              opcoes={ESTADOS.map(({ valor, rotulo }) => ({
+              opcoes={ESTADOS_DO_CLIENTE.map((valor) => ({
                 valor,
                 rotulo: (
                   <span className="inline-flex items-center">
-                    {rotulo}
+                    {ROTULO_DO_ESTADO[valor]}
                     <Contagem valor={resultado.porEstado[valor]} ativo={filtros.estado === valor} />
                   </span>
                 ),
@@ -240,8 +230,13 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
               <IconeBusca className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
               <input
                 type="search"
-                value={filtros.busca}
-                onChange={(e) => mudar({ busca: e.target.value })}
+                value={rascunhoDaBusca ?? filtros.busca}
+                onFocus={() => setRascunhoDaBusca(filtros.busca)}
+                onBlur={() => setRascunhoDaBusca(null)}
+                onChange={(e) => {
+                  setRascunhoDaBusca(e.target.value);
+                  mudar({ busca: e.target.value });
+                }}
                 placeholder="Buscar por nome, telefone ou e-mail…"
                 className="campo py-2 pl-9"
                 aria-label="Buscar cliente por nome, telefone ou e-mail"
@@ -289,8 +284,8 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
               onChange={(e) => {
                 const situacao = e.target.value as FiltroDeSituacao;
                 // Escolher uma situacao de quem esta ativo sai de "Inativos".
-                mudar(
-                  situacao !== "todas" && filtros.estado === "inativos"
+                mudar((atual) =>
+                  situacao !== "todas" && atual.estado === "inativos"
                     ? { situacao, estado: "ativos" }
                     : { situacao },
                 );
@@ -299,9 +294,9 @@ function ListaDeClientes({ parametros }: { parametros: ReadonlyURLSearchParams }
               aria-label="Filtrar por situação do plano"
             >
               <option value="todas">Todas as situações</option>
-              {SITUACOES_DOS_ATIVOS.map((s) => (
-                <option key={s.valor} value={s.valor}>
-                  {s.rotulo} ({resultado.contagem[s.valor]})
+              {SITUACOES_DO_FILTRO.map((situacao) => (
+                <option key={situacao} value={situacao}>
+                  {ROTULO_DA_SITUACAO[situacao]} ({resultado.contagem[situacao]})
                 </option>
               ))}
             </select>

@@ -46,7 +46,7 @@ export function CabecalhoAluno({
 
   return (
     <div className="space-y-4">
-      <LinkDeVolta href="/alunos">Alunos</LinkDeVolta>
+      <LinkDeVolta href="/alunos">Clientes</LinkDeVolta>
 
       <section className="card overflow-hidden">
         {/* Faixa de saibro no topo do cartao, com a linha de fundo da quadra

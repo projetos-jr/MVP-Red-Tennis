@@ -8,9 +8,13 @@ import { executarOperacao } from "../banco/executar";
 import { somarDias } from "../date";
 import { congelarPlano } from "../banco/operacoes/alunos";
 import { gerarBancoInicial } from "../banco/semente";
+import type { Banco, Lancamento, Ocupacao, OcupacaoAluno } from "../banco/tipos";
 import {
+  FILTROS_PADRAO_DA_LISTA,
   aulasDoAluno,
+  enderecoDaListaDeClientes,
   filtrarAlunos,
+  filtrosDaListaPeloEndereco,
   historicoDeAulas,
   idsDosAlunosDoProfessor,
   linhasDaListaDeAlunos,
@@ -20,6 +24,7 @@ import {
   previaDoCongelamento,
   resumoDoAluno,
   ROTULO_CATEGORIA,
+  type FiltrosDaListaDeClientes,
 } from "./alunos";
 import { agendaDaSemana, repassesDoProfessor } from "./professores";
 
@@ -88,6 +93,83 @@ describe("lista de alunos", () => {
   });
 });
 
+/** Uma locacao de teste (agendada, hoje, quadra 2, 20h–21h). */
+function locacaoDeTeste(dados: Pick<Ocupacao, "id" | "tipo"> & Partial<Ocupacao>): Ocupacao {
+  return {
+    quadraId: "2",
+    data: HOJE,
+    horaInicio: "20:00",
+    horaFim: "21:00",
+    situacao: "agendada",
+    criadoEm: `${HOJE}T08:00:00`,
+    ...dados,
+  };
+}
+
+/**
+ * Grupos de cada cliente com um "Cliente Novo" (x-1, sem plano e fora do
+ * ranking) e uma locacao a mais: os participantes na ordem dada, a cobranca
+ * (opcional) e uma Locacao Mensal ja encerrada que valia na data (opcional).
+ */
+function categoriasCom({
+  ocupacao,
+  alunosIds,
+  cobradoId,
+  matriculaDe,
+}: {
+  ocupacao: Ocupacao;
+  alunosIds: string[];
+  cobradoId?: string;
+  matriculaDe?: string;
+}) {
+  const novo = { ...banco.alunos[0], id: "x-1", nome: "Cliente Novo", inscritoRanking: false };
+  const participantes: OcupacaoAluno[] = alunosIds.map((alunoId) => ({
+    id: `pa-${ocupacao.id}-${alunoId}`,
+    ocupacaoId: ocupacao.id,
+    alunoId,
+    presenca: "a_marcar",
+  }));
+  const cobranca: Lancamento[] = cobradoId
+    ? [
+        {
+          id: `lc-${ocupacao.id}`,
+          tipo: "receber",
+          categoria: "Locação",
+          pessoaId: cobradoId,
+          pessoaTipo: "aluno",
+          nomePagante: "Cliente Novo",
+          item: "Locação avulsa",
+          valor: 120,
+          vencimento: ocupacao.data,
+          ocupacaoId: ocupacao.id,
+          criadoEm: ocupacao.criadoEm,
+        },
+      ]
+    : [];
+  const matricula = matriculaDe
+    ? [
+        {
+          id: `mt-${ocupacao.id}`,
+          alunoId: matriculaDe,
+          planoId: "pl-loc",
+          valorMensal: 640,
+          diaVencimento: 5,
+          inicio: somarDias(HOJE, -100),
+          fim: somarDias(HOJE, -10),
+        },
+      ]
+    : [];
+  const outro: Banco = {
+    ...banco,
+    alunos: [...banco.alunos, novo],
+    matriculas: [...banco.matriculas, ...matricula],
+    ocupacoes: [...banco.ocupacoes, ocupacao],
+    ocupacaoAlunos: [...banco.ocupacaoAlunos, ...participantes],
+    lancamentos: [...banco.lancamentos, ...cobranca],
+  };
+  return new Map(linhasDaListaDeAlunos(outro, HOJE).map((l) => [l.aluno.id, l.categorias]));
+}
+
 describe("clientes: estado e grupos (H15)", () => {
   const linhas = linhasDaListaDeAlunos(banco, HOJE);
   const porId = new Map(linhas.map((l) => [l.aluno.id, l]));
@@ -146,36 +228,74 @@ describe("clientes: estado e grupos (H15)", () => {
     expect(porId.get("a20")?.plano).toBeUndefined();
     expect(porId.get("a20")?.categorias).toContain("aluguel");
 
-    const novo = { ...banco.alunos[0], id: "x-1", nome: "Cliente Novo", inscritoRanking: false };
-    const locacao = {
-      id: "oc-x-1",
-      quadraId: "2" as const,
-      data: HOJE,
-      horaInicio: "20:00",
-      horaFim: "21:00",
-      tipo: "Locação Avulsa" as const,
-      situacao: "cancelada" as const,
-      criadoEm: `${HOJE}T08:00:00`,
-    };
-    const participantes = [
-      { id: "pa-x-1", ocupacaoId: "oc-x-1", alunoId: "x-1", presenca: "a_marcar" as const },
-      { id: "pa-x-2", ocupacaoId: "oc-x-1", alunoId: "b04", presenca: "a_marcar" as const },
-    ];
-    const montar = (situacao: "cancelada" | "agendada") => {
-      const outro = {
-        ...banco,
-        alunos: [...banco.alunos, novo],
-        ocupacoes: [...banco.ocupacoes, { ...locacao, situacao }],
-        ocupacaoAlunos: [...banco.ocupacaoAlunos, ...participantes],
-      };
-      return new Map(linhasDaListaDeAlunos(outro, HOJE).map((l) => [l.aluno.id, l.categorias]));
-    };
+    // Locacao avulsa como a operacao grava: participantes e a cobranca no
+    // nome do titular (Cliente Novo); b04 e convidado.
+    const montar = (situacao: "cancelada" | "agendada") =>
+      categoriasCom({
+        ocupacao: locacaoDeTeste({ id: "oc-x-1", tipo: "Locação Avulsa", situacao }),
+        alunosIds: ["x-1", "b04"],
+        cobradoId: "x-1",
+      });
 
     expect(montar("cancelada").get("x-1")).toEqual([]);
     const agendada = montar("agendada");
     expect(agendada.get("x-1")).toEqual(["aluguel"]);
-    // O segundo da lista e convidado: continua so no grupo que ja tinha.
     expect(agendada.get("b04")).toEqual(porId.get("b04")?.categorias);
+  });
+
+  it("titular da locação é quem foi cobrado, não o primeiro da lista", () => {
+    // O convidado (b04) aparece primeiro; a cobranca e do Cliente Novo.
+    const categorias = categoriasCom({
+      ocupacao: locacaoDeTeste({ id: "oc-x-2", tipo: "Locação Avulsa" }),
+      alunosIds: ["b04", "x-1"],
+      cobradoId: "x-1",
+    });
+    expect(categorias.get("x-1")).toEqual(["aluguel"]);
+    expect(categorias.get("b04")).toEqual(porId.get("b04")?.categorias);
+  });
+
+  it("locação sem cobrança: titular é quem tinha plano de locação na data; sem plano, ninguém", () => {
+    const passado = somarDias(HOJE, -40);
+    // Cliente Novo teve Locacao Mensal ate 10 dias atras: hoje nao tem plano,
+    // mas pagava aquela locacao. O convidado (b04) nao entra.
+    const comMatricula = categoriasCom({
+      ocupacao: locacaoDeTeste({ id: "oc-x-3", tipo: "Locação Mensal", data: passado }),
+      alunosIds: ["b04", "x-1"],
+      matriculaDe: "x-1",
+    });
+    expect(comMatricula.get("x-1")).toEqual(["aluguel"]);
+    expect(comMatricula.get("b04")).toEqual(porId.get("b04")?.categorias);
+
+    // Sem cobranca e sem plano de locacao, o sistema nao sabe quem paga.
+    const semNada = categoriasCom({
+      ocupacao: locacaoDeTeste({ id: "oc-x-4", tipo: "Plano de locação", data: passado }),
+      alunosIds: ["x-1", "b04"],
+    });
+    expect(semNada.get("x-1")).toEqual([]);
+    expect(semNada.get("b04")).toEqual(porId.get("b04")?.categorias);
+  });
+
+  it("a ordem dos participantes (que o Supabase não guarda) não muda nenhum grupo", () => {
+    const original = new Map(linhas.map((l) => [l.aluno.id, l.categorias]));
+    const ordens: OcupacaoAluno[][] = [
+      [...banco.ocupacaoAlunos].reverse(),
+      // A ordem em que o Supabase entrega: pelo id.
+      [...banco.ocupacaoAlunos].sort((a, b) => a.id.localeCompare(b.id)),
+      [...banco.ocupacaoAlunos].sort((a, b) => b.alunoId.localeCompare(a.alunoId)),
+    ];
+    ordens.forEach((ocupacaoAlunos) => {
+      const embaralhado = linhasDaListaDeAlunos({ ...banco, ocupacaoAlunos }, HOJE);
+      expect(new Map(embaralhado.map((l) => [l.aluno.id, l.categorias]))).toEqual(original);
+    });
+    // A troca de ordem mudou mesmo quem vem primeiro em alguma locacao.
+    const primeiros = (lista: OcupacaoAluno[]) => {
+      const mapa = new Map<string, string>();
+      lista.forEach((p) => {
+        if (!mapa.has(p.ocupacaoId)) mapa.set(p.ocupacaoId, p.alunoId);
+      });
+      return mapa;
+    };
+    expect(primeiros(ordens[1])).not.toEqual(primeiros(banco.ocupacaoAlunos));
   });
 
   it("combina estado, grupo, plano e busca; cada contagem ignora só o próprio filtro", () => {
@@ -213,6 +333,62 @@ describe("clientes: estado e grupos (H15)", () => {
       expect(l.situacao).toBe("congelado");
       expect(l.categorias).toContain("alunos");
     });
+  });
+});
+
+describe("endereço da lista de clientes", () => {
+  const ler = (consulta: string) => filtrosDaListaPeloEndereco(new URLSearchParams(consulta));
+  const padrao = FILTROS_PADRAO_DA_LISTA;
+
+  it.each<[string, Partial<FiltrosDaListaDeClientes>]>([
+    ["", padrao],
+    // Busca rapida ("Ver os N na lista"): ativos e inativos.
+    ["busca=ana", { busca: "ana", estado: "todos" }],
+    ["busca=ana&estado=ativos", { busca: "ana", estado: "ativos" }],
+    // Ficha do professor.
+    ["professor=prof-1", { professor: "prof-1", estado: "ativos" }],
+    ["situacao=congelado", { situacao: "congelado", estado: "ativos" }],
+    ["situacao=inativo", { situacao: "todas", estado: "inativos" }],
+    ["estado=inativos&situacao=congelado", { situacao: "todas", estado: "inativos" }],
+    ["plano=tipo:Dupla", { plano: "tipo:Dupla" }],
+    ["categoria=torneio", { categoria: "torneio" }],
+    // Valor desconhecido vira o padrao.
+    [
+      "estado=xyz&categoria=xyz&situacao=xyz&plano=",
+      { estado: "ativos", categoria: "todas", situacao: "todas", plano: "todos" },
+    ],
+  ])("?%s", (consulta, esperado) => {
+    expect(ler(consulta)).toEqual({ ...padrao, ...esperado });
+  });
+
+  it("monta só o que não é padrão, e lê de volta os mesmos filtros", () => {
+    expect(enderecoDaListaDeClientes(padrao)).toBe("/alunos");
+    expect(enderecoDaListaDeClientes({ ...padrao, busca: "ar", estado: "todos" })).toBe(
+      "/alunos?busca=ar",
+    );
+
+    const casos: FiltrosDaListaDeClientes[] = [
+      padrao,
+      { ...padrao, busca: "ar", estado: "todos", categoria: "torneio" },
+      { ...padrao, busca: "ana maria", estado: "ativos", situacao: "congelado" },
+      { ...padrao, estado: "inativos", plano: "sem", professor: "prof-2" },
+      { ...padrao, estado: "todos", categoria: "aluguel", plano: "plano:pl-loc", professor: "sem" },
+      { ...padrao, estado: "todos" },
+    ];
+    casos.forEach((filtros) => {
+      const endereco = enderecoDaListaDeClientes(filtros);
+      expect(endereco.startsWith("/alunos")).toBe(true);
+      expect(ler(endereco.split("?")[1] ?? "")).toEqual(filtros);
+    });
+  });
+
+  it("depois de escolher um grupo, o “Ver os N” da busca rápida é outro endereço", () => {
+    // Defeito: busca rapida "ar" -> Torneio -> busca rapida "ar" de novo
+    // ficava em Torneio, porque o endereco nao mudava.
+    const daBuscaRapida = `/alunos?busca=${encodeURIComponent("ar")}`;
+    const comTorneio = enderecoDaListaDeClientes({ ...ler("busca=ar"), categoria: "torneio" });
+    expect(comTorneio).not.toBe(daBuscaRapida);
+    expect(ler(daBuscaRapida.split("?")[1])).toEqual({ ...padrao, busca: "ar", estado: "todos" });
   });
 });
 

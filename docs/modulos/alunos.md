@@ -8,7 +8,7 @@ professor").
 
 | Tela | Rota | O que tem |
 | --- | --- | --- |
-| Clientes (lista de alunos) | `/alunos` | Como no sistema antigo da arena: **Ativos / Inativos / Todos** e os grupos **Todos / Ranking / Alunos / Aluguel / Torneio**, cada botão com a contagem; busca por nome (aceita pedaços: "gui lim"), telefone ou e-mail; filtros por plano (tipo ou plano exato), professor principal e situação do plano (com plano, congelado, sem plano); **Limpar filtros**. Tabela densa (nome com foto e link para a ficha, celular, plano, professor, grupos, situação, valor em atraso), ordenada por nome (clique em "Nome" para inverter), 50 por vez; no celular e no tablet em pé, um cartão por cliente. Ícones **Editar** e **Inativar** em cada cliente ativo (só dono e recepção); botão **Novo cliente**; link para os professores. Os filtros também podem vir no endereço (ver "Endereço da lista"). |
+| Clientes (lista de alunos) | `/alunos` | Como no sistema antigo da arena: **Ativos / Inativos / Todos** e os grupos **Todos / Ranking / Alunos / Aluguel / Torneio**, cada botão com a contagem; busca por nome (aceita pedaços: "gui lim"), telefone ou e-mail; filtros por plano (tipo ou plano exato), professor principal e situação do plano (com plano, congelado, sem plano); **Limpar filtros**. Tabela densa (nome com foto e link para a ficha, celular, plano, professor, grupos, situação, saldo de reposição, valor em atraso), ordenada por nome (clique em "Nome" para inverter), 50 por vez; no celular e no tablet em pé, um cartão por cliente. Quem tem minutos de reposição para usar mostra o saldo numa etiqueta violeta (coluna **Reposição**, "1h"; no cartão, "Reposição 1h" junto das etiquetas). Ícones **Editar** e **Inativar** em cada cliente ativo (só dono e recepção); botão **Novo cliente**; botão **Professores** (só para quem abre a tela de professores: o perfil de professor não vê). Os filtros ficam no endereço (ver "Endereço da lista"). |
 | Ficha do aluno | `/alunos/[id]` | Cabeçalho (situação, plano, professor, contato); **Editar cadastro**, **Congelar/Reativar plano**, **Inativar aluno** (ou **Reativar cadastro**); indicadores (aulas, frequência, faltas, pagos, em aberto, ranking); **Matrícula** com histórico de planos; **Reposição** (extrato); **Congelamento** com histórico; **Horários fixos** e próximas aulas; **Histórico de aulas**; **Pagamentos**; consumo do balcão; comentários; histórico de alterações. |
 | Lista de professores | `/professores` | Um cartão por professor: regra de repasse, alunos principais, aulas e horas da semana, repasse previsto do mês; **Novo professor**. |
 | Ficha do professor | `/professores/[id]` | Cadastro e **Editar cadastro** (com a regra de repasse); **Ver agenda deste professor** (`/agenda?professor=<id>`); indicadores da semana; **Agenda da semana** (aulas reais, com setas para outras semanas); **Repasse** (previsto x pago, mês a mês); alunos; consumo; comentários; histórico. |
@@ -53,7 +53,7 @@ dois):
 | --- | --- |
 | Ranking | Quem está inscrito no ranking (cadastro do aluno). A etiqueta mostra a categoria: "Ranking B". |
 | Alunos | Quem tem plano de aula valendo hoje: Individual, Dupla ou LAP (congelado também conta). |
-| Aluguel | Quem tem plano de locação valendo (Locação Mensal ou Plano de locação) **ou** é o titular (o primeiro nome, quem paga) de alguma locação da agenda (avulsa, mensal ou plano de locação), passada ou marcada, sem contar as canceladas e as reposições. |
+| Aluguel | Quem tem plano de locação valendo (Locação Mensal ou Plano de locação) **ou** é o titular (quem paga) de alguma locação da agenda (avulsa, mensal ou plano de locação), passada ou marcada, sem contar as canceladas e as reposições. Ver "Quem é o titular" abaixo. |
 | Torneio | Quem está inscrito em algum torneio, de qualquer situação (inscrições, em andamento ou encerrado). |
 
 Por que o titular e não todos os participantes da locação: nos dados de
@@ -64,14 +64,40 @@ avulsos). Perguntas para a arena: o grupo "Aluguel" do sistema antigo é isso?
 Convidado de uma locação conta? Quem jogou torneio há muito tempo continua em
 "Torneio"?
 
+**Quem é o titular de uma locação** (`titularesDeLocacao`), nesta ordem:
+
+1. a pessoa **cobrada** pela locação (lançamento a receber ligado a ela). A
+   locação avulsa nasce com a cobrança no nome do primeiro aluno escolhido,
+   na tela e no Supabase (`criar_horario_avulso`). Cobrança anulada também
+   vale (anular muda o dinheiro, não quem alugou);
+2. sem cobrança (locação mensal e plano de locação, que se pagam pela
+   mensalidade): quem do horário tinha **matrícula de plano de locação**
+   naquela data;
+3. sem nenhum dos dois, o sistema não sabe quem paga e a locação não põe
+   ninguém no grupo.
+
+A ordem dos nomes na locação **não** decide: o banco não guarda essa ordem
+(`ocupacao_alunos` não tem coluna de ordem e o id é sorteado), então "o
+primeiro da lista" mudava do modo demonstração para o Supabase (nos dados de
+exemplo, o grupo ia de 14 para 45 clientes). Se a arena quiser que o titular
+de uma locação mensal sem matrícula conte, o caminho é o banco guardar o
+titular (uma migração nova); hoje isso não acontece nos dados de exemplo.
+
 **Ativos e Inativos.** "Inativos" são os que saíram da arena (Inativar
 aluno). "Ativos" são todos os outros: com plano valendo, congelados e sem plano
 mensal. A situação do plano (com plano, congelado, sem plano) é o filtro
 "Todas as situações". Cada contagem nos botões considera os outros filtros
 (busca, plano, professor, grupo), menos o próprio.
 
-**Endereço da lista.** Os filtros podem vir no endereço e valem ao abrir a
-tela (também com a tela já aberta, por exemplo pela busca rápida do topo):
+**Endereço da lista.** Os filtros ficam no endereço: cada filtro escolhido na
+tela reescreve o endereço (sem criar um passo novo no "voltar" do
+navegador), e a tela lê os filtros de lá. Por isso um link abre a lista já
+filtrada, abrir uma ficha e voltar devolve os mesmos filtros, e o "Ver os N na
+lista de clientes" da busca rápida sempre vale, mesmo com a lista aberta e
+outro grupo escolhido. A ordem (A–Z ou Z–A) e o "Mostrar mais" não vão para o
+endereço. As funções são `filtrosDaListaPeloEndereco` (lê) e
+`enderecoDaListaDeClientes` (monta; só o que não é padrão), em
+`src/lib/consultas/alunos.ts`, com teste. Endereços aceitos:
 
 | Endereço | Abre |
 | --- | --- |
@@ -82,7 +108,8 @@ tela (também com a tela já aberta, por exemplo pela busca rápida do topo):
 | `/alunos?estado=inativos` | Ativos, inativos ou todos. |
 | `/alunos?categoria=torneio` | Um grupo: `ranking`, `alunos`, `aluguel` ou `torneio`. |
 
-A tela não escreve no endereço: os filtros escolhidos nela não mudam o link.
+Os parâmetros se combinam (`/alunos?busca=ar&categoria=torneio`). Valor
+desconhecido vira o padrão daquele filtro.
 
 **Editar e Inativar pela lista.** Os ícones abrem os mesmos formulários da
 ficha (`FormularioAluno` e `ModalInativar`), com as mesmas regras e a mesma

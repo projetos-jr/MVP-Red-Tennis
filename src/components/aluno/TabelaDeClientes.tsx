@@ -7,7 +7,7 @@ import { EtiquetaDeSituacao, EtiquetaNeutra, type Situacao, type Tom } from "@/c
 import { MostrarMais } from "@/components/ui/MostrarMais";
 import type { Aluno } from "@/lib/banco/tipos";
 import type { CategoriaDoCliente, LinhaDaListaDeAlunos, SituacaoAluno } from "@/lib/consultas/alunos";
-import { formatarMoeda } from "@/lib/theme";
+import { formatarMinutos, formatarMoeda } from "@/lib/theme";
 import { ESTILO_SITUACAO_ALUNO } from "./estilos";
 import { IconeEditar, IconeSaida } from "./Icones";
 
@@ -81,6 +81,25 @@ function EmAtraso({ valor }: { valor: number }) {
     >
       {formatarMoeda(valor)}
     </EtiquetaDeSituacao>
+  );
+}
+
+/**
+ * Saldo de reposição (minutos para repor aulas), só quando houver. Violeta,
+ * a cor da reposição na agenda (mesmo par de texto e fundo do marcador).
+ * Na tabela vai só o tempo ("1h"; o cabeçalho diz "Reposição"); no cartão,
+ * "Reposição 1h".
+ */
+function SaldoDeReposicao({ minutos, curto }: { minutos: number; curto?: boolean }) {
+  if (minutos <= 0) return null;
+  const tempo = formatarMinutos(minutos);
+  return (
+    <span
+      title={`Saldo de reposição: ${tempo} para repor aulas`}
+      className="inline-flex items-center whitespace-nowrap rounded-md bg-violet-100 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-violet-800"
+    >
+      {curto ? tempo : `Reposição ${tempo}`}
+    </span>
   );
 }
 
@@ -169,7 +188,7 @@ export function TabelaDeClientes({
 
   return (
     <>
-      {/* Celular e tablet em pé: um cartão por cliente (8 colunas não cabem). */}
+      {/* Celular e tablet em pé: um cartão por cliente (9 colunas não cabem). */}
       <ul className="divide-y divide-areia-100 lg:hidden">
         {visiveis.map((linha) => {
           const { aluno, plano, professor } = linha;
@@ -196,6 +215,7 @@ export function TabelaDeClientes({
                 <div className="mt-1.5 flex flex-wrap items-center gap-1">
                   <EtiquetaDoCliente situacao={linha.situacao} />
                   {linha.valorEmAtraso > 0 && <EmAtraso valor={linha.valorEmAtraso} />}
+                  <SaldoDeReposicao minutos={linha.saldoReposicao} />
                   {linha.categorias.length > 0 && <Grupos linha={linha} />}
                 </div>
               </div>
@@ -208,13 +228,17 @@ export function TabelaDeClientes({
         <table className="w-full table-fixed text-sm">
           {/* Abaixo de 1280px (tablet deitado) o celular vai para baixo do nome:
               no toque a linha ja tem 44px, entao nao perde densidade. */}
+          {/* Reposicao numa coluna estreita (so o tempo): a etiqueta embaixo da
+              situacao deixava quase toda linha com duas alturas. A largura sai
+              do plano (o nome inteiro fica no title e na ficha). */}
           <colgroup>
             <col />
             <col className="hidden w-[9rem] xl:table-column" />
-            <col className="w-[20%] xl:w-[22%]" />
-            <col className="w-[8.5rem] xl:w-[9.5rem]" />
-            <col className="w-[12.5rem] xl:w-[13.5rem]" />
+            <col className="w-[16%] xl:w-[17%]" />
+            <col className="w-[7.5rem] xl:w-[9.5rem]" />
+            <col className="w-[12rem] xl:w-[13.5rem]" />
             <col className="w-[7rem]" />
+            <col className="w-[5.5rem]" />
             <col className="w-[7rem] xl:w-[7.5rem]" />
             {podeAlterar && <col className="w-[5rem] [@media(pointer:coarse)]:w-[7rem]" />}
           </colgroup>
@@ -243,6 +267,9 @@ export function TabelaDeClientes({
               <th scope="col" className="px-2 py-2">Professor</th>
               <th scope="col" className="px-2 py-2">Categorias</th>
               <th scope="col" className="px-2 py-2">Situação</th>
+              <th scope="col" className="px-2 py-2" title="Saldo de minutos para repor aulas">
+                Reposição
+              </th>
               <th scope="col" className={`py-2 pl-2 text-right ${podeAlterar ? "pr-2" : "pr-4"}`}>
                 Em atraso
               </th>
@@ -291,6 +318,13 @@ export function TabelaDeClientes({
                   </td>
                   <td className="px-2 py-1.5">
                     <EtiquetaDoCliente situacao={linha.situacao} />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    {linha.saldoReposicao > 0 ? (
+                      <SaldoDeReposicao minutos={linha.saldoReposicao} curto />
+                    ) : (
+                      <Vazio texto="Sem reposição" />
+                    )}
                   </td>
                   <td className={`py-1.5 pl-2 text-right ${podeAlterar ? "pr-2" : "pr-4"}`}>
                     <EmAtraso valor={linha.valorEmAtraso} />
