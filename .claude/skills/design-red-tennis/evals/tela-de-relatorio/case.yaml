@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: tela-de-relatorio
+expected_outcome: |
+  Monta a tela calma (fundo branco, Card, CabecalhoDaPagina, tabela que vira cartões no celular), com cor viva só onde se age e nas quadras, cores pela paleta, e confere nos três tamanhos de tela.

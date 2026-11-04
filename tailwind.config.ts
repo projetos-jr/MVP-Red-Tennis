@@ -9,6 +9,9 @@ import { PALETA } from "./src/lib/paleta";
  */
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  // `hover:` so vale onde existe mouse: no tablet da quadra o realce nao
+  // fica "grudado" depois do toque.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: PALETA,
