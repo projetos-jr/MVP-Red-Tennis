@@ -125,6 +125,64 @@ export interface LinhaDaListaDeAlunos {
   chaveDeBusca: string;
 }
 
+/**
+ * Quem tem ou teve locacao na agenda como TITULAR (quem paga a locacao), sem
+ * as canceladas e sem as reposicoes. Convidados e reposicoes nao contam: na
+ * semente quase todo aluno ja foi convidado de alguma locacao (ou repos uma
+ * aula num horario de locacao), e o grupo Aluguel perderia o sentido.
+ *
+ * Quem paga, nesta ordem:
+ *  1. a pessoa cobrada pela locacao (lancamento a receber ligado a ela). A
+ *     locacao avulsa nasce com a cobranca no nome do titular, na tela e no
+ *     Supabase (`criar_horario_avulso`). Anular a cobranca muda o dinheiro,
+ *     nao quem alugou: a anulada tambem vale;
+ *  2. sem cobranca (locacao mensal e plano de locacao), quem do horario tinha
+ *     matricula de plano de locacao naquela data;
+ *  3. sem nenhum dos dois, o sistema nao sabe quem paga: a locacao nao poe
+ *     ninguem no grupo.
+ *
+ * A ORDEM dos participantes nao conta: no Supabase ela nao e guardada
+ * (`ocupacao_alunos` nao tem coluna de ordem e o id e sorteado), entao "o
+ * primeiro da lista" mudaria de um modo para o outro.
+ */
+function titularesDeLocacao(banco: Banco, planoPorId: Map<string, Plano>): Set<string> {
+  const reposicoes = new Set(
+    banco.reposicoes.flatMap((r) => (r.ocupacaoUsoId ? [r.ocupacaoUsoId] : [])),
+  );
+  const locacoes = new Map(
+    banco.ocupacoes
+      .filter(
+        (o) =>
+          o.situacao !== "cancelada" && TIPOS_DE_LOCACAO.includes(o.tipo) && !reposicoes.has(o.id),
+      )
+      .map((o) => [o.id, o]),
+  );
+
+  const titulares = new Set<string>();
+  const cobradas = new Set<string>();
+  banco.lancamentos.forEach((l) => {
+    if (l.tipo !== "receber" || l.pessoaTipo !== "aluno" || !l.pessoaId) return;
+    if (!l.ocupacaoId || !locacoes.has(l.ocupacaoId)) return;
+    cobradas.add(l.ocupacaoId);
+    titulares.add(l.pessoaId);
+  });
+
+  const matriculasDeLocacao = agrupar(
+    banco.matriculas.filter((m) => {
+      const tipo = planoPorId.get(m.planoId)?.tipo;
+      return tipo !== undefined && PLANOS_DE_LOCACAO.includes(tipo);
+    }),
+    (m) => m.alunoId,
+  );
+  banco.ocupacaoAlunos.forEach((oa) => {
+    const ocupacao = locacoes.get(oa.ocupacaoId);
+    if (!ocupacao || cobradas.has(ocupacao.id)) return;
+    const matriculas = matriculasDeLocacao.get(oa.alunoId) ?? [];
+    if (matriculaVigente(matriculas, oa.alunoId, ocupacao.data)) titulares.add(oa.alunoId);
+  });
+  return titulares;
+}
+
 /** Todas as linhas da lista (calcula uma vez; os filtros rodam por cima). */
 export function linhasDaListaDeAlunos(banco: Banco, hoje: string): LinhaDaListaDeAlunos[] {
   const planoPorId = new Map(banco.planos.map((p) => [p.id, p]));
@@ -137,29 +195,7 @@ export function linhasDaListaDeAlunos(banco: Banco, hoje: string): LinhaDaListaD
     atrasoPorAluno.set(l.pessoaId, (atrasoPorAluno.get(l.pessoaId) ?? 0) + l.valor);
   });
 
-  // Quem tem ou teve locacao na agenda como titular (o primeiro da lista, quem
-  // paga a locacao), sem as canceladas e sem as reposicoes. Convidados e
-  // reposicoes nao contam: na semente quase todo aluno ja foi convidado de
-  // alguma locacao (ou repos uma aula num horario de locacao), e o grupo
-  // perderia o sentido.
-  const reposicoes = new Set(
-    banco.reposicoes.flatMap((r) => (r.ocupacaoUsoId ? [r.ocupacaoUsoId] : [])),
-  );
-  const locacoes = new Set(
-    banco.ocupacoes
-      .filter(
-        (o) =>
-          o.situacao !== "cancelada" && TIPOS_DE_LOCACAO.includes(o.tipo) && !reposicoes.has(o.id),
-      )
-      .map((o) => o.id),
-  );
-  const titulares = new Map<string, string>();
-  banco.ocupacaoAlunos.forEach((oa) => {
-    if (locacoes.has(oa.ocupacaoId) && !titulares.has(oa.ocupacaoId)) {
-      titulares.set(oa.ocupacaoId, oa.alunoId);
-    }
-  });
-  const locatarios = new Set(titulares.values());
+  const locatarios = titularesDeLocacao(banco, planoPorId);
   const emTorneio = new Set(banco.torneioInscritos.flatMap((i) => i.alunosIds));
 
   return banco.alunos
@@ -318,6 +354,100 @@ export function filtrarAlunos(
     porEstado,
     porCategoria,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Endereco da lista de clientes
+// ---------------------------------------------------------------------------
+
+/**
+ * Os filtros da lista de clientes. Ficam no ENDERECO (/alunos?...): a tela le
+ * daqui e cada mudanca reescreve o endereco (como a agenda). Assim um link
+ * abre a lista ja filtrada, "voltar" da ficha devolve os mesmos filtros e o
+ * "Ver os N na lista" da busca rapida sempre vale, mesmo com a lista aberta.
+ */
+export interface FiltrosDaListaDeClientes {
+  busca: string;
+  /** "todos", "sem", "tipo:<tipo>" ou "plano:<id>". */
+  plano: string;
+  /** "todos", "sem" ou o id do professor. */
+  professor: string;
+  situacao: FiltroDeSituacao;
+  estado: EstadoDoCliente;
+  categoria: FiltroDeCategoria;
+}
+
+/** Ativos, Inativos e Todos, na ordem dos botoes. */
+export const ESTADOS_DO_CLIENTE: EstadoDoCliente[] = ["ativos", "inativos", "todos"];
+
+/** Situacoes do filtro "Todas as situacoes" (inativo e o botao Inativos). */
+export const SITUACOES_DO_FILTRO: SituacaoAluno[] = ["ativo", "congelado", "avulso"];
+
+export const FILTROS_PADRAO_DA_LISTA: FiltrosDaListaDeClientes = {
+  busca: "",
+  plano: "todos",
+  professor: "todos",
+  situacao: "todas",
+  estado: "ativos",
+  categoria: "todas",
+};
+
+/** Sem `?estado=`: quem chega com uma busca ve ativos e inativos (como a busca do topo). */
+function estadoPadrao(busca: string): EstadoDoCliente {
+  return busca.trim() ? "todos" : "ativos";
+}
+
+/**
+ * Le os filtros do endereco. Links aceitos (os antigos continuam valendo):
+ *
+ * | Endereco                    | Abre                                          |
+ * | --------------------------- | --------------------------------------------- |
+ * | (nada)                      | Ativos, sem filtro                            |
+ * | `?busca=ana`                | A busca, em Todos (link da busca rapida)      |
+ * | `?professor=prof-1`         | Os alunos do professor (ficha do professor)   |
+ * | `?situacao=congelado`       | Uma situacao; `inativo` abre Inativos         |
+ * | `?plano=tipo:Dupla`         | Um tipo de plano (ou `plano:<id>`, ou `sem`)  |
+ * | `?estado=inativos`          | Ativos, inativos ou todos                     |
+ * | `?categoria=torneio`        | Um grupo (ranking, alunos, aluguel, torneio)  |
+ *
+ * Valor desconhecido vira o padrao daquele filtro.
+ */
+export function filtrosDaListaPeloEndereco(parametros: {
+  get(nome: string): string | null;
+}): FiltrosDaListaDeClientes {
+  const busca = parametros.get("busca") ?? "";
+  const situacaoUrl = parametros.get("situacao");
+  const estadoUrl = parametros.get("estado");
+  const categoriaUrl = parametros.get("categoria");
+  const situacao: FiltroDeSituacao = SITUACOES_DO_FILTRO.find((s) => s === situacaoUrl) ?? "todas";
+  const estado: EstadoDoCliente =
+    ESTADOS_DO_CLIENTE.find((e) => e === estadoUrl) ??
+    (situacaoUrl === "inativo" ? "inativos" : estadoPadrao(busca));
+  return {
+    busca,
+    plano: parametros.get("plano") || "todos",
+    professor: parametros.get("professor") || "todos",
+    // Inativos nao tem situacao de plano.
+    situacao: estado === "inativos" ? "todas" : situacao,
+    estado,
+    categoria: ORDEM_CATEGORIAS.find((c) => c === categoriaUrl) ?? "todas",
+  };
+}
+
+/**
+ * Endereco dos filtros (o inverso de `filtrosDaListaPeloEndereco`): so vai o
+ * que nao e padrao, sempre na mesma ordem. Sem filtro nenhum, "/alunos".
+ */
+export function enderecoDaListaDeClientes(filtros: FiltrosDaListaDeClientes): string {
+  const p = new URLSearchParams();
+  if (filtros.busca) p.set("busca", filtros.busca);
+  if (filtros.estado !== estadoPadrao(filtros.busca)) p.set("estado", filtros.estado);
+  if (filtros.situacao !== "todas") p.set("situacao", filtros.situacao);
+  if (filtros.categoria !== "todas") p.set("categoria", filtros.categoria);
+  if (filtros.plano !== "todos") p.set("plano", filtros.plano);
+  if (filtros.professor !== "todos") p.set("professor", filtros.professor);
+  const consulta = p.toString();
+  return consulta ? `/alunos?${consulta}` : "/alunos";
 }
 
 /** Opcoes do filtro de plano: os tipos e cada plano do catalogo. */

@@ -342,7 +342,7 @@ function CaixaDeBusca({
               }}
               className="font-semibold text-saibro-700 underline-offset-2 hover:underline"
             >
-              Ver os {resultado.total} na lista de alunos
+              Ver os {resultado.total} na lista de clientes
             </Link>
           )}
         </div>
