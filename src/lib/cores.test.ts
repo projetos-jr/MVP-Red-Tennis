@@ -1,3 +1,4 @@
+import coresDoTailwind from "tailwindcss/colors";
 import { describe, expect, it } from "vitest";
 import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import { contraste, misturar, textoLegivelSobre } from "./cores";
@@ -108,5 +109,9 @@ describe("etiquetas e estilos dos módulos", () => {
     for (const c of Object.values(ESTILO_NIVEL_ESTOQUE)) esperarContraste(c.cor, c.fundo);
     for (const c of Object.values(ESTILO_CATEGORIA_PRODUTO)) esperarContraste(c.cor, c.fundo);
     for (const c of Object.values(ESTILO_MOVIMENTO)) esperarContraste(c.cor, c.fundo);
+  });
+
+  it("reposição (violeta nativo do Tailwind): marcador da agenda e coluna de Clientes", () => {
+    esperarContraste(coresDoTailwind.violet[800], coresDoTailwind.violet[100]);
   });
 });

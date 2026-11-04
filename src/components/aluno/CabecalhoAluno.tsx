@@ -124,7 +124,7 @@ export function CabecalhoAluno({
               {professor ? (
                 <Link
                   href={`/professores/${professor.id}`}
-                  className="chip border border-transparent bg-areia-100 text-areia-700 hover:border-saibro-300 hover:text-saibro-800"
+                  className="chip alvo-de-toque border border-transparent bg-areia-100 text-areia-700 hover:border-saibro-300 hover:text-saibro-800"
                 >
                   Professor: {professor.nome}
                 </Link>

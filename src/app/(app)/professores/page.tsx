@@ -28,7 +28,7 @@ export default function PaginaProfessores() {
 
   return (
     <div className="space-y-5">
-      <LinkDeVolta href="/alunos">Alunos</LinkDeVolta>
+      <LinkDeVolta href="/alunos">Clientes</LinkDeVolta>
 
       <CabecalhoDaPagina
         titulo="Professores"

@@ -77,7 +77,7 @@ export default function PaginaFichaAluno() {
         tituloDaPagina
         acoes={
           <Link href="/alunos" className="btn-secundario">
-            Voltar para a lista de alunos
+            Voltar para a lista de clientes
           </Link>
         }
       />
