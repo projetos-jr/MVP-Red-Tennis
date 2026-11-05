@@ -33,6 +33,7 @@ export function BotaoDeAtencao({
   titulo = "Atenção",
   descricao,
   variante = "grande",
+  abreJanela = true,
   className = "",
 }: {
   quantidade: number;
@@ -41,6 +42,8 @@ export function BotaoDeAtencao({
   /** Linha de baixo (grande) ou rótulo (compacto). Padrão: "N itens precisam de você". */
   descricao?: string;
   variante?: "grande" | "compacto";
+  /** O botão abre uma janela (leitor de tela avisa). Use false quando ele só abre uma lista na própria página. */
+  abreJanela?: boolean;
   className?: string;
 }) {
   if (quantidade <= 0) return null;
@@ -51,6 +54,7 @@ export function BotaoDeAtencao({
       <button
         type="button"
         onClick={aoAbrir}
+        aria-haspopup={abreJanela ? "dialog" : undefined}
         className={`btn alvo-de-toque gap-2 border-2 border-areia-900 bg-bola-300 px-3 py-2 text-areia-900 hover:bg-bola-200 ${className}`}
       >
         <PlacaDeAtencao className="h-6 w-6 shrink-0" />
@@ -63,6 +67,7 @@ export function BotaoDeAtencao({
     <button
       type="button"
       onClick={aoAbrir}
+      aria-haspopup={abreJanela ? "dialog" : undefined}
       className={`group flex w-full items-center gap-5 rounded-2xl bg-areia-900 px-5 py-4 text-left text-white shadow-card transition-transform hover:-translate-y-0.5 motion-reduce:transition-none sm:px-7 sm:py-5 ${className}`}
     >
       <span className="relative shrink-0">
