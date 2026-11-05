@@ -121,4 +121,16 @@ describe("etiquetas e estilos dos módulos", () => {
   it("reposição (violeta nativo do Tailwind): marcador da agenda e coluna de Clientes", () => {
     esperarContraste(coresDoTailwind.violet[800], coresDoTailwind.violet[100]);
   });
+
+  it("base (login e Início): rodapé sobre o saibro, erro do login, aviso, janela de atenção", () => {
+    // Login: rodapé branco na pílula escura sobre o saibro; "Entrar" laranja no hover.
+    esperarContraste(BRANCO, PALETA.saibro[900]);
+    esperarContraste(PALETA.saibro[700], BRANCO);
+    // Login: erro grande e aviso da demonstração.
+    esperarContraste(PALETA.tijolo[800], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[700], PALETA.areia[100]);
+    // Janela "Precisa de atenção": contagem branca no vermelho e a linha "Em dia".
+    esperarContraste(BRANCO, PALETA.tijolo[700]);
+    esperarContraste(PALETA.quadra[800], PALETA.quadra[50]);
+  });
 });
