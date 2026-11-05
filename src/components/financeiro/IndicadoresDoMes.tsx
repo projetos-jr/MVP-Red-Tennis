@@ -67,36 +67,39 @@ function Cartao({
   aoClicar: () => void;
 }) {
   const estilo = TONS[tom];
+  // Grande por padrão (pedido do dono da arena): rótulo em letra normal, o
+  // valor em letra de placar e o detalhe em text-sm.
   return (
     <button
       type="button"
       onClick={aoClicar}
-      className={`group flex w-full items-start gap-2.5 rounded-2xl border p-3 text-left shadow-card transition-all hover:shadow-card-hover sm:gap-3 sm:p-4 ${estilo.caixa} ${
+      aria-pressed={ativo}
+      className={`group flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left shadow-card transition-all hover:shadow-card-hover sm:gap-4 sm:p-5 ${estilo.caixa} ${
         ativo ? "ring-2 ring-saibro-500/60 ring-offset-2 ring-offset-areia-100" : ""
       }`}
     >
       <span
-        className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:flex ${estilo.icone}`}
+        className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl xl:flex ${estilo.icone}`}
       >
         {icone}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-start justify-between gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-areia-500">
+          <span className="text-sm font-semibold text-areia-700 sm:text-base">
             <span className="sm:hidden">{rotuloCurto}</span>
             <span className="hidden sm:inline">{rotulo}</span>
           </span>
           <IconeSeta
-            className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 transition-transform motion-safe:group-hover:translate-x-0.5 group-hover:text-areia-700"
+            className="mt-0.5 h-4 w-4 shrink-0 text-areia-500 transition-transform motion-safe:group-hover:translate-x-0.5 group-hover:text-areia-700"
           />
         </span>
-        {/* sm:leading-none: a variante sm:text-2xl traz o line-height dela. */}
+        {/* sm:leading-none: a variante sm:text-3xl traz o line-height dela. */}
         <span
-          className={`mt-1 block font-display text-2xl font-bold leading-none sm:text-3xl sm:leading-none ${estilo.valor}`}
+          className={`mt-1.5 block font-display text-2xl font-bold leading-none tabular-nums sm:text-3xl sm:leading-none 2xl:text-4xl 2xl:leading-none ${estilo.valor}`}
         >
           {formatarMoeda(valor)}
         </span>
-        <span className="mt-1.5 block text-xs leading-snug text-areia-600">
+        <span className="mt-2 block text-sm leading-snug text-areia-600">
           {detalhe}
           {ativo && <span className="sr-only"> (filtro aplicado na lista)</span>}
         </span>
@@ -127,14 +130,14 @@ export function IndicadoresDoMes({
 
   return (
     <div
-      className={`grid grid-cols-2 gap-3 sm:gap-4 ${mostrarAPagar ? "xl:grid-cols-4" : "xl:grid-cols-3"}`}
+      className={`grid grid-cols-2 gap-3 sm:gap-4 ${mostrarAPagar ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
     >
       <Cartao
         rotulo={`Recebido em ${nomeDoMes}`}
         rotuloCurto="Recebido"
         valor={recebido.valor}
         detalhe={plural(recebido.quantidade, "pagamento", "pagamentos")}
-        icone={<IconeCheck className="h-5 w-5" />}
+        icone={<IconeCheck className="h-6 w-6" />}
         tom="positivo"
         ativo={ativo === "recebido"}
         aoClicar={() => aoEscolher("recebido")}
@@ -144,7 +147,7 @@ export function IndicadoresDoMes({
         rotuloCurto="A receber"
         valor={aReceber.valor}
         detalhe={`${plural(aReceber.quantidade, "lançamento", "lançamentos")} no prazo`}
-        icone={<IconeRelogio className="h-5 w-5" />}
+        icone={<IconeRelogio className="h-6 w-6" />}
         tom="saibro"
         ativo={ativo === "aReceber"}
         aoClicar={() => aoEscolher("aReceber")}
@@ -154,7 +157,7 @@ export function IndicadoresDoMes({
         rotuloCurto="Em atraso"
         valor={emAtraso.valor}
         detalhe={`${plural(emAtraso.quantidade, "lançamento vencido", "lançamentos vencidos")}, de qualquer mês`}
-        icone={<IconeAlerta className="h-5 w-5" />}
+        icone={<IconeAlerta className="h-6 w-6" />}
         tom={emAtraso.quantidade > 0 ? "alerta" : "neutro"}
         ativo={ativo === "emAtraso"}
         aoClicar={() => aoEscolher("emAtraso")}
@@ -167,7 +170,7 @@ export function IndicadoresDoMes({
           detalhe={`${plural(aPagar.quantidade, "conta", "contas")}${
             aPagar.vencidas > 0 ? ` · ${plural(aPagar.vencidas, "vencida", "vencidas")}` : ""
           }`}
-          icone={<IconeFinanceiro className="h-5 w-5" />}
+          icone={<IconeFinanceiro className="h-6 w-6" />}
           tom="neutro"
           ativo={ativo === "aPagar"}
           aoClicar={() => aoEscolher("aPagar")}

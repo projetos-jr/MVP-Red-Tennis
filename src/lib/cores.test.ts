@@ -121,4 +121,20 @@ describe("etiquetas e estilos dos módulos", () => {
   it("reposição (violeta nativo do Tailwind): marcador da agenda e coluna de Clientes", () => {
     esperarContraste(coresDoTailwind.violet[800], coresDoTailwind.violet[100]);
   });
+
+  it("financeiro e estoque (redesign 3): faixas de alerta, painéis de opções e números grandes", () => {
+    // Cabeçalho da lista de compras e resumo das reservas com prazo vencido (fundo tijolo-50).
+    esperarContraste(PALETA.areia[800], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[600], PALETA.tijolo[50]);
+    esperarContraste(PALETA.tijolo[700], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[900], PALETA.tijolo[50]);
+    // Painéis de "Mais opções"/"Mais filtros" (areia-50) e descrição dos botões grandes.
+    esperarContraste(PALETA.areia[700], PALETA.areia[50]);
+    esperarContraste(PALETA.areia[600], PALETA.areia[50]);
+    esperarContraste(PALETA.areia[600], BRANCO);
+    // Lista de compras vazia (faixa verde) e números de placar dos cartões.
+    esperarContraste(PALETA.areia[800], PALETA.quadra[50]);
+    esperarContraste(PALETA.quadra[700], PALETA.quadra[50]);
+    esperarContraste(PALETA.saibro[700], BRANCO);
+  });
 });

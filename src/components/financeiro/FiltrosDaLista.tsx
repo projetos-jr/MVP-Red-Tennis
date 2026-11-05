@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { IconeBusca } from "@/components/ui/Icons";
+import { BotaoMaisOpcoes, PainelDeOpcoes } from "@/components/ui/MaisOpcoes";
 import type { CategoriaLancamento, TipoLancamento } from "@/lib/banco/tipos";
 import {
   categoriasDoTipo,
@@ -90,15 +91,50 @@ const SITUACOES: Array<{ valor: SituacaoNoFiltro; rotulo: string }> = [
   { valor: "cancelado", rotulo: "Anulados" },
 ];
 
+/** Quantos filtros guardados em "Mais filtros" estão ligados (a busca fica à vista e não conta). */
+export function contarFiltrosAtivos(filtros: FiltrosDaTela): number {
+  return [
+    filtros.situacao !== FILTROS_INICIAIS.situacao,
+    filtros.categoria !== FILTROS_INICIAIS.categoria,
+    filtros.forma !== FILTROS_INICIAIS.forma,
+    filtros.periodo !== FILTROS_INICIAIS.periodo,
+  ].filter(Boolean).length;
+}
+
+/** Os filtros ligados em palavras ("Em atraso", "Todos os meses"), para ver sem abrir o painel. */
+export function descreverFiltrosAtivos(filtros: FiltrosDaTela, mes: string): string[] {
+  const mesSemAno = nomeDoMes(mes).split(" de ")[0];
+  const partes: string[] = [];
+  if (filtros.situacao !== FILTROS_INICIAIS.situacao) {
+    partes.push(SITUACOES.find((s) => s.valor === filtros.situacao)?.rotulo ?? filtros.situacao);
+  }
+  if (filtros.categoria !== FILTROS_INICIAIS.categoria) partes.push(filtros.categoria);
+  if (filtros.forma !== FILTROS_INICIAIS.forma) {
+    partes.push(filtros.forma === "sem_forma" ? "Forma não informada" : filtros.forma);
+  }
+  if (filtros.periodo === "ate") partes.push(`Até ${mesSemAno}`);
+  if (filtros.periodo === "todos") partes.push("Todos os meses");
+  return partes;
+}
+
 function Seletor({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1 block text-xs font-medium text-areia-500">{rotulo}</span>
+      <span className="mb-1 block text-sm font-semibold text-areia-700">{rotulo}</span>
       {children}
     </label>
   );
 }
 
+const ID_DO_PAINEL = "filtros-do-financeiro";
+
+/**
+ * Busca grande à vista; Situação, Categoria, Forma e Período guardados em
+ * "Mais filtros" (o botão mostra quantos estão ligados). Com o painel
+ * fechado, os filtros ligados aparecem escritos embaixo da busca, com
+ * "Limpar filtros": clicar num cartão do topo liga filtros, e a pessoa
+ * precisa ver o que está valendo.
+ */
 export function FiltrosDaLista({
   tipo,
   filtros,
@@ -114,36 +150,83 @@ export function FiltrosDaLista({
   aoMudar: (parcial: Partial<FiltrosDaTela>) => void;
   aoLimpar: () => void;
 }) {
+  const [aberto, setAberto] = useState(false);
   const nome = nomeDoMes(mes);
   // Nas opções do período vai só o nome do mês: o ano já está no topo da tela.
   const mesSemAno = nome.split(" de ")[0];
   const buscandoSoNoMes = Boolean(filtros.busca.trim()) && filtros.periodo === "mes";
+  const ativos = contarFiltrosAtivos(filtros);
+  const descricao = descreverFiltrosAtivos(filtros, mes);
 
   return (
-    <div className="space-y-2.5 border-b border-areia-200 px-4 py-3">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
-        <label className="relative block min-w-0 xl:flex-1">
-          <span className="mb-1 block text-xs font-medium text-areia-500">Busca</span>
-          <IconeBusca className="pointer-events-none absolute bottom-2.5 left-3 h-4 w-4 text-areia-400" />
+    <div className="space-y-3 border-b border-areia-200 px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <IconeBusca className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-areia-500" />
           <input
             type="search"
             value={filtros.busca}
             onChange={(e) => aoMudar({ busca: e.target.value })}
+            aria-label={
+              tipo === "receber"
+                ? "Buscar por aluno, quem pagou ou item"
+                : "Buscar por favorecido ou item"
+            }
             placeholder={
               tipo === "receber"
-                ? "Aluno, quem pagou ou item…"
-                : "Favorecido ou item…"
+                ? "Buscar nome ou item…"
+                : "Buscar favorecido ou item…"
             }
-            className="campo py-2 pl-9"
+            className="campo py-3 pl-11 text-base"
           />
-        </label>
+        </div>
+        <BotaoMaisOpcoes
+          aberto={aberto}
+          aoAlternar={() => setAberto((atual) => !atual)}
+          controla={ID_DO_PAINEL}
+          rotulo="Mais filtros"
+          rotuloAberto="Menos filtros"
+          contagem={ativos}
+          className="py-3 text-base"
+        />
+      </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[700px] xl:shrink-0">
+      {buscandoSoNoMes && (
+        <p className="text-sm text-areia-600">
+          A busca olha só {nome}.{" "}
+          <button
+            type="button"
+            onClick={() => aoMudar({ periodo: "todos" })}
+            className="link-acao alvo-de-toque"
+          >
+            Buscar em todos os meses
+          </button>
+        </p>
+      )}
+
+      {!aberto && descricao.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-areia-700">
+          <span>
+            Mostrando: <strong className="font-semibold text-areia-900">{descricao.join(" · ")}</strong>
+          </span>
+          <button type="button" onClick={aoLimpar} className="link-acao alvo-de-toque">
+            Limpar filtros
+          </button>
+        </p>
+      )}
+
+      <PainelDeOpcoes
+        id={ID_DO_PAINEL}
+        aberto={aberto}
+        rotulo="Mais filtros"
+        className="space-y-2.5 rounded-xl border border-areia-200 bg-areia-50 p-3 sm:p-4"
+      >
+        <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-4">
           <Seletor rotulo="Situação">
             <select
               value={filtros.situacao}
               onChange={(e) => aoMudar({ situacao: e.target.value as SituacaoNoFiltro })}
-              className="campo py-2"
+              className="campo text-base"
             >
               {SITUACOES.map((s) => (
                 <option key={s.valor} value={s.valor}>
@@ -158,7 +241,7 @@ export function FiltrosDaLista({
               onChange={(e) =>
                 aoMudar({ categoria: e.target.value as CategoriaLancamento | "todas" })
               }
-              className="campo py-2"
+              className="campo text-base"
             >
               <option value="todas">Todas</option>
               {categoriasDoTipo(tipo).map((categoria) => (
@@ -172,7 +255,7 @@ export function FiltrosDaLista({
             <select
               value={filtros.forma}
               onChange={(e) => aoMudar({ forma: e.target.value })}
-              className="campo py-2"
+              className="campo text-base"
             >
               <option value="todas">Todas</option>
               {formas.map((forma) => (
@@ -187,7 +270,7 @@ export function FiltrosDaLista({
             <select
               value={filtros.periodo}
               onChange={(e) => aoMudar({ periodo: e.target.value as FiltrosDaTela["periodo"] })}
-              className="campo py-2"
+              className="campo text-base"
             >
               <option value="mes">Só {mesSemAno}</option>
               <option value="ate">Até {mesSemAno}</option>
@@ -195,35 +278,18 @@ export function FiltrosDaLista({
             </select>
           </Seletor>
         </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-areia-500">
-        {buscandoSoNoMes ? (
-          <span className="text-areia-600">
-            A busca olha só {nome}.{" "}
-            <button
-              type="button"
-              onClick={() => aoMudar({ periodo: "todos" })}
-              className="link-acao"
-            >
-              Buscar em todos os meses
-            </button>
-          </span>
-        ) : (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-areia-600">
           <span>
             No período, vale a data do pagamento; o que ainda não foi pago entra pelo vencimento.
           </span>
-        )}
-        {!filtrosLimpos(filtros) && (
-          <button
-            type="button"
-            onClick={aoLimpar}
-            className="link-acao"
-          >
-            Limpar filtros
-          </button>
-        )}
-      </div>
+          {!filtrosLimpos(filtros) && (
+            <button type="button" onClick={aoLimpar} className="link-acao alvo-de-toque">
+              Limpar filtros
+            </button>
+          )}
+        </div>
+      </PainelDeOpcoes>
     </div>
   );
 }

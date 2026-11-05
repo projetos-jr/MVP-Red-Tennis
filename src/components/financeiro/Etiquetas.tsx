@@ -26,9 +26,9 @@ export function textoDaSituacao(linha: LinhaLancamento): string {
   }
 }
 
-export function BadgeSituacao({ linha }: { linha: LinhaLancamento }) {
+export function BadgeSituacao({ linha, className = "" }: { linha: LinhaLancamento; className?: string }) {
   return (
-    <EtiquetaDeSituacao situacao={linha.situacao} className="whitespace-nowrap">
+    <EtiquetaDeSituacao situacao={linha.situacao} className={`whitespace-nowrap ${className}`}>
       {textoDaSituacao(linha)}
     </EtiquetaDeSituacao>
   );
@@ -58,10 +58,10 @@ export const ESTILO_SITUACAO_REPASSE: Record<
   sem_aulas: { rotulo: "Sem aulas", tom: "neutro", icone: IconeRelogio },
 };
 
-export function BadgeRepasse({ situacao }: { situacao: SituacaoRepasse }) {
+export function BadgeRepasse({ situacao, className = "" }: { situacao: SituacaoRepasse; className?: string }) {
   const estilo = ESTILO_SITUACAO_REPASSE[situacao];
   return (
-    <EtiquetaDeSituacao tom={estilo.tom} icone={estilo.icone} className="whitespace-nowrap">
+    <EtiquetaDeSituacao tom={estilo.tom} icone={estilo.icone} className={`whitespace-nowrap ${className}`}>
       {estilo.rotulo}
     </EtiquetaDeSituacao>
   );

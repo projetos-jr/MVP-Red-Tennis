@@ -35,7 +35,7 @@ export function BarraDoNivel({
   const preenchimento = Math.min(100, (Math.max(saldo, 0) / referencia) * 100);
   return (
     <div
-      className={`relative h-2 w-full overflow-hidden rounded-full bg-areia-100 ${className}`}
+      className={`relative h-2.5 w-full overflow-hidden rounded-full bg-areia-100 ${className}`}
       aria-hidden="true"
     >
       <div
@@ -65,15 +65,18 @@ export function SaldoEmDestaque({
   nivel: NivelEstoque;
   tamanho?: "md" | "lg";
 }) {
+  // "lg": número de placar (cartão e detalhe do produto); o dono da arena lê de longe.
+  const numero = tamanho === "lg" ? "font-display text-5xl" : "text-3xl";
+  const minimo = tamanho === "lg" ? "text-base text-areia-600" : "text-xs text-areia-500";
   return (
     <p>
       <span
-        className={`font-bold leading-none tabular-nums ${tamanho === "lg" ? "text-4xl" : "text-3xl"}`}
+        className={`font-bold leading-none tabular-nums ${numero}`}
         style={{ color: ESTILO_NIVEL_ESTOQUE[nivel].cor }}
       >
         {saldo}
       </span>
-      <span className="ml-1.5 text-xs text-areia-500">/ mín. {estoqueMinimo}</span>
+      <span className={`ml-2 ${minimo}`}>/ mínimo {estoqueMinimo}</span>
     </p>
   );
 }
