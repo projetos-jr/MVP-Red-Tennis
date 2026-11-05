@@ -4,6 +4,7 @@ import { TONS } from "@/components/ui/EtiquetaDeSituacao";
 import { contraste, misturar, textoLegivelSobre } from "./cores";
 import { BRANCO, LADRILHO, PALETA, TINTA } from "./paleta";
 import {
+  CORES_AVATAR,
   ESTILO_CATEGORIA,
   ESTILO_CATEGORIA_PRODUTO,
   ESTILO_MOVIMENTO,
@@ -132,5 +133,19 @@ describe("etiquetas e estilos dos módulos", () => {
     // Janela "Precisa de atenção": contagem branca no vermelho e a linha "Em dia".
     esperarContraste(BRANCO, PALETA.tijolo[700]);
     esperarContraste(PALETA.quadra[800], PALETA.quadra[50]);
+  });
+
+  it("ranking: pirâmide de raquetes (nome, pontos, posição na bolinha, faixa de saibro)", () => {
+    // Faixa de saibro atrás do topo (pior caso: saibro-100) e o resto em branco.
+    for (const fundo of [PALETA.saibro[100], PALETA.saibro[50], BRANCO]) {
+      esperarContraste(PALETA.areia[900], fundo); // nome e pontos em negrito
+      esperarContraste(PALETA.areia[700], fundo); // "pontos", texto de apoio
+      esperarContraste(PALETA.saibro[700], fundo); // nome ao passar o mouse
+      esperarContraste(PALETA.saibro[800], fundo); // dica "Arraste para o lado"
+    }
+    // Número da posição na bolinha de tênis.
+    esperarContraste(PALETA.areia[900], PALETA.bola[300]);
+    // Iniciais (sem foto) sobre a cor do avatar.
+    for (const cor of CORES_AVATAR) esperarContraste(textoLegivelSobre(cor), cor);
   });
 });
