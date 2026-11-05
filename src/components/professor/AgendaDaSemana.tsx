@@ -116,7 +116,10 @@ export function AgendaDaSemana({
                                 {" · "}
                               </span>
                             )}
-                            <Link href={`/alunos/${aluno.id}`} className="hover:text-saibro-700 hover:underline">
+                            <Link
+                              href={`/alunos/${aluno.id}`}
+                              className="hover:text-saibro-700 hover:underline [@media(pointer:coarse)]:inline-flex [@media(pointer:coarse)]:min-h-[2.75rem] [@media(pointer:coarse)]:items-center"
+                            >
                               {aluno.nome}
                             </Link>
                           </span>

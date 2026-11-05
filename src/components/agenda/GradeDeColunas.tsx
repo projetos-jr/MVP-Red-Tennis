@@ -349,11 +349,14 @@ function CabecalhoDaColuna({
         } ${realcada ? "ring-4 ring-inset ring-bola-300" : ""}`}
         title={`${coluna.quadra.nome} (${coluna.quadra.piso}) · ${contagem}`}
       >
-        {/* Coluna estreita (letras maiores, tablet): letra um pouco menor em vez de "Quadr…". */}
-        <span className="truncate font-display text-lg font-bold leading-none xl:text-xl xl:leading-none [@container(max-width:150px)]:text-base [@container(max-width:150px)]:leading-none">
+        {/* Coluna estreita (letras maiores, tablet): letra um pouco menor em vez de "Quadr…". Em rem: acompanha o tamanho da letra escolhido. */}
+        <span className="truncate font-display text-lg font-bold leading-none xl:text-xl xl:leading-none [@container(max-width:6.8rem)]:text-base [@container(max-width:6.8rem)]:leading-none">
           {coluna.quadra.nome}
         </span>
-        <ContagemDaColuna ativos={ativos} contagem={contagem} fundo="escuro" />
+        {/* Muito estreita: o nome vale mais que a contagem (que fica no title). */}
+        <span className="contents [@container(max-width:5.6rem)]:hidden">
+          <ContagemDaColuna ativos={ativos} contagem={contagem} fundo="escuro" />
+        </span>
       </div>
     );
   }
