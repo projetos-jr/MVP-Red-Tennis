@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { IconeInfo } from "@/components/base/Icones";
+import { BotaoBola } from "@/components/base/login/BotaoBola";
+import { CenaDoLogin } from "@/components/base/login/CenaDoLogin";
 import { ESTILO_DO_PERFIL } from "@/components/base/perfis";
 import { areaInicial } from "@/components/layout/abas";
-import { FaixaDeQuadra } from "@/components/layout/FaixaDeQuadra";
-import { Logo } from "@/components/layout/Logo";
 import { LoginComEmail } from "@/components/base/LoginComEmail";
 import { Avatar } from "@/components/ui/Avatar";
-import { IconeCadeado, IconeSeta } from "@/components/ui/Icons";
+import { IconeCadeado } from "@/components/ui/Icons";
 import { NOMES_DOS_PERFIS, resumoDoAcesso } from "@/lib/consultas/configuracoes";
 import {
   HORARIO_DE_FUNCIONAMENTO,
@@ -34,8 +34,10 @@ export default function PaginaLogin() {
  * `banco.colaboradores`) e qualquer senha serve. O perfil escolhido define o
  * que aparece no sistema (Hipotese H9).
  *
- * Visual deliberadamente limpo: fundo branco e marca centralizada, sem
- * elementos decorativos competindo com o formulario.
+ * Visual: a quadra de saibro de fundo e o cartao branco com a logo; entra-se
+ * clicando na bola de tenis ao lado da senha (ou com Enter), como no sistema
+ * antigo da arena. Cada pessoa e um botao com a foto, o nome e o selo do
+ * perfil; o que o perfil ve aparece embaixo, so da pessoa escolhida.
  */
 function LoginDemonstracao() {
   const router = useRouter();
@@ -43,85 +45,80 @@ function LoginDemonstracao() {
   const equipe = equipeAtiva(banco);
   const [escolhidoId, setEscolhidoId] = useState(equipe[0]?.id ?? "");
   const [senha, setSenha] = useState("");
+  const [entrando, setEntrando] = useState(false);
   const escolhido = equipe.find((c) => c.id === escolhidoId) ?? equipe[0];
+  const primeiroNome = escolhido?.nome.split(" ")[0];
 
   function acessar(evento: FormEvent) {
     evento.preventDefault();
-    if (!escolhido) return;
+    if (!escolhido || entrando) return;
+    setEntrando(true);
     entrar(escolhido.id);
     router.push(areaInicial(banco, escolhido)?.href ?? "/dashboard");
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-white px-6 py-12">
-      <FaixaDeQuadra className="absolute inset-x-0 top-0" />
-      <div className="w-full max-w-sm animate-fade-up">
-        <Logo className="mx-auto h-24 w-auto sm:h-28" />
-        <FaixaDeQuadra className="mx-auto mt-6 !w-14 rounded-full" />
-
-        <h1 className="mt-6 text-center font-display text-2xl font-bold text-areia-900">
-          Acesse sua conta
-        </h1>
-        <p className="mt-1.5 text-center text-sm text-areia-600">
-          Cada colaborador entra com o próprio acesso e vê as áreas do seu perfil.
-        </p>
-
-        <form onSubmit={acessar} className="mt-7 space-y-5">
-          <fieldset>
-            <legend className="mb-2 block text-xs font-semibold uppercase tracking-wide text-areia-500">
-              Quem está entrando
-            </legend>
-            <div className="grid gap-2">
-              {equipe.map((c) => {
-                const ativo = c.id === escolhido?.id;
-                return (
-                  <label
-                    key={c.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-all has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-saibro-600 ${
-                      ativo
-                        ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
-                        : "border-areia-200 bg-white hover:border-saibro-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="colaborador"
-                      value={c.id}
-                      checked={ativo}
-                      onChange={() => setEscolhidoId(c.id)}
-                      className="sr-only"
-                    />
-                    <span aria-hidden="true">
-                      <Avatar id={c.id} nome={c.nome} tamanho="sm" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="text-sm font-medium text-areia-900">{c.nome}</span>
-                        <span
-                          className={`chip border px-2 py-0.5 text-[10px] ${ESTILO_DO_PERFIL[c.perfil]}`}
-                        >
-                          {NOMES_DOS_PERFIS[c.perfil]}
-                        </span>
+    <CenaDoLogin rodape={`${descricaoDaArena(banco)} · ${HORARIO_DE_FUNCIONAMENTO}`}>
+      <form onSubmit={acessar} className="mt-5 space-y-5">
+        <fieldset>
+          <legend className="mb-2.5 block text-base font-semibold text-areia-800">
+            Quem está entrando?
+          </legend>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {equipe.map((c) => {
+              const ativo = c.id === escolhido?.id;
+              return (
+                <label
+                  key={c.id}
+                  className={`relative flex min-w-0 cursor-pointer flex-col items-center gap-1.5 rounded-2xl border-2 px-1.5 pb-2.5 pt-3 text-center transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-saibro-600 ${
+                    ativo
+                      ? "border-saibro-600 bg-saibro-50"
+                      : "border-areia-200 bg-white hover:border-saibro-300 hover:bg-saibro-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="colaborador"
+                    value={c.id}
+                    checked={ativo}
+                    onChange={() => setEscolhidoId(c.id)}
+                    className="sr-only"
+                  />
+                  <span aria-hidden="true" className="relative">
+                    <Avatar id={c.id} nome={c.nome} tamanho="md" />
+                    {ativo && (
+                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-saibro-600 ring-2 ring-white">
+                        <svg viewBox="0 0 12 12" className="h-3 w-3 text-white">
+                          <path d="M2.5 6.2l2.2 2.2 4.8-4.8" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </span>
-                      <span className="mt-0.5 block text-xs text-areia-500">
-                        {c.cargo} · {resumoDoAcesso(banco.configuracoes, c.perfil)}
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+                    )}
+                  </span>
+                  <span className="w-full truncate text-base font-semibold leading-tight text-areia-900">
+                    {c.nome.split(" ")[0]}
+                  </span>
+                  <span className={`chip border px-2 py-0.5 text-xs ${ESTILO_DO_PERFIL[c.perfil]}`}>
+                    {NOMES_DOS_PERFIS[c.perfil]}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {escolhido && (
+            <p aria-live="polite" className="mt-2.5 text-sm leading-snug text-areia-600">
+              <strong className="font-semibold text-areia-800">{escolhido.nome}</strong> ·{" "}
+              {escolhido.cargo} · {resumoDoAcesso(banco.configuracoes, escolhido.perfil)}
+            </p>
+          )}
+        </fieldset>
 
-          <div>
-            <label
-              htmlFor="senha"
-              className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-areia-500"
-            >
-              Senha
-            </label>
-            <div className="relative">
-              <IconeCadeado className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-areia-400" />
+        <div>
+          <label htmlFor="senha" className="mb-2 block text-base font-semibold text-areia-800">
+            Senha
+          </label>
+          <div className="mb-9 flex items-center gap-3 sm:gap-4">
+            <div className="relative min-w-0 flex-1">
+              <IconeCadeado className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-areia-500" />
               <input
                 id="senha"
                 type="password"
@@ -130,33 +127,28 @@ function LoginDemonstracao() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 aria-describedby="aviso-demonstracao"
-                className="campo pl-9"
+                className="campo h-14 pl-11 text-lg sm:h-16"
               />
             </div>
+            <BotaoBola
+              entrando={entrando}
+              desabilitado={!escolhido}
+              rotuloAcessivel={primeiroNome ? `Entrar como ${primeiroNome}` : "Entrar no sistema"}
+            />
           </div>
+        </div>
 
-          <button type="submit" className="btn-primario w-full" disabled={!escolhido}>
-            {escolhido ? `Entrar como ${escolhido.nome.split(" ")[0]}` : "Entrar no sistema"}
-            <IconeSeta className="h-4 w-4" />
-          </button>
-
-          <p
-            id="aviso-demonstracao"
-            className="flex items-start gap-2 rounded-xl border border-areia-200 bg-areia-50 px-3.5 py-3 text-xs leading-relaxed text-areia-600"
-          >
-            <IconeInfo className="mt-0.5 h-4 w-4 shrink-0 text-saibro-700" />
-            <span>
-              <strong className="font-semibold text-areia-800">Demonstração:</strong> qualquer
-              senha serve e nada é gravado de verdade. Com o banco de dados (Supabase)
-              configurado, cada pessoa entra com o próprio e-mail e senha.
-            </span>
-          </p>
-        </form>
-
-        <p className="mt-8 text-center text-xs text-areia-500">
-          {descricaoDaArena(banco)} · {HORARIO_DE_FUNCIONAMENTO}
+        <p
+          id="aviso-demonstracao"
+          className="flex items-start gap-2 rounded-xl bg-areia-100 px-3.5 py-3 text-sm leading-snug text-areia-700"
+        >
+          <IconeInfo className="mt-0.5 h-4 w-4 shrink-0 text-saibro-700" />
+          <span>
+            <strong className="font-semibold text-areia-900">Demonstração:</strong> qualquer senha
+            serve e nada é gravado de verdade.
+          </span>
         </p>
-      </div>
-    </div>
+      </form>
+    </CenaDoLogin>
   );
 }

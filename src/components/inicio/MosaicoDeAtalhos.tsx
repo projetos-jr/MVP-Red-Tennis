@@ -60,19 +60,19 @@ export function MosaicoDeAtalhos({ atalhos }: { atalhos: Atalho[] }) {
         {atalhos.map((atalho, i) => {
           const Icone = ICONE_DO_ATALHO[atalho.id];
           const destaque = i === 0;
-          const classes = `ladrilho group min-h-[7.25rem] sm:min-h-[8rem] ${
-            destaque ? "lg:min-h-[8.5rem]" : ""
+          const classes = `ladrilho group min-h-[7.75rem] sm:min-h-[8.75rem] ${
+            destaque ? "lg:min-h-[9.25rem]" : ""
           }`;
           const conteudo = (
             <>
               <CantoDeQuadra />
               <span className="relative flex items-start justify-between gap-2">
-                <Icone className="h-11 w-11 shrink-0 drop-shadow-sm lg:h-12 lg:w-12" />
+                <Icone className="h-12 w-12 shrink-0 drop-shadow-sm lg:h-14 lg:w-14" />
                 {atalho.externo && <IconeExterno className="h-5 w-5 shrink-0" />}
               </span>
               <span
-                className={`relative mt-3 block font-display text-[1.375rem] font-bold leading-[1.05] tracking-tight sm:text-2xl ${
-                  destaque ? "lg:text-[1.75rem]" : ""
+                className={`relative mt-3 block font-display text-[1.375rem] font-bold leading-[1.05] tracking-tight sm:text-[1.625rem] ${
+                  destaque ? "lg:text-[2rem]" : ""
                 }`}
               >
                 {atalho.rotulo}
