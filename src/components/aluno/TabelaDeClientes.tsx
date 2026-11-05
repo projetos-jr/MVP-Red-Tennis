@@ -188,8 +188,10 @@ export function TabelaDeClientes({
 
   return (
     <>
-      {/* Celular e tablet em pé: um cartão por cliente (9 colunas não cabem). */}
-      <ul className="divide-y divide-areia-100 lg:hidden">
+      {/* Celular e tablet: um cartão por cliente, com letra grande (9 colunas
+          não cabem com a letra do dono da arena). A tabela fica para o
+          computador (1280px ou mais). */}
+      <ul className="divide-y divide-areia-100 xl:hidden">
         {visiveis.map((linha) => {
           const { aluno, plano, professor } = linha;
           return (
@@ -199,18 +201,18 @@ export function TabelaDeClientes({
                 <div className="flex items-center justify-between gap-2">
                   <Link
                     href={`/alunos/${aluno.id}`}
-                    className="alvo-de-toque flex min-w-0 items-center text-[15px] font-semibold text-areia-900 hover:text-saibro-700 hover:underline"
+                    className="alvo-de-toque flex min-w-0 items-center text-lg font-semibold text-areia-900 hover:text-saibro-700 hover:underline"
                   >
                     <span className="truncate">{aluno.nome}</span>
                   </Link>
                   {podeAlterar && <Acoes aluno={aluno} aoEditar={aoEditar} aoInativar={aoInativar} />}
                 </div>
-                <p className="truncate text-xs text-areia-600">
+                <p className="truncate text-sm text-areia-600">
                   {plano?.nome ?? "Sem plano mensal"}
                   {professor && ` · ${professor.nome}`}
                 </p>
                 {aluno.telefone && (
-                  <p className="text-xs tabular-nums text-areia-600">{aluno.telefone}</p>
+                  <p className="text-sm tabular-nums text-areia-600">{aluno.telefone}</p>
                 )}
                 <div className="mt-1.5 flex flex-wrap items-center gap-1">
                   <EtiquetaDoCliente situacao={linha.situacao} />
@@ -224,22 +226,23 @@ export function TabelaDeClientes({
         })}
       </ul>
 
-      <div className="hidden lg:block">
-        <table className="w-full table-fixed text-sm">
-          {/* Abaixo de 1280px (tablet deitado) o celular vai para baixo do nome:
-              no toque a linha ja tem 44px, entao nao perde densidade. */}
+      <div className="hidden xl:block">
+        <table className="w-full table-fixed text-[0.95rem]">
+          {/* O nome tem largura garantida (e o que se procura); o plano fica com
+              o que sobra e corta com "…" (nome inteiro no title e na ficha).
+              Abaixo de 1536px o celular vai para baixo do nome. */}
           {/* Reposicao numa coluna estreita (so o tempo): a etiqueta embaixo da
               situacao deixava quase toda linha com duas alturas. A largura sai
               do plano (o nome inteiro fica no title e na ficha). */}
           <colgroup>
+            <col className="w-[16rem]" />
+            <col className="hidden w-[9rem] 2xl:table-column" />
             <col />
-            <col className="hidden w-[9rem] xl:table-column" />
-            <col className="w-[16%] xl:w-[17%]" />
-            <col className="w-[7.5rem] xl:w-[9.5rem]" />
-            <col className="w-[12rem] xl:w-[13.5rem]" />
+            <col className="w-[8.5rem]" />
+            <col className="w-[11rem]" />
             <col className="w-[7rem]" />
             <col className="w-[5.5rem]" />
-            <col className="w-[7rem] xl:w-[7.5rem]" />
+            <col className="w-[7.5rem]" />
             {podeAlterar && <col className="w-[5rem] [@media(pointer:coarse)]:w-[7rem]" />}
           </colgroup>
           <thead>
@@ -262,7 +265,7 @@ export function TabelaDeClientes({
                   </span>
                 </button>
               </th>
-              <th scope="col" className="hidden px-2 py-2 xl:table-cell">Celular</th>
+              <th scope="col" className="hidden px-2 py-2 2xl:table-cell">Celular</th>
               <th scope="col" className="px-2 py-2">Plano</th>
               <th scope="col" className="px-2 py-2">Professor</th>
               <th scope="col" className="px-2 py-2">Categorias</th>
@@ -297,14 +300,14 @@ export function TabelaDeClientes({
                       <span className="min-w-0">
                         <span className="block truncate">{aluno.nome}</span>
                         {aluno.telefone && (
-                          <span className="block truncate text-xs font-normal tabular-nums text-areia-600 xl:hidden">
+                          <span className="block truncate text-xs font-normal tabular-nums text-areia-600 2xl:hidden">
                             {aluno.telefone}
                           </span>
                         )}
                       </span>
                     </Link>
                   </td>
-                  <td className="hidden whitespace-nowrap px-2 py-1.5 tabular-nums text-areia-700 xl:table-cell">
+                  <td className="hidden whitespace-nowrap px-2 py-1.5 tabular-nums text-areia-700 2xl:table-cell">
                     {aluno.telefone || <Vazio texto="Sem celular" />}
                   </td>
                   <td className="truncate px-2 py-1.5 text-areia-800" title={plano?.nome}>
