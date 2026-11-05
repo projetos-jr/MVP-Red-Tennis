@@ -39,7 +39,7 @@ export function MenuDoUsuario() {
 
   useEffect(() => {
     if (!aberto) return;
-    menu.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    menu.current?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus();
 
     function aoClicarFora(evento: MouseEvent) {
       const alvo = evento.target as Node;
@@ -50,7 +50,7 @@ export function MenuDoUsuario() {
   }, [aberto]);
 
   function aoTeclar(evento: KeyboardEvent<HTMLDivElement>) {
-    const itens = [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    const itens = [...(menu.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])];
     const atual = itens.indexOf(document.activeElement as HTMLElement);
     if (evento.key === "ArrowDown" || evento.key === "ArrowUp") {
       evento.preventDefault();

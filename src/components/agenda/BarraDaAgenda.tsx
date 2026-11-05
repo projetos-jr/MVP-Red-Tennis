@@ -120,7 +120,7 @@ export function BarraDaAgenda({
           variante="compacto"
           quantidade={vencidas}
           descricao={textoDasVencidas}
-          rotuloAcessivel={`${vencidas} ${vencidas === 1 ? "reserva passou" : "reservas passaram"} do prazo de pagamento: abrir a lista`}
+          rotuloAcessivel={`${textoDasVencidas}: abrir a lista de reservas sem pagamento`}
           aoAbrir={aoAbrirReservas}
           className="text-base"
         />

@@ -191,7 +191,8 @@ export function TabelaDeClientes({
       {/* Celular e tablet: um cartão por cliente, com letra grande (9 colunas
           não cabem com a letra do dono da arena). A tabela fica para o
           computador (1280px ou mais). */}
-      <ul className="divide-y divide-areia-100 xl:hidden">
+      {/* Com "Letras maiores", a tabela só cabe a partir de 1400px: antes disso, cartões. */}
+      <ul className="divide-y divide-areia-100 xl:hidden xl:[html[data-letra=grande]_&]:block min-[1400px]:[html[data-letra=grande]_&]:hidden">
         {visiveis.map((linha) => {
           const { aluno, plano, professor } = linha;
           return (
@@ -226,7 +227,7 @@ export function TabelaDeClientes({
         })}
       </ul>
 
-      <div className="hidden xl:block">
+      <div className="hidden xl:block xl:[html[data-letra=grande]_&]:hidden min-[1400px]:[html[data-letra=grande]_&]:block">
         <table className="w-full table-fixed text-[0.95rem]">
           {/* O nome tem largura garantida (e o que se procura); o plano fica com
               o que sobra e corta com "…" (nome inteiro no title e na ficha).

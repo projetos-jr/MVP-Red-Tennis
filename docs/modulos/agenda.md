@@ -66,8 +66,9 @@ antigo", com cores vivas)
   (Quadra 1 a 4 e Paredão) e **linhas de 30 em 30 minutos**, das 07h às 22h,
   como no sistema antigo da arena. O cabeçalho de cada coluna tem a cor do
   piso (Quadra 1 de cimento em azul; as de saibro em laranja) e quantos
-  horários ela tem. A partir de 1024 px de largura aparecem as 10 colunas; no
-  tablet em pé (768 a 1023 px), um dia por vez com **Hoje | Amanhã**; no
+  horários ela tem. A partir de 1150 px de largura (o tablet deitado da arena,
+  1180) aparecem as 10 colunas; entre 768 e 1149 px (tablet em pé, iPad
+  deitado), um dia por vez com **Hoje | Amanhã**; no
   celular, a **lista do dia**, com uma régua para trocar entre os dois dias.
 - **Professores** (Hipótese H20, "igual à agenda das quadras"): **hoje e
   amanhã lado a lado, uma coluna por professor ativo**, como a Diária faz

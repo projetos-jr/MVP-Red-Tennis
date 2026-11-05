@@ -160,6 +160,7 @@ export function capacidadeDaFileira(indice: number, tamanhos: readonly number[] 
  */
 export function fileirasDaPiramide(total: number, tamanhos: readonly number[] = FILEIRAS_DA_PIRAMIDE): number[] {
   const fileiras: number[] = [];
+  if (!Number.isFinite(total)) return fileiras;
   let restam = Math.max(0, Math.floor(total));
   for (let i = 0; restam > 0; i += 1) {
     const nesta = Math.min(restam, capacidadeDaFileira(i, tamanhos));

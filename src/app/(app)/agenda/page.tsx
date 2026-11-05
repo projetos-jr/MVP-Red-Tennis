@@ -4,7 +4,11 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarraDaAgenda } from "@/components/agenda/BarraDaAgenda";
 import { FaixaDeProfessores, FaixaDeQuadras } from "@/components/agenda/FaixaDeAssunto";
-import { filtrosAtivosDaAgenda } from "@/components/agenda/FiltrosDaAgenda";
+import {
+  LinhaDeFiltrosAtivos,
+  descricaoDosFiltros,
+  filtrosAtivosDaAgenda,
+} from "@/components/agenda/FiltrosDaAgenda";
 import { GradeDeColunas, type MeiaHoraEscolhida } from "@/components/agenda/GradeDeColunas";
 import {
   colunasDaDiaria,
@@ -67,17 +71,6 @@ import { useApp } from "@/store/AppStore";
 
 type Janela = "bloqueio" | "chuva" | "reservas";
 
-/**
- * Altura maxima da grade: quase toda a altura que sobra da tela depois do
- * topo do sistema e da barra da agenda (tudo em rem, para acompanhar
- * "Letras maiores"). No tablet em pe a barra quebra em duas linhas; nas
- * semanas, a faixa da quadra ou do professor fica em cima da grade.
- */
-const ALTURA_DA_GRADE = {
-  comum: "md:max-h-[calc(100dvh-16.5rem)] lg:max-h-[calc(100dvh-13rem)]",
-  comFaixa: "md:max-h-[calc(100dvh-20.25rem)] lg:max-h-[calc(100dvh-17rem)]",
-};
-
 export default function PaginaAgenda() {
   return (
     <Suspense fallback={<Carregando />}>
@@ -139,11 +132,9 @@ function Agenda() {
   const [janela, setJanela] = useState<Janela | null>(null);
   // Diaria com um dia por vez (tablet em pe e celular): mostra o segundo dia?
   const [segundoDia, setSegundoDia] = useState(false);
-  // "Mais opcoes" comeca fechado; chegando por um link ja filtrado (ex.: LAP
-  // do Inicio), comeca aberto, para o filtro ficar a vista.
-  const [opcoesAbertas, setOpcoesAbertas] = useState(
-    () => filtrosAtivosDaAgenda(estado, Boolean(professorDoPerfil)) > 0,
-  );
+  // "Mais opcoes" sempre comeca fechado (a grade e o que importa). Chegando
+  // por um link ja filtrado (o LAP do Inicio), uma linha curta diz o filtro.
+  const [opcoesAbertas, setOpcoesAbertas] = useState(false);
 
   // --- Endereco: cada mudanca vira um novo endereco ---------------------------
   const irPara = useCallback((novo: EstadoDaAgenda) => {
@@ -327,10 +318,28 @@ function Agenda() {
     [banco, ctx, irPara],
   );
   /** Visao Professores: um professor abre a semana dele; sem professor, os dois dias com todos. */
+  /**
+   * Dos 2 dias com todos os professores, abrir a semana de um deles EMPILHA
+   * um endereco (o "Voltar" do tablet retorna a todos); "Todos os
+   * professores" desempilha quando foi assim. Trocar de um professor para
+   * outro troca o endereco no lugar.
+   */
   const escolherProfessor = useCallback(
     (professorId: string | undefined) => {
       setSegundoDia(false);
-      irPara({ ...estadoAtual.current, professorId, ocupacaoId: undefined });
+      const atual = estadoAtual.current;
+      const novo = { ...atual, professorId, ocupacaoId: undefined };
+      const endereco = enderecoDaAgenda(novo, HOJE);
+      if (atual.visao === "professor" && !atual.professorId && professorId) {
+        const base = enderecoDaAgenda({ ...atual, ocupacaoId: undefined }, HOJE);
+        window.history.pushState({ semanaDoProfessor: base }, "", endereco);
+        return;
+      }
+      if (!professorId && window.history.state?.semanaDoProfessor === endereco) {
+        window.history.back();
+        return;
+      }
+      irPara(novo);
     },
     [irPara],
   );
@@ -489,10 +498,35 @@ function Agenda() {
           filtrosAtivos={filtrosAtivosDaAgenda(estado, Boolean(professorDoPerfil))}
         />
 
+        {!opcoesAbertas && (
+          <LinhaDeFiltrosAtivos
+            filtros={descricaoDosFiltros(
+              estado,
+              Boolean(professorDoPerfil),
+              banco.professores.find((p) => p.id === estado.professorId)?.nome,
+            )}
+            aoVer={() => setOpcoesAbertas(true)}
+            aoLimpar={() => {
+              setSegundoDia(false);
+              mudar({
+                tipo: "todos",
+                mostrarCanceladas: true,
+                // Na visao Professores o professor escolhido e o assunto, nao filtro.
+                ...(visao !== "professor" && !professorDoPerfil ? { professorId: undefined } : {}),
+                ocupacaoId: undefined,
+              });
+            }}
+          />
+        )}
+
         <OpcoesDaAgenda
           aberto={opcoesAbertas}
           podeEditar={podeEditar}
-          aoAbrirJanela={setJanela}
+          aoAbrirJanela={(qual) => {
+            // Abriu uma janela pelo painel: o painel fecha (como no estoque e no financeiro).
+            setJanela(qual);
+            setOpcoesAbertas(false);
+          }}
           reservas={reservas.length}
           reservasVencidas={reservasVencidas}
           linkImprimir={`/agenda/imprimir?data=${doisDias ? diaVisivel : data}`}
@@ -565,7 +599,6 @@ function Agenda() {
               aoAbrirDia={doisDias ? undefined : abrirDia}
               aoEscolherProfessor={visao === "professor" && !professorDoPerfil ? escolherProfessor : undefined}
               mostrarGrupo={!faixa}
-              classeDaAltura={faixa ? ALTURA_DA_GRADE.comFaixa : ALTURA_DA_GRADE.comum}
             />
           )}
         </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { EtiquetaDeSituacao } from "@/components/ui/EtiquetaDeSituacao";
 import { IconeRelogio } from "@/components/ui/Icons";
@@ -61,11 +61,19 @@ export function ReservasSemPagamento({
   abertaNoInicio?: boolean;
 }) {
   const [aberta, setAberta] = useState(abertaNoInicio);
+  // Chegando pelo link (Início › Registrar pagamento), a lista aberta precisa
+  // estar à vista: rola até ela uma vez.
+  const secao = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!abertaNoInicio) return;
+    const calmo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    secao.current?.scrollIntoView({ block: "start", behavior: calmo ? "auto" : "smooth" });
+  }, [abertaNoInicio]);
   if (reservas.length === 0) return null;
   const vencidas = reservas.filter((r) => r.prazoVencido).length;
 
   return (
-    <section className={`card ${vencidas > 0 ? "border-tijolo-200" : ""}`}>
+    <section ref={secao} className={`card scroll-mt-32 ${vencidas > 0 ? "border-tijolo-200" : ""}`}>
       <div
         className={`flex flex-col gap-3 rounded-2xl px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-5 ${
           vencidas > 0 ? "bg-tijolo-50/60" : ""
@@ -93,6 +101,7 @@ export function ReservasSemPagamento({
               variante="compacto"
               quantidade={vencidas}
               descricao={`Ver ${plural(vencidas, "vencida", "vencidas")}`}
+              abreJanela={false}
               aoAbrir={() => setAberta(true)}
               className="text-base"
             />

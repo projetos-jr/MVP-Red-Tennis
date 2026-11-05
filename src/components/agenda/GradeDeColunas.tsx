@@ -40,6 +40,11 @@ import { IconeChuva } from "./Icones";
 const COLUNA_DAS_HORAS = 64;
 
 /** O que um clique numa meia hora livre manda para o "Novo horario". */
+/** Ate o pe da tela, descontando onde a grade comeca (medido em `--topo-da-grade`). */
+const ALTURA_DA_GRADE: CSSProperties = {
+  maxHeight: "calc(100dvh - var(--topo-da-grade, 13.5rem) - 0.75rem)",
+};
+
 export interface MeiaHoraEscolhida {
   data: string;
   horaInicio: string;
@@ -78,7 +83,6 @@ export const GradeDeColunas = memo(function GradeDeColunas({
   aoAbrirDia,
   aoEscolherProfessor,
   mostrarGrupo = true,
-  classeDaAltura = "max-h-[calc(100dvh-13.5rem)]",
 }: {
   grupos: GrupoDeColunas[];
   /** Horarios que aparecem (com os filtros). */
@@ -101,8 +105,6 @@ export const GradeDeColunas = memo(function GradeDeColunas({
   aoEscolherProfessor?: (professorId: string) => void;
   /** Primeira linha do cabecalho. Nas semanas, a faixa de cima ja diz a quadra ou o professor. */
   mostrarGrupo?: boolean;
-  /** Altura maxima da caixa: a grade ocupa quase toda a altura que sobra da tela. */
-  classeDaAltura?: string;
 }) {
   const colunas = useMemo(() => grupos.flatMap((g) => g.colunas), [grupos]);
   const porColuna = useMemo(
@@ -151,6 +153,29 @@ export const GradeDeColunas = memo(function GradeDeColunas({
       alvo === undefined ? 0 : Math.max((alvo - ABERTURA_EM_MINUTOS - PASSO) * px, 0);
   }, [chaveDaRolagem, agoraVisivel, minutoAgora, primeiroInicio, px]);
 
+  // Altura: a grade vai ate o pe da tela, seja qual for a altura do que esta
+  // em cima (barra em uma ou duas linhas, "Letras maiores", faixa da semana,
+  // "Mais opcoes" aberto). Mede onde a grade comeca na pagina e grava numa
+  // variavel CSS (direto no DOM, sem redesenhar o React); com pouco espaco
+  // vale o minimo de 26rem e a pagina rola.
+  useEffect(() => {
+    const elemento = rolagem.current;
+    if (!elemento) return;
+    function medir() {
+      if (!elemento) return;
+      const topo = Math.round(elemento.getBoundingClientRect().top + window.scrollY);
+      elemento.style.setProperty("--topo-da-grade", `${topo}px`);
+    }
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(document.body);
+    window.addEventListener("resize", medir);
+    return () => {
+      observador.disconnect();
+      window.removeEventListener("resize", medir);
+    };
+  }, []);
+
   // Linhas da grade: hora cheia mais marcada, meia hora leve. (Memorizado:
   // um objeto novo a cada desenho faria todas as colunas redesenharem.)
   const linhas = useMemo<CSSProperties>(
@@ -168,7 +193,8 @@ export const GradeDeColunas = memo(function GradeDeColunas({
     <div
       ref={rolagem}
       data-grade-da-agenda=""
-      className={`relative isolate min-h-[26rem] overflow-auto overscroll-contain rolagem-suave ${classeDaAltura}`}
+      className="relative isolate min-h-[26rem] overflow-auto overscroll-contain rolagem-suave"
+      style={ALTURA_DA_GRADE}
     >
       <div style={{ minWidth: COLUNA_DAS_HORAS + colunas.length * larguraMinima }}>
         {/* Cabecalho fixo: grupos e colunas */}

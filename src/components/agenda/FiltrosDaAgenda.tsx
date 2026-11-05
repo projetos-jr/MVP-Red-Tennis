@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
+import { IconeFiltro } from "@/components/ui/Icons";
 import { InterruptorBola } from "@/components/ui/InterruptorBola";
 import type { Professor, TipoOcupacao } from "@/lib/banco/tipos";
 import type { EstadoDaAgenda } from "@/lib/consultas/enderecoDaAgenda";
@@ -14,6 +15,50 @@ export function filtrosAtivosDaAgenda(estado: EstadoDaAgenda, professorTravado: 
     Number(filtraProfessor && Boolean(estado.professorId)) +
     Number(estado.tipo !== "todos") +
     Number(!estado.mostrarCanceladas)
+  );
+}
+
+/** Os filtros ligados, em palavras ("Tipo: LAP", "sem canceladas"), para a linha compacta. */
+export function descricaoDosFiltros(
+  estado: EstadoDaAgenda,
+  professorTravado: boolean,
+  nomeDoProfessor?: string,
+): string[] {
+  const filtraProfessor = estado.visao !== "professor" && !professorTravado;
+  return [
+    filtraProfessor && estado.professorId ? `Professor: ${nomeDoProfessor ?? "escolhido"}` : "",
+    estado.tipo !== "todos" ? `Tipo: ${estado.tipo}` : "",
+    !estado.mostrarCanceladas ? "sem as canceladas" : "",
+  ].filter(Boolean);
+}
+
+/**
+ * Filtros ligados com "Mais opcoes" fechado: uma linha so, com "Limpar", para
+ * quem chega por um link ja filtrado (o LAP do Inicio) sem perder a grade.
+ */
+export function LinhaDeFiltrosAtivos({
+  filtros,
+  aoLimpar,
+  aoVer,
+}: {
+  filtros: string[];
+  aoLimpar: () => void;
+  aoVer: () => void;
+}) {
+  if (filtros.length === 0) return null;
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-saibro-200 bg-saibro-50 px-4 py-1.5 text-base text-saibro-900">
+      <IconeFiltro className="h-5 w-5 shrink-0" />
+      <span>
+        <strong className="font-semibold">Filtro:</strong> {filtros.join(" · ")}
+      </span>
+      <button type="button" onClick={aoVer} className="link-acao alvo-de-toque text-base">
+        Ver filtros
+      </button>
+      <button type="button" onClick={aoLimpar} className="link-acao alvo-de-toque text-base">
+        Limpar
+      </button>
+    </p>
   );
 }
 

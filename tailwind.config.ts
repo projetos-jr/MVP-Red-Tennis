@@ -52,7 +52,8 @@ const config: Config = {
         "conflito-pulse": "conflito-pulse 1.6s ease-in-out infinite",
         "fade-up": "fade-up 0.35s ease-out both",
         "fade-in": "fade-in 0.4s ease-out both",
-        atencao: "atencao 3.2s ease-in-out infinite",
+        // Balanca duas vezes ao aparecer e para (movimento automatico < 5 s).
+        atencao: "atencao 2.4s ease-in-out 2",
       },
     },
   },

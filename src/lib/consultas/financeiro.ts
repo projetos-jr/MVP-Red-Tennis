@@ -15,7 +15,7 @@
  */
 
 import { formatarData } from "../date";
-import { rotuloDaQuadra } from "../banco/regras/agenda";
+import { reservaVencida, rotuloDaQuadra } from "../banco/regras/agenda";
 import { congelamentoVigente, planoVigente, situacaoDoAluno, type SituacaoAluno } from "../banco/regras/alunos";
 import {
   diasEmAtraso,
@@ -357,7 +357,15 @@ export interface ReservaSemPagamento {
 }
 
 /** Reservas "aguardando pagamento", das de prazo mais curto para as de prazo mais longo. */
-export function reservasAguardandoPagamento(banco: Banco, hoje: string): ReservaSemPagamento[] {
+export function reservasAguardandoPagamento(
+  banco: Banco,
+  hoje: string,
+  /**
+   * Agora (data e hora da arena). Com ele, o prazo vence na hora certa, como
+   * na agenda e no Inicio; sem ele, vale so a data (vence no dia seguinte).
+   */
+  agora: string = `${hoje}T00:00:00`,
+): ReservaSemPagamento[] {
   const aguardando = banco.ocupacoes.filter((o) => o.situacao === "aguardando_pagamento");
   if (aguardando.length === 0) return [];
 
@@ -378,14 +386,15 @@ export function reservasAguardandoPagamento(banco: Banco, hoje: string): Reserva
       const alunos = participantes.get(ocupacao.id) ?? [];
       const cobranca = cobrancas.get(ocupacao.id);
       const prazo = (ocupacao.prazoPagamento ?? ocupacao.data).slice(0, 10);
+      const vencido = ocupacao.prazoPagamento ? reservaVencida(ocupacao, agora) : prazo < hoje;
       return {
         ocupacao,
         quadra: rotuloDaQuadra(ocupacao.quadraId),
         titular: alunos[0] ? pessoas.get(alunos[0]) : undefined,
         acompanhantes: Math.max(alunos.length - 1, 0),
         lancamento: cobranca && montarLinha(banco, pessoas, cobranca, hoje),
-        prazoVencido: prazo < hoje,
-        prazoHoje: prazo === hoje,
+        prazoVencido: vencido,
+        prazoHoje: !vencido && prazo === hoje,
       };
     })
     .sort((a, b) =>

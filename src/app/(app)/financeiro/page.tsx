@@ -42,6 +42,7 @@ import {
   IconeProximo,
 } from "@/components/ui/Icons";
 import { Segmentado } from "@/components/ui/Segmentado";
+import { useAgora } from "@/components/agenda/useAgora";
 import { HOJE } from "@/lib/banco/constantes";
 import type { TipoLancamento } from "@/lib/banco/tipos";
 import { podeAcessar } from "@/lib/consultas/base";
@@ -143,7 +144,9 @@ function TelaFinanceiro() {
     () => listarLancamentos(banco, montarFiltro(tipoDaLista, filtrosDaLista, mes), HOJE),
     [banco, tipoDaLista, filtrosDaLista, mes],
   );
-  const reservas = useMemo(() => reservasAguardandoPagamento(banco, HOJE), [banco]);
+  // Mesma regra da agenda e do Inicio: o prazo vence na hora (nao so no dia).
+  const agora = useAgora();
+  const reservas = useMemo(() => reservasAguardandoPagamento(banco, HOJE, agora), [banco, agora]);
   const porForma = useMemo(() => recebidoPorForma(banco, mes, HOJE), [banco, mes]);
   const relatorio = useMemo(
     () => (abaVisivel === "professores" ? relatorioDeProfessores(banco, mes, HOJE) : null),
