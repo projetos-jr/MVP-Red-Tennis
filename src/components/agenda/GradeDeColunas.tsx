@@ -344,12 +344,13 @@ function CabecalhoDaColuna({
   if (!semana && coluna.quadra) {
     return (
       <div
-        className={`linha-de-quadra flex min-w-0 items-center justify-between gap-1 px-2 py-2.5 ${separador} ${
+        className={`linha-de-quadra flex min-w-0 items-center justify-between gap-1 px-2 py-2.5 [container-type:inline-size] ${separador} ${
           CLASSE_DO_PISO[coluna.quadra.piso]
         } ${realcada ? "ring-4 ring-inset ring-bola-300" : ""}`}
         title={`${coluna.quadra.nome} (${coluna.quadra.piso}) · ${contagem}`}
       >
-        <span className="truncate font-display text-lg font-bold leading-none xl:text-xl xl:leading-none">
+        {/* Coluna estreita (letras maiores, tablet): letra um pouco menor em vez de "Quadr…". */}
+        <span className="truncate font-display text-lg font-bold leading-none xl:text-xl xl:leading-none [@container(max-width:150px)]:text-base [@container(max-width:150px)]:leading-none">
           {coluna.quadra.nome}
         </span>
         <ContagemDaColuna ativos={ativos} contagem={contagem} fundo="escuro" />
