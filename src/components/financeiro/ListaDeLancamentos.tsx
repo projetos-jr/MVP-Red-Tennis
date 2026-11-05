@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
-import { EtiquetaNeutra } from "@/components/ui/EtiquetaDeSituacao";
 import { ITENS_POR_PAGINA, MostrarMais } from "@/components/ui/MostrarMais";
 import type {
   LinhaLancamento,
@@ -18,6 +17,13 @@ import { BadgeCongelado, BadgeSituacao } from "./Etiquetas";
 /** Quantos lançamentos aparecem de cada vez (o resto vem em "Mostrar mais"). */
 export const LANCAMENTOS_POR_PAGINA = ITENS_POR_PAGINA;
 
+/**
+ * Rodapé "Mostrar mais" em letra maior: o componente comum é compacto, e
+ * aqui a lista é o centro da tela (pedido do dono da arena).
+ */
+const RODAPE_GRANDE =
+  "[&_footer]:px-4 [&_footer]:py-3.5 [&_footer]:text-base sm:[&_footer]:px-5 [&_footer_button]:px-4 [&_footer_button]:py-2.5 [&_footer_button]:text-base";
+
 function emAberto(linha: LinhaLancamento): boolean {
   return linha.situacao === "pendente" || linha.situacao === "em_atraso";
 }
@@ -27,7 +33,7 @@ function linkDaPessoa(pessoa: PessoaDoLancamento): string {
 }
 
 /** Pessoa do lançamento (com link para a ficha) e, se for outra, quem paga ou recebe. */
-function Pessoa({ linha, tipo, compacta }: { linha: LinhaLancamento; tipo: TipoLancamento; compacta?: boolean }) {
+function Pessoa({ linha, tipo }: { linha: LinhaLancamento; tipo: TipoLancamento }) {
   const { pessoa, lancamento } = linha;
   const outro = lancamento.nomePagante && lancamento.nomePagante !== pessoa?.nome;
   return (
@@ -35,18 +41,18 @@ function Pessoa({ linha, tipo, compacta }: { linha: LinhaLancamento; tipo: TipoL
       {pessoa ? (
         <Link
           href={linkDaPessoa(pessoa)}
-          className="flex min-w-0 items-center gap-2 font-medium text-areia-800 hover:text-saibro-700 hover:underline"
+          className="alvo-de-toque flex min-w-0 items-center gap-2.5 font-semibold text-areia-900 hover:text-saibro-700 hover:underline"
         >
-          <Avatar id={pessoa.id} nome={pessoa.nome} src={pessoa.fotoUrl} tamanho={compacta ? "sm" : "xs"} />
+          <Avatar id={pessoa.id} nome={pessoa.nome} src={pessoa.fotoUrl} tamanho="sm" />
           <span className="truncate">{pessoa.nome}</span>
         </Link>
       ) : (
-        <span className="block truncate font-medium text-areia-800">
+        <span className="block truncate font-semibold text-areia-900">
           {lancamento.nomePagante ?? "—"}
         </span>
       )}
       {pessoa && outro && (
-        <span className={`mt-0.5 block truncate text-xs text-areia-500 ${compacta ? "pl-10" : "pl-8"}`}>
+        <span className="mt-0.5 block truncate pl-[2.625rem] text-sm text-areia-600">
           {tipo === "receber" ? "pagante" : "favorecido"}: {lancamento.nomePagante}
         </span>
       )}
@@ -59,6 +65,22 @@ function Valor({ linha, className = "" }: { linha: LinhaLancamento; className?: 
   return (
     <span className={`tabular-nums ${anulado ? "text-areia-500 line-through" : ""} ${className}`}>
       {formatarMoeda(linha.lancamento.valor)}
+    </span>
+  );
+}
+
+/** Linha de apoio do item: categoria, forma de pagamento e convênio, em texto. */
+function DetalheDoItem({ linha }: { linha: LinhaLancamento }) {
+  const { lancamento } = linha;
+  const partes: string[] = [lancamento.categoria];
+  if (lancamento.formaPagamento) partes.push(lancamento.formaPagamento);
+  if (lancamento.valorConvenio !== undefined) {
+    partes.push(`convênio ${formatarMoeda(lancamento.valorConvenio)}`);
+  }
+  return (
+    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-areia-600">
+      <span>{partes.join(" · ")}</span>
+      {linha.congelada && <BadgeCongelado />}
     </span>
   );
 }
@@ -88,7 +110,7 @@ export function ListaDeLancamentos({
 
   if (linhas.length === 0) {
     return (
-      <p className="px-5 py-12 text-center text-sm text-areia-500">
+      <p className="px-5 py-12 text-center text-base text-areia-600">
         Nenhum lançamento encontrado com estes filtros.
       </p>
     );
@@ -96,40 +118,40 @@ export function ListaDeLancamentos({
 
   return (
     <>
-      {/* Celular: um cartão por lançamento — a tabela de 7 colunas exigiria rolagem lateral. */}
+      {/* Celular: um cartão por lançamento — a tabela exigiria rolagem lateral. */}
       <ul className="divide-y divide-areia-100 md:hidden">
         {visiveis.map((linha) => {
           const { lancamento } = linha;
           return (
             <li
               key={lancamento.id}
-              className={`px-4 py-3 ${linha.situacao === "em_atraso" ? "bg-tijolo-50/50" : ""}`}
+              className={`px-4 py-3.5 ${linha.situacao === "em_atraso" ? "bg-tijolo-50/50" : ""}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 text-sm">
-                  <Pessoa linha={linha} tipo={tipo} compacta />
+                <div className="min-w-0 text-base">
+                  <Pessoa linha={linha} tipo={tipo} />
                 </div>
-                <Valor linha={linha} className="shrink-0 text-base font-bold text-areia-900" />
+                <Valor linha={linha} className="shrink-0 pt-2.5 text-lg font-bold text-areia-900" />
               </div>
               <button
                 type="button"
                 onClick={() => aoAbrir(lancamento.id)}
-                className="mt-2 block text-left text-sm text-areia-700 underline decoration-areia-300 underline-offset-2 hover:text-saibro-700"
+                className="alvo-de-toque mt-1 block text-left text-base text-areia-800 underline decoration-areia-300 underline-offset-2 hover:text-saibro-700"
               >
                 {lancamento.item}
               </button>
-              <p className="mt-1 text-xs text-areia-500">Vence em {formatarData(lancamento.vencimento)}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <BadgeSituacao linha={linha} />
-                <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
-                {lancamento.formaPagamento && <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>}
-                {linha.congelada && <BadgeCongelado />}
+              <DetalheDoItem linha={linha} />
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <BadgeSituacao linha={linha} className="text-sm" />
+                <span className="text-sm text-areia-600">
+                  Vence em {formatarData(lancamento.vencimento)}
+                </span>
               </div>
               {emAberto(linha) && (
                 <button
                   type="button"
                   onClick={() => aoPagar(lancamento.id)}
-                  className="btn-secundario mt-3 w-full py-2"
+                  className="btn-secundario mt-3 w-full py-3 text-base"
                   aria-label={`Registrar pagamento: ${lancamento.item}`}
                 >
                   Registrar pagamento
@@ -141,17 +163,17 @@ export function ListaDeLancamentos({
       </ul>
 
       <div className="hidden overflow-x-auto rolagem-suave md:block">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full min-w-[760px] text-base">
           <thead>
-            <tr className="border-b border-areia-200 text-left text-xs uppercase tracking-wide text-areia-500">
+            <tr className="border-b border-areia-200 text-left text-sm text-areia-600">
               <th
-                className="px-5 py-2.5 font-medium"
+                className="px-5 py-3 font-semibold"
                 aria-sort={ordem === "vencimento_desc" ? "descending" : "ascending"}
               >
                 <button
                   type="button"
                   onClick={aoAlternarOrdem}
-                  className="inline-flex items-center gap-1 font-medium uppercase tracking-wide hover:text-areia-900"
+                  className="alvo-de-toque inline-flex items-center gap-1 font-semibold hover:text-areia-900"
                   title="Inverter a ordem"
                 >
                   Vencimento
@@ -163,12 +185,11 @@ export function ListaDeLancamentos({
                   </span>
                 </button>
               </th>
-              <th className="px-3 py-2.5 font-medium">{tipo === "receber" ? "Pessoa" : "Favorecido"}</th>
-              <th className="px-3 py-2.5 font-medium">Item</th>
-              <th className="px-3 py-2.5 font-medium">Forma</th>
-              <th className="px-3 py-2.5 text-right font-medium">Valor</th>
-              <th className="px-3 py-2.5 font-medium">Situação</th>
-              <th className="px-5 py-2.5 font-medium">
+              <th className="px-3 py-3 font-semibold">{tipo === "receber" ? "Pessoa" : "Favorecido"}</th>
+              <th className="px-3 py-3 font-semibold">Item</th>
+              <th className="px-3 py-3 text-right font-semibold">Valor</th>
+              <th className="px-3 py-3 font-semibold">Situação</th>
+              <th className="px-5 py-3 font-semibold">
                 <span className="sr-only">Ações</span>
               </th>
             </tr>
@@ -183,52 +204,34 @@ export function ListaDeLancamentos({
                     linha.situacao === "em_atraso" ? "bg-tijolo-50/50" : "hover:bg-areia-50"
                   }
                 >
-                  <td className="whitespace-nowrap px-5 py-2.5 font-medium tabular-nums text-areia-800">
+                  <td className="whitespace-nowrap px-5 py-3 font-semibold tabular-nums text-areia-800">
                     {formatarData(lancamento.vencimento)}
                   </td>
-                  <td className="max-w-[220px] px-3 py-2.5">
+                  <td className="max-w-[260px] px-3 py-3">
                     <Pessoa linha={linha} tipo={tipo} />
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-3">
                     <button
                       type="button"
                       onClick={() => aoAbrir(lancamento.id)}
-                      className="text-left text-areia-700 hover:text-saibro-700 hover:underline"
+                      className="alvo-de-toque text-left text-areia-800 hover:text-saibro-700 hover:underline"
                     >
                       {lancamento.item}
                     </button>
-                    <span className="mt-1 flex flex-wrap items-center gap-1">
-                      <EtiquetaNeutra>{lancamento.categoria}</EtiquetaNeutra>
-                      {linha.congelada && <BadgeCongelado />}
-                    </span>
+                    <DetalheDoItem linha={linha} />
                   </td>
-                  <td className="px-3 py-2.5">
-                    {lancamento.formaPagamento ? (
-                      <EtiquetaNeutra>{lancamento.formaPagamento}</EtiquetaNeutra>
-                    ) : (
-                      <span className="text-areia-400">
-                        <span aria-hidden="true">—</span>
-                        <span className="sr-only">Não informada</span>
-                      </span>
-                    )}
-                    {lancamento.valorConvenio !== undefined && (
-                      <span className="mt-1 block whitespace-nowrap text-[11px] text-areia-500">
-                        Convênio {formatarMoeda(lancamento.valorConvenio)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold text-areia-800">
+                  <td className="whitespace-nowrap px-3 py-3 text-right text-lg font-bold text-areia-900">
                     <Valor linha={linha} />
                   </td>
-                  <td className="px-3 py-2.5">
-                    <BadgeSituacao linha={linha} />
+                  <td className="px-3 py-3">
+                    <BadgeSituacao linha={linha} className="text-sm" />
                   </td>
-                  <td className="whitespace-nowrap px-5 py-2.5 text-right">
+                  <td className="whitespace-nowrap px-5 py-3 text-right">
                     {emAberto(linha) ? (
                       <button
                         type="button"
                         onClick={() => aoPagar(lancamento.id)}
-                        className="btn-secundario px-3 py-1.5 text-xs"
+                        className="btn-secundario px-5 py-2.5 text-base"
                         aria-label={`Registrar pagamento: ${lancamento.item}`}
                       >
                         {rotuloAcao}
@@ -237,7 +240,7 @@ export function ListaDeLancamentos({
                       <button
                         type="button"
                         onClick={() => aoAbrir(lancamento.id)}
-                        className="btn-fantasma px-3 py-1.5 text-xs"
+                        className="btn-fantasma px-4 py-2.5 text-base"
                         aria-label={`Ver detalhes: ${lancamento.item}`}
                       >
                         Ver
@@ -251,19 +254,21 @@ export function ListaDeLancamentos({
         </table>
       </div>
 
-      <MostrarMais
-        mostrando={visiveis.length}
-        total={linhas.length}
-        passo={LANCAMENTOS_POR_PAGINA}
-        aoMostrarMais={aoMostrarMais}
-      >
-        <strong className="font-semibold text-areia-800">
-          {validos.quantidade} {validos.quantidade === 1 ? "lançamento" : "lançamentos"}
-        </strong>{" "}
-        · total <strong className="font-semibold text-areia-800">{formatarMoeda(validos.valor)}</strong>
-        {anulados.quantidade > 0 &&
-          ` · ${anulados.quantidade} ${anulados.quantidade === 1 ? "anulado" : "anulados"} (${formatarMoeda(anulados.valor)}) fora do total`}
-      </MostrarMais>
+      <div className={RODAPE_GRANDE}>
+        <MostrarMais
+          mostrando={visiveis.length}
+          total={linhas.length}
+          passo={LANCAMENTOS_POR_PAGINA}
+          aoMostrarMais={aoMostrarMais}
+        >
+          <strong className="font-semibold text-areia-900">
+            {validos.quantidade} {validos.quantidade === 1 ? "lançamento" : "lançamentos"}
+          </strong>{" "}
+          · total <strong className="font-semibold text-areia-900">{formatarMoeda(validos.valor)}</strong>
+          {anulados.quantidade > 0 &&
+            ` · ${anulados.quantidade} ${anulados.quantidade === 1 ? "anulado" : "anulados"} (${formatarMoeda(anulados.valor)}) fora do total`}
+        </MostrarMais>
+      </div>
     </>
   );
 }

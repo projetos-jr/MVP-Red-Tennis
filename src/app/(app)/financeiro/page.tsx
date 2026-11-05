@@ -24,12 +24,14 @@ import { ModalPagamento } from "@/components/financeiro/ModalPagamento";
 import { RecebidoPorForma } from "@/components/financeiro/RecebidoPorForma";
 import { RelatorioProfessores } from "@/components/financeiro/RelatorioProfessores";
 import { ReservasSemPagamento } from "@/components/financeiro/ReservasSemPagamento";
+import { BotaoGrande } from "@/components/financeiro/BotaoGrande";
 import { baixarArquivo } from "@/components/financeiro/utilitarios";
 import { useAvisos } from "@/components/ui/Avisos";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Carregando } from "@/components/ui/Carregando";
 import { EstadoVazio } from "@/components/ui/EstadoVazio";
+import { BotaoMaisOpcoes, PainelDeOpcoes } from "@/components/ui/MaisOpcoes";
 import {
   IconeAnterior,
   IconeCadeado,
@@ -76,6 +78,11 @@ const MES_ATUAL = HOJE.slice(0, 7);
 const INDICADORES: ChaveIndicador[] = ["recebido", "aReceber", "emAtraso", "aPagar"];
 const SITUACOES_DA_URL: SituacaoNoFiltro[] = ["em_aberto", "pendente", "em_atraso", "pago", "cancelado"];
 const ID_DA_LISTA = "lista-de-lancamentos";
+const ID_DAS_OPCOES = "opcoes-do-financeiro";
+
+/** Abas grandes (o Segmentado comum é compacto): letra e área de toque maiores. */
+const ABAS_GRANDES =
+  "w-full sm:w-auto [&>button]:flex-auto sm:[&>button]:flex-none [&>button]:whitespace-nowrap [&>button]:px-3 sm:[&>button]:px-5 [&>button]:py-2.5 [&>button]:text-base [&>button]:font-semibold";
 
 function rolarAteALista() {
   window.requestAnimationFrame(() =>
@@ -119,6 +126,9 @@ function TelaFinanceiro() {
     return { receber: inicial, pagar: inicial };
   });
   const [limite, setLimite] = useState(LANCAMENTOS_POR_PAGINA);
+  const [opcoesAbertas, setOpcoesAbertas] = useState(false);
+  // ?reservas=abrir (atalho de outras telas): a lista de reservas já vem aberta.
+  const reservasAbertasNoInicio = parametros.get("reservas") === "abrir";
   const [modal, setModal] = useState<ModalAberto>(() => {
     const id = parametros.get("lancamento");
     return id ? { tipo: "detalhe", id } : null;
@@ -243,65 +253,93 @@ function TelaFinanceiro() {
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho: título, mês de referência e ações */}
-      <CabecalhoDaPagina
-        titulo="Financeiro"
-        descricao={
-          <div className="flex flex-wrap items-center gap-1">
-            <button
-              type="button"
-              onClick={() => trocarMes(somarMesesNaCompetencia(mes, -1))}
-              className="btn-fantasma px-2 py-1.5"
-              aria-label="Mês anterior"
-            >
-              <IconeAnterior className="h-4 w-4" />
-            </button>
-            <p
-              className="inline-block min-w-[150px] text-center text-sm font-semibold text-areia-800 first-letter:uppercase"
-              aria-live="polite"
-            >
-              {nomeDoMes(mes)}
-            </p>
-            <button
-              type="button"
-              onClick={() => trocarMes(somarMesesNaCompetencia(mes, 1))}
-              className="btn-fantasma px-2 py-1.5"
-              aria-label="Próximo mês"
-            >
-              <IconeProximo className="h-4 w-4" />
-            </button>
-            {mes !== MES_ATUAL && (
+      {/* Cabeçalho: título, mês de referência e UMA ação principal; o resto em "Mais opções". */}
+      <div className="space-y-3">
+        <CabecalhoDaPagina
+          titulo="Financeiro"
+          descricao={
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => trocarMes(MES_ATUAL)}
-                className="btn-fantasma px-2.5 py-1.5 text-xs"
+                onClick={() => trocarMes(somarMesesNaCompetencia(mes, -1))}
+                className="btn-secundario h-11 w-11 p-0"
+                aria-label="Mês anterior"
               >
-                Voltar ao mês atual
+                <IconeAnterior className="h-6 w-6" />
               </button>
-            )}
+              <p
+                className="min-w-[200px] text-center font-display text-2xl font-bold text-areia-900 first-letter:uppercase"
+                aria-live="polite"
+              >
+                {nomeDoMes(mes)}
+              </p>
+              <button
+                type="button"
+                onClick={() => trocarMes(somarMesesNaCompetencia(mes, 1))}
+                className="btn-secundario h-11 w-11 p-0"
+                aria-label="Próximo mês"
+              >
+                <IconeProximo className="h-6 w-6" />
+              </button>
+              {mes !== MES_ATUAL && (
+                <button
+                  type="button"
+                  onClick={() => trocarMes(MES_ATUAL)}
+                  className="btn-fantasma px-3 py-2 text-base"
+                >
+                  Voltar ao mês atual
+                </button>
+              )}
+            </div>
+          }
+          acoes={
+            <>
+              <BotaoMaisOpcoes
+                aberto={opcoesAbertas}
+                aoAlternar={() => setOpcoesAbertas((atual) => !atual)}
+                controla={ID_DAS_OPCOES}
+                className="whitespace-nowrap py-3 text-base"
+              />
+              <button
+                type="button"
+                onClick={() => setModal({ tipo: "novo" })}
+                className="btn-primario whitespace-nowrap px-5 py-3 text-base"
+              >
+                <IconeMais className="h-5 w-5" />
+                Novo lançamento
+              </button>
+            </>
+          }
+        />
+
+        {/* A grade fica num div de dentro: classe de display no painel venceria o `hidden`. */}
+        <PainelDeOpcoes id={ID_DAS_OPCOES} aberto={opcoesAbertas}>
+          <div className="grid gap-3 rounded-2xl border border-areia-200 bg-white p-3 shadow-card sm:grid-cols-2 sm:p-4 lg:ml-auto lg:max-w-3xl">
+          <BotaoGrande
+            icone={<IconeNota className="h-6 w-6" />}
+            titulo="Gerar mensalidades"
+            descricao="Cria de uma vez as mensalidades do mês para todas as matrículas."
+            aoClicar={() => {
+              setOpcoesAbertas(false);
+              setModal({ tipo: "gerar" });
+            }}
+          />
+          {abaVisivel !== "professores" && (
+            <BotaoGrande
+              icone={<IconeExportar className="h-6 w-6" />}
+              titulo="Exportar planilha"
+              descricao={`Baixa a lista de ${
+                tipoDaLista === "receber" ? "contas a receber" : "contas a pagar"
+              } com a busca e os filtros de agora (abre no Excel).`}
+              aoClicar={() => {
+                setOpcoesAbertas(false);
+                exportar();
+              }}
+            />
+          )}
           </div>
-        }
-        acoes={
-          <>
-            <button
-              type="button"
-              onClick={() => setModal({ tipo: "gerar" })}
-              className="btn-secundario whitespace-nowrap"
-            >
-              <IconeNota className="h-4 w-4" />
-              Gerar mensalidades
-            </button>
-            <button
-              type="button"
-              onClick={() => setModal({ tipo: "novo" })}
-              className="btn-primario whitespace-nowrap"
-            >
-              <IconeMais className="h-4 w-4" />
-              Novo lançamento
-            </button>
-          </>
-        }
-      />
+        </PainelDeOpcoes>
+      </div>
 
       <IndicadoresDoMes
         indicadores={indicadores}
@@ -316,6 +354,7 @@ function TelaFinanceiro() {
           aria="Área do financeiro"
           valor={abaVisivel}
           aoMudar={trocarAba}
+          className={ABAS_GRANDES}
           opcoes={[
             { valor: "receber", rotulo: "A receber" },
             { valor: "pagar", rotulo: "A pagar" },
@@ -334,7 +373,12 @@ function TelaFinanceiro() {
       ) : (
         <>
           {abaVisivel === "receber" && (
-            <ReservasSemPagamento reservas={reservas} aoPagar={abrirPagamento} aoAbrir={abrirDetalhe} />
+            <ReservasSemPagamento
+              reservas={reservas}
+              aoPagar={abrirPagamento}
+              aoAbrir={abrirDetalhe}
+              abertaNoInicio={reservasAbertasNoInicio}
+            />
           )}
 
           <div id={ID_DA_LISTA} className="scroll-mt-36">
@@ -347,12 +391,6 @@ function TelaFinanceiro() {
                     : "Despesas da arena, fornecedores e repasses dos professores."
                 }
                 icone={<IconeFinanceiro className="h-5 w-5" />}
-                acao={
-                  <button type="button" onClick={exportar} className="btn-secundario py-2">
-                    <IconeExportar className="h-4 w-4" />
-                    Exportar planilha
-                  </button>
-                }
               />
               <FiltrosDaLista
                 tipo={tipoDaLista}

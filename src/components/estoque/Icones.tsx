@@ -57,6 +57,14 @@ export const IconeCarrinho = (p: IconeProps) => (
   </Base>
 );
 
+/** Setas para cima e para baixo: movimentar o estoque (entrada, perda, contagem). */
+export const IconeMovimentar = (p: IconeProps) => (
+  <Base {...p}>
+    <path d="M8 19V5M4.5 8.5 8 5l3.5 3.5" />
+    <path d="M16 5v14M12.5 15.5 16 19l3.5-3.5" />
+  </Base>
+);
+
 /** Recibo: fechar conta. */
 export const IconeRecibo = (p: IconeProps) => (
   <Base {...p}>

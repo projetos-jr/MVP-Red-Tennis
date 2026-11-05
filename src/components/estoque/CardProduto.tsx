@@ -2,65 +2,59 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { IconeEntrada, IconeLixeira, IconeProximo } from "@/components/ui/Icons";
+import { IconeProximo } from "@/components/ui/Icons";
 import type { ProdutoComSaldo } from "@/lib/consultas/estoque";
-import { ESTILO_CATEGORIA_PRODUTO, formatarMoeda } from "@/lib/theme";
-import { IconeContagem } from "./Icones";
+import { formatarMoeda } from "@/lib/theme";
+import { IconeMovimentar } from "./Icones";
 import { BarraDoNivel, SaldoEmDestaque, SeloDoNivel } from "./NivelDoEstoque";
-
-export type AcaoRapida = "entrada" | "perda" | "inventario" | "reativar";
 
 interface CardProdutoProps {
   item: ProdutoComSaldo;
-  aoAgir: (acao: AcaoRapida, item: ProdutoComSaldo) => void;
+  /** Abre a janela "Movimentar" (Entrada, Perda, Contagem). */
+  aoMovimentar: (item: ProdutoComSaldo) => void;
+  aoReativar: (item: ProdutoComSaldo) => void;
 }
 
 /**
- * Cartao de um item do estoque.
+ * Cartão de um item do estoque, limpo para bater o olho: nome grande, saldo
+ * em número de placar e a situação (Em dia, Atenção, Repor já, Esgotado), com
+ * a barra do nível — três sinais, nunca só a cor.
  *
- * A leitura rapida vem da combinacao de tres sinais — barra de nivel, numero
- * grande e rotulo de situacao — para nao depender so da cor. O nome leva ao
- * detalhe do produto (cadastro, movimentos, comentarios e historico).
+ * Tocar em qualquer parte do cartão abre a janela "Movimentar" (o botão
+ * "Movimentar" se estende pelo cartão inteiro); o nome continua levando ao
+ * detalhe do produto (cadastro, movimentos, comentários e histórico).
  */
-export function CardProduto({ item, aoAgir }: CardProdutoProps) {
+export function CardProduto({ item, aoMovimentar, aoReativar }: CardProdutoProps) {
   const { produto, saldo, nivel } = item;
-  const categoria = ESTILO_CATEGORIA_PRODUTO[produto.categoria];
 
   return (
     <article
-      className={`flex flex-col rounded-2xl border p-4 shadow-card transition-shadow hover:shadow-card-hover ${
-        produto.ativo ? "border-areia-200 bg-white" : "border-dashed border-areia-300 bg-areia-50"
+      className={`relative flex flex-col rounded-2xl border p-4 shadow-card transition-shadow sm:p-5 ${
+        produto.ativo
+          ? "border-areia-200 bg-white hover:border-saibro-300 hover:shadow-card-hover"
+          : "border-dashed border-areia-300 bg-areia-50"
       }`}
     >
-      <header className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold leading-tight text-areia-900">
-            <Link
-              href={`/estoque/produto?id=${produto.id}`}
-              className="group inline-flex items-start gap-1 rounded hover:text-saibro-700"
-            >
-              <span className="group-hover:underline">{produto.nome}</span>
-              <IconeProximo className="mt-px h-3.5 w-3.5 shrink-0 text-areia-400 group-hover:text-saibro-700" />
-            </Link>
-          </h3>
-          <p className="mt-0.5 text-xs text-areia-500">{produto.unidade}</p>
-        </div>
-        <Badge
-          cor={categoria.cor}
-          fundo={categoria.fundo}
-          borda={categoria.borda}
-          className="shrink-0 text-[10px]"
+      <h3 className="text-lg font-semibold leading-tight text-areia-900">
+        {/* relative z-10: fica acima do botão que cobre o cartão. */}
+        <Link
+          href={`/estoque/produto?id=${produto.id}`}
+          className="alvo-de-toque group relative z-10 inline-flex items-center gap-1 rounded hover:text-saibro-700"
         >
-          {produto.categoria}
-        </Badge>
-      </header>
+          <span className="group-hover:underline">{produto.nome}</span>
+          <IconeProximo className="h-4 w-4 shrink-0 text-areia-500 group-hover:text-saibro-700" />
+        </Link>
+      </h3>
+      <p className="text-sm text-areia-600">
+        {produto.unidade} · {formatarMoeda(produto.precoVenda)}
+      </p>
 
       <div className="mt-3 flex items-end justify-between gap-2">
-        <SaldoEmDestaque saldo={saldo} estoqueMinimo={produto.estoqueMinimo} nivel={nivel} />
+        <SaldoEmDestaque saldo={saldo} estoqueMinimo={produto.estoqueMinimo} nivel={nivel} tamanho="lg" />
         {produto.ativo ? (
-          <SeloDoNivel nivel={nivel} className="text-[11px]" />
+          <SeloDoNivel nivel={nivel} className="shrink-0 text-sm" />
         ) : (
-          <Badge className="text-[11px]">Inativo</Badge>
+          <Badge className="shrink-0 text-sm">Inativo</Badge>
         )}
       </div>
 
@@ -68,51 +62,26 @@ export function CardProduto({ item, aoAgir }: CardProdutoProps) {
         saldo={saldo}
         estoqueMinimo={produto.estoqueMinimo}
         nivel={nivel}
-        className="mt-2.5"
+        className="mt-3"
       />
 
-      <p className="mt-2.5 text-xs text-areia-600">
-        Venda <strong className="font-semibold">{formatarMoeda(produto.precoVenda)}</strong>
-        <span className="text-areia-500"> · custo {formatarMoeda(produto.precoCusto)}</span>
-      </p>
-
       {produto.ativo ? (
-        <div className="mt-3 flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => aoAgir("entrada", item)}
-            className="btn-secundario flex-1 px-2 py-1.5 text-xs"
-          >
-            <IconeEntrada className="h-3.5 w-3.5" />
-            Entrada
-          </button>
-          <button
-            type="button"
-            onClick={() => aoAgir("perda", item)}
-            disabled={saldo <= 0}
-            className="btn-secundario px-2.5 py-1.5 text-xs"
-            title="Registrar perda (quebra, vencimento, cortesia)"
-          >
-            <IconeLixeira className="h-3.5 w-3.5" />
-            Perda
-          </button>
-          <button
-            type="button"
-            onClick={() => aoAgir("inventario", item)}
-            className="btn-secundario px-2.5 py-1.5 text-xs"
-            title="Ajuste de inventário: informe quanto há na prateleira"
-          >
-            <IconeContagem className="h-3.5 w-3.5" />
-            Contagem
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => aoMovimentar(item)}
+          aria-label={`Movimentar ${produto.nome}: entrada, perda ou contagem`}
+          className="btn-secundario mt-4 w-full py-3 text-base after:absolute after:inset-0 after:rounded-2xl after:content-['']"
+        >
+          <IconeMovimentar className="h-5 w-5" />
+          Movimentar
+        </button>
       ) : (
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-xs text-areia-500">Fora das listas de venda.</p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-areia-600">Fora das listas de venda.</p>
           <button
             type="button"
-            onClick={() => aoAgir("reativar", item)}
-            className="btn-secundario px-2.5 py-1.5 text-xs"
+            onClick={() => aoReativar(item)}
+            className="btn-secundario px-4 py-2.5 text-base"
           >
             Reativar
           </button>
