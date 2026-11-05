@@ -154,6 +154,11 @@ Detalhes técnicos em **[`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)**; o banco 
 
 ## Identidade visual
 
+Feita para o dono da arena ler de relance: **tudo grande por padrão** (17px de letra no
+computador e a opção **"Letras maiores"** no menu do usuário), uma ação principal por tela e o
+resto atrás de **"Mais opções"**; alertas com a **placa triangular de atenção**, que só aparece
+quando há algo. Regras e peças na skill `.claude/skills/design-red-tennis/SKILL.md`.
+
 Cores **vivas** de quadra de tênis (pedido do cliente), definidas num arquivo só,
 `src/lib/paleta.ts`, que o Tailwind lê:
 
