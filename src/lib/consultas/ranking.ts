@@ -133,6 +133,58 @@ export function resumoDoRanking(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Piramide do ranking (forma de MOSTRAR o ranking geral, nao formato de disputa)
+// ---------------------------------------------------------------------------
+
+/**
+ * Hipotese H19: quantos jogadores ficam em cada fileira da piramide. Pedido do
+ * dono da arena: "o primeiro colocado, depois na segunda fileira tres pessoas,
+ * depois desce 4 pessoas e assim em diante". Depois do ultimo numero da lista,
+ * cada fileira tem um a mais que a anterior (1, 3, 4, 5, 6, 7...). Se a arena
+ * disser que a 2a fileira tem 2, basta trocar para [1, 2, 3].
+ */
+export const FILEIRAS_DA_PIRAMIDE: readonly number[] = [1, 3, 4];
+
+/** Tamanho cheio da fileira `indice` (0 = topo), mesmo que ela fique incompleta. */
+export function capacidadeDaFileira(indice: number, tamanhos: readonly number[] = FILEIRAS_DA_PIRAMIDE): number {
+  const lista = tamanhos.filter((t) => Number.isInteger(t) && t > 0);
+  if (lista.length === 0) return indice + 1;
+  if (indice < lista.length) return lista[indice];
+  return lista[lista.length - 1] + (indice - lista.length + 1);
+}
+
+/**
+ * Quantos jogadores vao em cada fileira, de cima para baixo. A ultima fileira
+ * pode ficar incompleta. Ex.: 23 jogadores -> [1, 3, 4, 5, 6, 4].
+ */
+export function fileirasDaPiramide(total: number, tamanhos: readonly number[] = FILEIRAS_DA_PIRAMIDE): number[] {
+  const fileiras: number[] = [];
+  let restam = Math.max(0, Math.floor(total));
+  for (let i = 0; restam > 0; i += 1) {
+    const nesta = Math.min(restam, capacidadeDaFileira(i, tamanhos));
+    fileiras.push(nesta);
+    restam -= nesta;
+  }
+  return fileiras;
+}
+
+export interface FileiraDaPiramide<T> {
+  /** Tamanho cheio da fileira (a ultima pode ter menos itens que isso). */
+  capacidade: number;
+  itens: T[];
+}
+
+/** Divide a lista (ja na ordem do ranking) nas fileiras da piramide. */
+export function montarPiramide<T>(itens: readonly T[], tamanhos: readonly number[] = FILEIRAS_DA_PIRAMIDE): FileiraDaPiramide<T>[] {
+  let inicio = 0;
+  return fileirasDaPiramide(itens.length, tamanhos).map((quantos, i) => {
+    const fileira = { capacidade: capacidadeDaFileira(i, tamanhos), itens: itens.slice(inicio, inicio + quantos) };
+    inicio += quantos;
+    return fileira;
+  });
+}
+
 /** Quem pode jogar partida de ranking: inscritos no ranking e ativos, por nome. */
 export function jogadoresDoRanking(banco: Banco): Aluno[] {
   return banco.alunos

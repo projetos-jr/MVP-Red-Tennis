@@ -1,16 +1,34 @@
 # Módulo Ranking e Torneios
 
-Versão de 29/10/2026. Segue a seção "Ranking e torneios" de
-`docs/MODELO-E-TELAS.md` e a arquitetura descrita em `docs/ARQUITETURA.md`.
+Versão de 29/10/2026, com a pirâmide de raquetes do redesign 3 (05/11/2026).
+Segue a seção "Ranking e torneios" de `docs/MODELO-E-TELAS.md` e a arquitetura
+descrita em `docs/ARQUITETURA.md`.
 
 ## 1. O que o módulo faz
 
 **Ranking.** O ranking não é digitado: ele é calculado a partir das partidas
-com resultado, com a pontuação das Configurações (H7). A tela mostra o pódio,
-a posição, a foto, o nome (que abre a ficha), a categoria (A a D), os pontos,
-as vitórias, as derrotas e quantas posições cada um ganhou ou perdeu nos
-últimos 7 dias. Dá para filtrar por categoria: aí as posições passam a ser as
-da categoria.
+com resultado, com a pontuação das Configurações (H7). A aba Ranking mostra o
+ranking geral como uma **pirâmide de raquetes** (pedido do dono da arena): o
+1º colocado no topo, depois fileiras de 3, 4, 5, 6... jogadores (H19). Cada
+jogador é uma raquete de madeira desenhada, com a foto no centro da cabeça, a
+posição numa bolinha de tênis apoiada no aro e o nome e os pontos embaixo do
+cabo. O 1º tem o aro em laranja-saibro vivo, o grip amarelo-bola e uma coroa
+discreta. Tocar numa raquete abre a ficha do jogador. Dá para filtrar por
+categoria (Todas, A, B, C, D): a pirâmide é refeita só com a categoria, e as
+posições passam a ser as da categoria.
+
+Os números (líder, jogadores, partidas em 30 dias, próximo torneio) e a lista
+completa (posição, foto, nome, categoria, pontos, vitórias, derrotas e quantas
+posições cada um ganhou ou perdeu nos últimos 7 dias) ficam guardados no botão
+**Ver lista e números**, como pede o redesign ("quando está tudo fechado, deixa
+tudo bem grande").
+
+> **Escopo.** O escopo contratado inclui o **ranking geral** (resultados,
+> pontuação e posições). A pirâmide desta tela é só uma **forma de mostrar** o
+> ranking geral: a ordem vem da pontuação, ninguém troca de lugar à mão. A
+> **chave em pirâmide** como formato de disputa (desafiar quem está acima,
+> trocar de posição ao vencer, quatro categorias com regras próprias) **não está
+> no contrato** e só entra por Termo Aditivo. Nada disso foi implementado.
 
 **Partidas de ranking.** A recepção pode:
 
@@ -23,7 +41,7 @@ da categoria.
   excluir a partida (a correção e a exclusão ficam no histórico de alterações);
 - comentar qualquer partida e ver o histórico dela.
 
-**Torneios.** A pirâmide do MVP saiu (fora da v1). No lugar:
+**Torneios.** A chave em pirâmide do MVP saiu (fora da v1). No lugar:
 
 - lista de torneios com situação, formato, data, inscritos, andamento e campeão;
 - criar e editar torneio: nome, data, formato, categoria (ou livre), simples ou
@@ -44,10 +62,16 @@ da categoria.
 
 | Endereço | O que tem |
 | --- | --- |
-| `/ranking` | Indicadores, abas, pódio, ranking geral com filtro por categoria, próximas partidas, resumo dos torneios. |
-| `/ranking?aba=partidas` | Histórico de partidas (ranking e torneio) com busca, tipo, situação e período. |
-| `/ranking?aba=torneios` | Todos os torneios em cartões. |
+| `/ranking` | "Registrar partida", abas, filtro por categoria, a pirâmide de raquetes e, em "Ver lista e números", os indicadores e a lista completa. |
+| `/ranking?aba=partidas` | Próximas partidas (com "Marcar partida") e o histórico de partidas (ranking e torneio) com busca, tipo, situação e período. |
+| `/ranking?aba=torneios` | Todos os torneios em cartões e o botão "Novo torneio". |
 | `/ranking/torneio?id=t-2` | Um torneio: dados, chave, grupos ou matriz, inscrições, comentários e histórico. |
+
+No celular, a pirâmide encolhe as raquetes até um mínimo legível; as fileiras
+que ainda não cabem rolam para o lado **dentro do cartão** (a página não rola
+para o lado), começando centralizada no 1º, com a dica "Arraste para o lado
+para ver todos". No tablet (1180) e no computador (1440) a pirâmide inteira
+aparece sem rolar para o lado.
 
 No celular, a chave da eliminatória mostra uma rodada por vez (botões com o
 nome da rodada) e a matriz do todos contra todos dá lugar à lista de jogos por
@@ -60,11 +84,11 @@ rodada.
 | Regras do placar e do ranking | `src/lib/banco/regras/ranking.ts` |
 | Geradores de chave, avanço, classificação | `src/lib/banco/regras/torneios.ts` |
 | Gravações (operações) | `src/lib/banco/operacoes/ranking.ts` |
-| Leituras das telas (consultas) | `src/lib/consultas/ranking.ts` |
+| Leituras das telas (consultas) | `src/lib/consultas/ranking.ts` (inclui `FILEIRAS_DA_PIRAMIDE`, `fileirasDaPiramide` e `montarPiramide`) |
 | Dados de exemplo | `src/lib/banco/semente/ranking.ts` |
 | Telas | `src/app/(app)/ranking/page.tsx`, `src/app/(app)/ranking/torneio/page.tsx` |
-| Componentes | `src/components/ranking/` |
-| Testes | `src/lib/banco/regras/torneios.test.ts`, `src/lib/banco/operacoes/ranking.test.ts` |
+| Componentes | `src/components/ranking/` (a pirâmide: `PiramideDoRanking.tsx` e `RaqueteComFoto.tsx`) |
+| Testes | `src/lib/banco/regras/torneios.test.ts`, `src/lib/banco/operacoes/ranking.test.ts`, `src/lib/consultas/ranking.test.ts` (fileiras da pirâmide) |
 
 Operações: `registrarPartida`, `marcarPartida`, `registrarResultadoDePartida`,
 `corrigirResultadoDePartida`, `excluirPartida`, `criarTorneio`,
@@ -83,6 +107,28 @@ Operações: `registrarPartida`, `marcarPartida`, `registrarResultadoDePartida`,
   individual.
 - Desempate no ranking geral: mais vitórias, depois ordem alfabética (regra que
   já existia em `calcularRanking`, que não mudou).
+
+### Pirâmide do ranking (H19)
+
+- Fileiras de **1, 3, 4, 5, 6, 7...**: o 1º sozinho, depois 3, depois 4, e
+  cada fileira seguinte com um a mais. É o que o dono da arena descreveu ("o
+  primeiro colocado, depois na segunda fileira três pessoas, depois desce 4
+  pessoas e assim em diante"). A última fileira pode ficar incompleta (com 23
+  jogadores: 1, 3, 4, 5, 6 e 4).
+- **Hipótese H19, a confirmar com o cliente:** a 2ª fileira tem 3 ou 2
+  jogadores? (Uma pirâmide "clássica" seria 1, 2, 3, 4...) A regra fica num
+  parâmetro só, `FILEIRAS_DA_PIRAMIDE` em `src/lib/consultas/ranking.ts`
+  (hoje `[1, 3, 4]`; depois do último número, +1 por fileira). Para 1, 2, 3,
+  4..., troque para `[1, 2, 3]`; o teste `consultas/ranking.test.ts` mostra os
+  dois casos.
+- A ordem é a do ranking geral (pontos, depois vitórias, depois nome). Com o
+  filtro de categoria, a pirâmide é montada só com a categoria e as posições
+  são as da categoria (o 1º da categoria ganha a coroa).
+- Desenho: SVG próprio (`RaqueteComFoto`), sem biblioteca nem imagem de
+  terceiros; cores só da paleta (madeira = mistura de saibro, bola e areia).
+  Sem foto, aparecem as iniciais na cor do avatar. Cada raquete é um link com
+  rótulo para leitor de tela ("1º lugar: Samuel, 52 pontos, Categoria C. Abrir
+  a ficha.") e foco visível.
 
 ### Partida de ranking
 
@@ -191,7 +237,9 @@ A hipótese diz que, na importação, cada jogador recebe um lançamento de
 
 ## 3. O que ficou de fora, e por quê
 
-- **Pirâmide:** fora da v1 (decisão do plano).
+- **Chave em pirâmide como formato de disputa** (desafios, troca de posição,
+  quatro categorias): fora do contrato, só por Termo Aditivo. A pirâmide da
+  aba Ranking é só a forma de mostrar o ranking geral (H19).
 - **Cobrança da inscrição do torneio:** os dados de exemplo têm lançamentos
   "Inscrição · <torneio>", mas a tela não gera cobrança, porque o valor da
   inscrição não está definido em lugar nenhum. Sugestão: campo "valor da
@@ -212,73 +260,85 @@ A hipótese diz que, na importação, cada jogador recebe um lançamento de
 Use o sistema com o usuário padrão (Francisco, dono). Tudo volta ao estado
 inicial ao recarregar a página.
 
-1. Abra **Ranking / Torneio**. Deve aparecer o pódio com os 3 primeiros, a
-   lista do ranking com pontos, vitórias (V), derrotas (D) e a coluna "7 dias",
-   e à direita as próximas partidas e os torneios.
-2. Clique em **Cat. B**. A lista e o pódio passam a mostrar só a categoria B,
-   com as posições da categoria. Clique em **Todas** para voltar.
-3. Clique em **Registrar partida**. Escolha "Guilherme Lima" como jogador A e
+1. Abra **Ranking / Torneio**. Deve aparecer a **pirâmide de raquetes**: o 1º
+   sozinho no topo (aro laranja, grip amarelo e coroa), depois 3 raquetes,
+   depois 4, 5, 6 e a última fileira com quem sobrou (23 jogadores no total).
+   Em cada raquete: a foto no centro, a posição na bolinha amarela, e embaixo
+   o nome e os pontos. Confira que a ordem bate com os pontos (quem tem mais
+   pontos fica mais acima e mais à esquerda).
+2. Clique em **Cat. B** (no celular, **B**). A pirâmide é refeita só com a
+   categoria B, o título muda para "Ranking · Categoria B" e as posições
+   recomeçam do 1º. Clique em **Todas** para voltar.
+3. Clique numa raquete: abre a ficha do jogador. Volte para o Ranking.
+4. Clique em **Ver lista e números**: aparecem os 4 números (líder, jogadores,
+   partidas em 30 dias, próximo torneio) e a lista completa com pontos,
+   vitórias (V), derrotas (D) e a coluna "7 dias". O botão vira **Esconder
+   lista e números**; clique de novo para fechar. No celular, as fileiras de
+   baixo passam da largura da tela: arraste a pirâmide para o lado (a página
+   em si não rola para o lado).
+5. Clique em **Registrar partida**. Escolha "Guilherme Lima" como jogador A e
    "Anna Beatriz" como jogador B. Em **Placar**, escreva `6/4 3/6 10/8`.
    O vencedor "Guilherme Lima" é marcado sozinho e aparece o quadro "Confira o
    placar". Clique em **Registrar partida**. Deve aparecer o aviso "Partida
    registrada. O ranking foi atualizado." e Guilherme ganha 10 pontos.
-4. **Erro de regra:** abra **Registrar partida** de novo e escolha "Guilherme
+6. **Erro de regra:** abra **Registrar partida** de novo e escolha "Guilherme
    Lima" nos dois lados, com placar `6/4 6/4`. Ao salvar deve aparecer "Escolha
    dois jogadores diferentes.". Troque o jogador B por "Anna Beatriz" e marque
    Anna como vencedora: deve aparecer "O placar não bate com o vencedor: por
    esse placar quem venceu foi Guilherme Lima.". Cancele.
-5. Em **Próximas partidas**, clique em **Marcar**. Escolha dois jogadores,
-   deixe "Reservar quadra" marcado e mude o **Início** até aparecer "Quadra
-   livre nesse horário.". Clique em **Marcar partida**: aviso "Partida marcada e
-   quadra reservada na agenda.". A partida aparece em Próximas partidas.
-6. **Erro de regra:** marque outra partida, para outros jogadores, na mesma
+7. Abra a aba **Partidas**. Em **Próximas partidas**, clique em **Marcar
+   partida**. Escolha dois jogadores, deixe "Reservar quadra" marcado e mude o
+   **Início** até aparecer "Quadra livre nesse horário.". Clique em **Marcar partida**: aviso "Partida marcada e
+   quadra reservada na agenda.". A partida aparece em Próximas partidas (aba
+   Partidas).
+8. **Erro de regra:** marque outra partida, para outros jogadores, na mesma
    data, quadra e horário. A tela já avisa em vermelho que a quadra está
    ocupada; ao salvar aparece "Quadra 1 já está ocupada em … (Ranking · …)".
-7. Abra a aba **Partidas**. Busque "Guilherme" e escolha a situação "Com
+9. Abra a aba **Partidas**. Busque "Guilherme" e escolha a situação "Com
    resultado". Clique na partida de hoje, marque Anna Beatriz como vencedora,
    escreva o placar `4/6 6/3 8/10` e clique em **Salvar correção**. Aviso
    "Resultado corrigido. O ranking foi recalculado.".
-8. Abra a mesma partida e clique em **Histórico**: aparece "Alterou · Corrigir
-   resultado de partida de ranking", com o vencedor e o placar de antes e de
-   depois. Em **Comentários**, escreva algo e clique em **Adicionar
-   comentário**.
-9. Ainda na partida, clique em **Excluir partida** e confirme. Aviso "Partida
-   excluída.".
-10. Clique em **Novo torneio**. Dê um nome, deixe "Eliminatória simples" e
-    "Simples", e clique em **Inscrever** em seis alunos. Ponha "1º" como cabeça
-    de chave de um deles e "2º" de outro. O quadro "Chave" diz "Chave de 8 com
+10. Abra a mesma partida e clique em **Histórico**: aparece "Alterou · Corrigir
+    resultado de partida de ranking", com o vencedor e o placar de antes e de
+    depois. Em **Comentários**, escreva algo e clique em **Adicionar
+    comentário**.
+11. Ainda na partida, clique em **Excluir partida** e confirme. Aviso "Partida
+    excluída.".
+12. Abra a aba **Torneios** e clique em **Novo torneio**. Dê um nome, deixe
+    "Eliminatória simples" e "Simples", e clique em **Inscrever** em seis
+    alunos. Ponha "1º" como cabeça de chave de um deles e "2º" de outro. O quadro "Chave" diz "Chave de 8 com
     2 folgas…". Clique em **Criar torneio**: a tela do torneio abre.
-11. Clique em **Gerar chave** e confirme. Aparece a chave com as quartas de
+13. Clique em **Gerar chave** e confirme. Aparece a chave com as quartas de
     final (2 jogos e 2 folgas), as semifinais, a final e o campeão "a definir".
     Os cabeças 1 e 2 aparecem nas folgas, um em cima e outro embaixo.
-12. Clique no **Jogo 1**, escreva o placar `6/3 6/2` e clique em **Registrar
+14. Clique no **Jogo 1**, escreva o placar `6/3 6/2` e clique em **Registrar
     resultado**. Aviso "o vencedor avançou na chave" e o vencedor aparece na
     semifinal.
-13. Abra o **Jogo 1** de novo, troque o vencedor e o placar (`3/6 2/6`) e clique
+15. Abra o **Jogo 1** de novo, troque o vencedor e o placar (`3/6 2/6`) e clique
     em **Salvar correção**: o novo vencedor toma o lugar na semifinal.
-14. Abra o **Jogo 3** (semifinal), escolha um vencedor, marque **Vitória por
+16. Abra o **Jogo 3** (semifinal), escolha um vencedor, marque **Vitória por
     W.O.** e registre. Agora abra o **Jogo 1**: aparece "A partida seguinte
     (Semifinal) já foi jogada: este resultado não pode mais ser mudado." e não
     há botão de salvar.
-15. Registre o jogo 4 e a final. O torneio fica **Encerrado** e o campeão
+17. Registre o jogo 4 e a final. O torneio fica **Encerrado** e o campeão
     aparece em destaque no topo e na coluna "Campeão" da chave.
-16. Volte a **Torneios** e abra **Torneio Interno · Categoria B** (inscrições
+18. Volte a **Torneios** e abra **Torneio Interno · Categoria B** (inscrições
     abertas). Clique em **Editar e inscrever**, remova "Rafael", mude
     **Mostrar** para "Todo o ranking", inscreva "Caio" e ponha-o como cabeça
     "3º". Salve: aviso "Torneio atualizado.".
-17. Clique em **Gerar chave** e confirme: aparecem os grupos A e B com a
+19. Clique em **Gerar chave** e confirme: aparecem os grupos A e B com a
     classificação e os jogos, e o aviso de que a eliminatória será montada
     quando os grupos terminarem. Clique em **Desfazer chave** e confirme: o
     torneio volta para inscrições abertas. Gere de novo.
-18. Registre um jogo do grupo: a classificação muda na hora. Registre todos os
+20. Registre um jogo do grupo: a classificação muda na hora. Registre todos os
     jogos dos grupos: a fase eliminatória aparece sozinha (1A × 2B e 2A × 1B).
-19. Abra **Copa Red Tennis · Etapa 3** (encerrado): classificação com
+21. Abra **Copa Red Tennis · Etapa 3** (encerrado): classificação com
     "Desempate: confronto direto", matriz de confrontos (V e D com o placar) e
     os jogos por rodada; o jogo 7 foi por W.O.
-20. **Erro de permissão (H9):** saia do sistema, entre como **Renata Coelho**
+22. **Erro de permissão (H9):** saia do sistema, entre como **Renata Coelho**
     (professora), abra Ranking / Torneio e tente registrar uma partida. Deve
     aparecer "Seu perfil não tem acesso ao ranking e aos torneios.".
-21. Abra a **Agenda** na data e horário da partida marcada no passo 5: a
+23. Abra a **Agenda** na data e horário da partida marcada no passo 7: a
     reserva aparece em roxo, como "Ranking" com os dois jogadores (quando a
     agenda já estiver migrada para o modelo novo).
 
