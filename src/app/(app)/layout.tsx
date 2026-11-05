@@ -1,6 +1,7 @@
 import { CascaDoApp } from "@/components/layout/CascaDoApp";
 import { NavegacaoMobile } from "@/components/layout/NavegacaoMobile";
 import { ProtecaoDeRota } from "@/components/layout/ProtecaoDeRota";
+import { RolarAoTrocarDeTela } from "@/components/layout/RolarAoTrocarDeTela";
 import { Topbar } from "@/components/layout/Topbar";
 import { VirarODia } from "@/components/layout/VirarODia";
 
@@ -28,6 +29,7 @@ export default function LayoutApp({
 
         <NavegacaoMobile />
         <VirarODia />
+        <RolarAoTrocarDeTela />
       </div>
     </CascaDoApp>
   );

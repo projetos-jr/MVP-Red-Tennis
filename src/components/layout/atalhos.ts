@@ -47,7 +47,7 @@ const ATALHOS_INTERNOS: Atalho[] = [
   {
     id: "agenda-professores",
     rotulo: "Agenda Professores",
-    descricao: "Semana de cada professor",
+    descricao: "Hoje e amanhã, um professor por coluna",
     href: "/agenda?visao=professor",
     modulo: "agenda",
   },

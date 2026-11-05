@@ -98,7 +98,10 @@ export function SecaoPermissoes() {
                     const marcado = rascunho[perfil].includes(modulo);
                     return (
                       <td key={perfil} className="px-1 py-2.5 text-center">
-                        <span className="inline-flex items-center gap-1" title={trava}>
+                        <label
+                          className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg px-2 [@media(pointer:coarse)]:min-h-[2.75rem] [@media(pointer:coarse)]:min-w-[2.75rem]"
+                          title={trava}
+                        >
                           <input
                             type="checkbox"
                             checked={marcado}
@@ -109,7 +112,7 @@ export function SecaoPermissoes() {
                             className="h-5 w-5 cursor-pointer accent-saibro-600 disabled:cursor-not-allowed disabled:opacity-60"
                           />
                           {trava && <IconeCadeado className="h-3.5 w-3.5 text-areia-400" aria-hidden="true" />}
-                        </span>
+                        </label>
                       </td>
                     );
                   })}

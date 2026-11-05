@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { IconeSetaBaixo } from "@/components/base/Icones";
 import { ESTILO_DO_PERFIL } from "@/components/base/perfis";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconeSair } from "@/components/ui/Icons";
 import { NOMES_DOS_PERFIS, resumoDoAcesso } from "@/lib/consultas/configuracoes";
+import { assinarLetra, letraGrande, mudarLetra } from "@/lib/letra";
 import { useApp } from "@/store/AppStore";
 import { areasDoMenuPermitidas, estaNaArea } from "./abas";
 
@@ -24,6 +25,8 @@ export function MenuDoUsuario() {
   const botao = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const idDoMenu = useId();
+  // "Letras maiores": escolha guardada neste aparelho (ver lib/letra.ts).
+  const grande = useSyncExternalStore(assinarLetra, letraGrande, () => false);
 
   const areas = areasDoMenuPermitidas(banco, colaborador);
   const numaAreaDoMenu = areas.some((area) => estaNaArea(caminho, area.href));
@@ -36,7 +39,7 @@ export function MenuDoUsuario() {
 
   useEffect(() => {
     if (!aberto) return;
-    menu.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    menu.current?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus();
 
     function aoClicarFora(evento: MouseEvent) {
       const alvo = evento.target as Node;
@@ -47,7 +50,7 @@ export function MenuDoUsuario() {
   }, [aberto]);
 
   function aoTeclar(evento: KeyboardEvent<HTMLDivElement>) {
-    const itens = [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    const itens = [...(menu.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])];
     const atual = itens.indexOf(document.activeElement as HTMLElement);
     if (evento.key === "ArrowDown" || evento.key === "ArrowUp") {
       evento.preventDefault();
@@ -139,6 +142,31 @@ export function MenuDoUsuario() {
               ))}
             </ul>
           )}
+
+          <div className="border-b border-areia-200 py-1.5" role="none">
+            <button
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={grande}
+              onClick={() => mudarLetra(!grande)}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-areia-700 hover:bg-areia-50 hover:text-areia-900 focus-visible:bg-areia-50"
+            >
+              <span aria-hidden="true" className="w-[18px] text-center font-display text-base font-bold leading-none">
+                A<span className="text-xs">A</span>
+              </span>
+              <span className="flex-1">Letras maiores</span>
+              <span
+                aria-hidden="true"
+                className={`relative h-6 w-10 rounded-full transition-colors ${grande ? "bg-quadra-700" : "bg-areia-300"}`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full shadow-sm motion-safe:transition-[left] ${
+                    grande ? "left-[18px] bg-bola-300" : "left-0.5 bg-white"
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
 
           <div className="py-1.5" role="none">
             <button

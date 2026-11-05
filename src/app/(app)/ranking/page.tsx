@@ -9,8 +9,7 @@ import { ListaTorneios } from "@/components/ranking/ListaTorneios";
 import { ModalNovaPartida, type ModoDaPartida } from "@/components/ranking/ModalNovaPartida";
 import { ModalPartida } from "@/components/ranking/ModalPartida";
 import { ModalTorneio } from "@/components/ranking/ModalTorneio";
-import { PodioRanking } from "@/components/ranking/PodioRanking";
-import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
+import { PiramideDoRanking } from "@/components/ranking/PiramideDoRanking";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Carregando } from "@/components/ui/Carregando";
@@ -21,6 +20,7 @@ import {
   IconeTrofeu,
   IconeUsuarios,
 } from "@/components/ui/Icons";
+import { BotaoMaisOpcoes, PainelDeOpcoes } from "@/components/ui/MaisOpcoes";
 import { Segmentado } from "@/components/ui/Segmentado";
 import { StatCard } from "@/components/ui/StatCard";
 import { HOJE } from "@/lib/banco/constantes";
@@ -52,6 +52,7 @@ export default function PaginaRanking() {
   );
 }
 
+/** Filtro de categoria com botoes grandes (o dono bate o olho e toca). */
 function FiltroDeCategoria({
   valor,
   aoMudar,
@@ -59,23 +60,41 @@ function FiltroDeCategoria({
   valor: CategoriaRanking | "todas";
   aoMudar: (valor: CategoriaRanking | "todas") => void;
 }) {
+  // No celular so a letra (cabe numa linha); do tablet para cima, "Cat. A".
+  const opcoes: Array<{ valor: CategoriaRanking | "todas"; rotulo: string; titulo?: string }> = [
+    { valor: "todas", rotulo: "Todas" },
+    ...CATEGORIAS.map((c) => ({
+      valor: c,
+      rotulo: c,
+      titulo: `${ESTILO_CATEGORIA[c].label} · ${ESTILO_CATEGORIA[c].descricao}`,
+    })),
+  ];
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por categoria">
-      <BotaoFiltro ativo={valor === "todas"} aoClicar={() => aoMudar("todas")}>
-        Todas
-      </BotaoFiltro>
-      {CATEGORIAS.map((c) => {
-        const estilo = ESTILO_CATEGORIA[c];
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar por categoria">
+      {opcoes.map((opcao) => {
+        const ativo = valor === opcao.valor;
         return (
-          <BotaoFiltro
-            key={c}
-            ativo={valor === c}
-            aoClicar={() => aoMudar(c)}
-            cores={estilo}
-            title={`${estilo.label} · ${estilo.descricao}`}
+          <button
+            key={opcao.valor}
+            type="button"
+            onClick={() => aoMudar(opcao.valor)}
+            aria-pressed={ativo}
+            title={opcao.titulo}
+            className={`btn alvo-de-toque min-w-[3.25rem] border px-3.5 py-2.5 text-base sm:min-w-[4.5rem] sm:px-4 ${
+              ativo
+                ? "border-saibro-600 bg-saibro-600 text-white shadow-sm"
+                : "border-areia-300 bg-white text-areia-800 hover:border-saibro-400 hover:bg-saibro-50 hover:text-saibro-800"
+            }`}
           >
-            Cat. {c}
-          </BotaoFiltro>
+            {opcao.valor === "todas" ? (
+              opcao.rotulo
+            ) : (
+              <span>
+                <span className="sr-only sm:not-sr-only">Cat. </span>
+                {opcao.rotulo}
+              </span>
+            )}
+          </button>
         );
       })}
     </div>
@@ -93,6 +112,7 @@ function ConteudoDoRanking() {
   const [novaPartida, setNovaPartida] = useState<{ modo: ModoDaPartida; vez: number } | null>(null);
   const [partidaAberta, setPartidaAberta] = useState<string | null>(null);
   const [novoTorneio, setNovoTorneio] = useState<number | null>(null);
+  const [verLista, setVerLista] = useState(false);
 
   const geral = useMemo(() => rankingDaArena(banco, HOJE), [banco]);
   const linhas = useMemo(
@@ -124,60 +144,16 @@ function ConteudoDoRanking() {
         titulo="Ranking & Torneios"
         descricao={`${resumo.jogadores} jogadores no ranking · vitória vale ${pontosVitoria} pontos e derrota ${pontosDerrota}`}
         acoes={
-          <>
-            <button type="button" onClick={() => setNovoTorneio(Date.now())} className="btn-secundario">
-              <IconeTrofeu className="h-4 w-4" />
-              Novo torneio
-            </button>
-            <button
-              type="button"
-              onClick={() => abrirNovaPartida("resultado")}
-              className="btn-primario"
-            >
-              <IconeMais className="h-4 w-4" />
-              Registrar partida
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => abrirNovaPartida("resultado")}
+            className="btn-primario px-5 py-3 text-base"
+          >
+            <IconeMais className="h-5 w-5" />
+            Registrar partida
+          </button>
         }
       />
-
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard
-          rotulo="Líder do ranking"
-          rotuloCurto="Líder"
-          valor={resumo.lider ? nomeCompacto(resumo.lider.aluno.nome) : "—"}
-          detalhe={
-            resumo.lider
-              ? `${resumo.lider.pontos} pontos · ${resumo.lider.vitorias} vitórias${
-                  resumo.lider.aluno.categoriaRanking ? ` · Categoria ${resumo.lider.aluno.categoriaRanking}` : ""
-                }`
-              : undefined
-          }
-          icone={<IconeTrofeu className="h-5 w-5" />}
-          tom="saibro"
-        />
-        <StatCard
-          rotulo="Jogadores no ranking"
-          rotuloCurto="Jogadores"
-          valor={String(resumo.jogadores)}
-          detalhe="Inscritos nas categorias A a D"
-          icone={<IconeUsuarios className="h-5 w-5" />}
-        />
-        <StatCard
-          rotulo="Partidas em 30 dias"
-          rotuloCurto="Partidas (30d)"
-          valor={String(resumo.partidasRecentes)}
-          detalhe="Partidas de ranking com resultado"
-          icone={<IconeBola className="h-5 w-5" />}
-        />
-        <StatCard
-          rotulo="Próximo torneio"
-          rotuloCurto="Torneio"
-          valor={resumo.proximoTorneio ? formatarData(resumo.proximoTorneio.data) : "—"}
-          detalhe={resumo.proximoTorneio?.nome ?? "Nenhum torneio marcado"}
-          icone={<IconeAgenda className="h-5 w-5" />}
-        />
-      </div>
 
       <div className="overflow-x-auto">
         <Segmentado
@@ -193,79 +169,112 @@ function ConteudoDoRanking() {
       </div>
 
       {aba === "ranking" && (
-        <div className="grid items-start gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader
-              titulo={categoria === "todas" ? "Ranking geral" : `Ranking · ${ESTILO_CATEGORIA[categoria].label}`}
-              descricao="Calculado das partidas com resultado. Quem perde por W.O. não ganha os pontos da derrota."
-              icone={<IconeTrofeu className="h-5 w-5" />}
-              acao={<FiltroDeCategoria valor={categoria} aoMudar={setCategoria} />}
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <FiltroDeCategoria valor={categoria} aoMudar={setCategoria} />
+            <BotaoMaisOpcoes
+              aberto={verLista}
+              aoAlternar={() => setVerLista((atual) => !atual)}
+              controla="ranking-lista-e-numeros"
+              rotulo="Ver lista e números"
+              rotuloAberto="Esconder lista e números"
             />
-            {linhas.length > 0 && (
-              <div className="border-b border-areia-200 bg-gradient-to-b from-saibro-50/70 to-white">
-                <PodioRanking linhas={linhas} />
-              </div>
-            )}
-            <ListaRanking linhas={linhas} />
-            <footer className="border-t border-areia-200 px-5 py-3 text-xs text-areia-500">
-              “7 dias”: posições ganhas ou perdidas na última semana. Clique num jogador para abrir a
-              ficha.
-            </footer>
-          </Card>
-
-          <div className="min-w-0 space-y-6">
-            <Card>
-              <CardHeader
-                titulo="Próximas partidas"
-                descricao="Ainda sem resultado."
-                icone={<IconeAgenda className="h-5 w-5" />}
-                acao={
-                  <button
-                    type="button"
-                    onClick={() => abrirNovaPartida("marcar")}
-                    className="btn-fantasma px-2.5 py-1.5 text-xs"
-                  >
-                    <IconeMais className="h-3.5 w-3.5" />
-                    Marcar
-                  </button>
-                }
-              />
-              <ul className="divide-y divide-areia-100">
-                {proximas.map((item) => (
-                  <li key={item.partida.id}>
-                    <LinhaDaPartida item={item} aoAbrir={abrirPartida} />
-                  </li>
-                ))}
-                {proximas.length === 0 && (
-                  <li className="px-5 py-8 text-center text-sm text-areia-500">
-                    Nenhuma partida marcada.
-                  </li>
-                )}
-              </ul>
-            </Card>
-
-            <Card>
-              <CardHeader
-                titulo="Torneios"
-                descricao="Em andamento, abertos e encerrados."
-                icone={<IconeTrofeu className="h-5 w-5" />}
-                acao={
-                  <button
-                    type="button"
-                    onClick={() => trocarAba("torneios")}
-                    className="link-acao alvo-de-toque text-sm"
-                  >
-                    Ver todos
-                  </button>
-                }
-              />
-              <ListaTorneios torneios={torneios.slice(0, 3)} />
-            </Card>
           </div>
-        </div>
+
+          <PainelDeOpcoes
+            id="ranking-lista-e-numeros"
+            aberto={verLista}
+            rotulo="Lista e números do ranking"
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+              <StatCard
+                rotulo="Líder do ranking"
+                rotuloCurto="Líder"
+                valor={resumo.lider ? nomeCompacto(resumo.lider.aluno.nome) : "—"}
+                detalhe={
+                  resumo.lider
+                    ? `${resumo.lider.pontos} pontos · ${resumo.lider.vitorias} vitórias${
+                        resumo.lider.aluno.categoriaRanking ? ` · Categoria ${resumo.lider.aluno.categoriaRanking}` : ""
+                      }`
+                    : undefined
+                }
+                icone={<IconeTrofeu className="h-5 w-5" />}
+                tom="saibro"
+              />
+              <StatCard
+                rotulo="Jogadores no ranking"
+                rotuloCurto="Jogadores"
+                valor={String(resumo.jogadores)}
+                detalhe="Inscritos nas categorias A a D"
+                icone={<IconeUsuarios className="h-5 w-5" />}
+              />
+              <StatCard
+                rotulo="Partidas em 30 dias"
+                rotuloCurto="Partidas (30d)"
+                valor={String(resumo.partidasRecentes)}
+                detalhe="Partidas de ranking com resultado"
+                icone={<IconeBola className="h-5 w-5" />}
+              />
+              <StatCard
+                rotulo="Próximo torneio"
+                rotuloCurto="Torneio"
+                valor={resumo.proximoTorneio ? formatarData(resumo.proximoTorneio.data) : "—"}
+                detalhe={resumo.proximoTorneio?.nome ?? "Nenhum torneio marcado"}
+                icone={<IconeAgenda className="h-5 w-5" />}
+              />
+            </div>
+            <Card>
+              <CardHeader
+                titulo={categoria === "todas" ? "Lista completa" : `Lista · ${ESTILO_CATEGORIA[categoria].label}`}
+                descricao="Calculado das partidas com resultado. Quem perde por W.O. não ganha os pontos da derrota."
+                icone={<IconeTrofeu className="h-5 w-5" />}
+              />
+              <ListaRanking linhas={linhas} />
+              <footer className="border-t border-areia-200 px-5 py-3 text-sm text-areia-600">
+                “7 dias”: posições ganhas ou perdidas na última semana. Clique num jogador para abrir a
+                ficha.
+              </footer>
+            </Card>
+          </PainelDeOpcoes>
+
+          <Card className="overflow-hidden">
+            <PiramideDoRanking
+              linhas={linhas}
+              titulo={categoria === "todas" ? "Ranking geral" : `Ranking · ${ESTILO_CATEGORIA[categoria].label}`}
+            />
+          </Card>
+        </>
       )}
 
-      {aba === "partidas" && <ListaPartidas aoAbrir={abrirPartida} />}
+      {aba === "partidas" && (
+        <>
+          <Card>
+            <CardHeader
+              titulo="Próximas partidas"
+              descricao="Marcadas e ainda sem resultado."
+              icone={<IconeAgenda className="h-5 w-5" />}
+              acao={
+                <button type="button" onClick={() => abrirNovaPartida("marcar")} className="btn-secundario">
+                  <IconeMais className="h-4 w-4" />
+                  Marcar partida
+                </button>
+              }
+            />
+            <ul className="divide-y divide-areia-100">
+              {proximas.map((item) => (
+                <li key={item.partida.id}>
+                  <LinhaDaPartida item={item} aoAbrir={abrirPartida} larga />
+                </li>
+              ))}
+              {proximas.length === 0 && (
+                <li className="px-5 py-8 text-center text-base text-areia-600">Nenhuma partida marcada.</li>
+              )}
+            </ul>
+          </Card>
+          <ListaPartidas aoAbrir={abrirPartida} />
+        </>
+      )}
 
       {aba === "torneios" && (
         <Card>
@@ -273,6 +282,12 @@ function ConteudoDoRanking() {
             titulo="Torneios"
             descricao="Clique num torneio para ver a chave, registrar resultados e comentar."
             icone={<IconeTrofeu className="h-5 w-5" />}
+            acao={
+              <button type="button" onClick={() => setNovoTorneio(Date.now())} className="btn-secundario">
+                <IconeTrofeu className="h-4 w-4" />
+                Novo torneio
+              </button>
+            }
           />
           <ListaTorneios torneios={torneios} emGrade />
         </Card>

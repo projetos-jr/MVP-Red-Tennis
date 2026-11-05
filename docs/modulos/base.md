@@ -2,7 +2,9 @@
 
 Versão de 29/10/2026, atualizada em 04/11/2026 com o redesign (Início com as
 quadras e o mosaico de atalhos, como no sistema antigo do cliente, e a
-navegação nova). Faz parte da migração das telas para o modelo novo
+navegação nova) e em 05/11/2026 com o redesign 3 (login com a quadra de saibro
+e a bola de tênis para entrar; Início só com quadras, atalhos e a placa de
+atenção). Faz parte da migração das telas para o modelo novo
 (`docs/MODELO-E-TELAS.md`, seção 2: Login, Painel — hoje **Início** —,
 Configurações, Histórico e "Em todas as telas").
 
@@ -10,22 +12,59 @@ Configurações, Histórico e "Em todas as telas").
 
 | Parte | Onde | O que faz |
 | --- | --- | --- |
-| Login | `/` | Escolhe quem entra (a equipe de `banco.colaboradores`, com cargo, perfil e o que o perfil vê). A senha é só de demonstração: qualquer uma serve. Cada perfil cai na primeira área que pode abrir (dono e recepção no Início, professor na Agenda). Com o Supabase, e-mail e senha (`LoginComEmail`). As duas telas usam a paleta nova (botão laranja) e a faixa de saibro com a linha branca no alto. |
+| Login | `/` | Escolhe quem entra (a equipe de `banco.colaboradores`: três botões com foto, primeiro nome e o selo do perfil; embaixo, o cargo e o que o perfil vê). A senha é só de demonstração: qualquer uma serve. Entra-se clicando na **bola de tênis** ao lado da senha (ou com Enter), como no sistema antigo. Cada perfil cai na primeira área que pode abrir (dono e recepção no Início, professor na Agenda). Com o Supabase, e-mail e senha (`LoginComEmail`), com a mesma aparência. Detalhes em "O login", abaixo. |
 | Navegação | barra do topo e barra do celular | Mostra só as áreas que o perfil pode abrir (H9): Início, Agenda, Clientes (inclui Professores), Financeiro, Estoque e Ranking / Torneio. Configurações e Histórico ficam no menu do usuário (clique no nome ou na foto, no canto direito) e no mosaico do Início. Detalhes em "A navegação", abaixo. |
 | Busca rápida de aluno | barra do topo | Campo com sugestões enquanto se digita: nome (sem precisar de acento), pedaços do nome ("gui lim") ou números do telefone. Setas escolhem, Enter abre a ficha, Esc fecha. A tecla `/` leva o cursor para a busca. No celular é um botão de lupa que abre a busca em tela cheia. O professor só encontra os próprios alunos. |
 | Proteção de rota | todas as telas internas | Se o perfil não pode abrir a área da página atual (por exemplo, alguém volta pelo navegador depois de trocar de usuário), aparece "Sem acesso a esta área" com o botão **Voltar ao Início** (ou "Ir para" a primeira área do perfil, como a Agenda do professor). |
-| Início | `/dashboard` (o endereço não mudou) | De cima para baixo: a faixa das quadras (quem está jogando agora em cada quadra), o mosaico de atalhos laranja e o quadro "Precisa de atenção". Detalhes em "O Início", abaixo. |
+| Início | `/dashboard` (o endereço não mudou) | Só as entradas: a faixa das quadras (quem está jogando agora em cada quadra), o mosaico de atalhos laranja e, embaixo, a **placa de atenção** (só quando há pendência), que abre a janela "Precisa de atenção". Detalhes em "O Início", abaixo. |
 | Configurações | `/configuracoes` (só dono) | Todas as regras ajustáveis: siglas de reposição, validade da reposição, reservas, agenda, ranking, torneios, formas de pagamento, prazo do consumo, preços de locação, catálogo de planos e permissões. Cada item explica a regra e mostra o selo da hipótese (H#). |
 | Histórico de alterações | `/historico` (só dono) | Tudo o que foi criado, alterado ou apagado: quem, quando, o quê e a operação. Filtros por pessoa, período, tipo de registro e ação. "Ver detalhes" mostra os campos que mudaram (antes e depois). |
+
+### O login
+
+Pedido do cliente (redesign 3): sair do fundo branco e entrar "clicando na
+bolinha de tênis, igual o sistema antigo, só que mais bonito".
+
+- **Fundo:** um pedaço de quadra de saibro visto de cima, **desenhado em
+  código** (`components/base/login/FundoDeSaibro.tsx`), inspirado na foto que
+  a equipe trouxe, mas sem usar a foto (ela tem direito autoral). Camadas: o
+  saibro laranja da paleta com luz no meio, os grãos claros e escuros e manchas
+  largas (ruído SVG em ladrilhos repetidos, sem imagem), a linha branca em "T"
+  com a borda irregular de pó, a bola amarela encostada no "T" com a sombra
+  comprida do sol e uma vinheta nas bordas. Não carrega nenhum arquivo: funciona
+  offline. No computador e no tablet o "T" fica à esquerda do cartão, mais
+  embaixo que a bola de entrar (para ninguém confundir as duas); no celular, no
+  pé da tela.
+- **Cartão branco** no meio (`CenaDoLogin.tsx`), com a logo grande. No
+  celular ocupa a largura com 16 px de margem; o rodapé com as quadras e o
+  horário fica numa pílula escura sobre o saibro (só do tablet para cima).
+- **Bola de entrar** (`BotaoBola.tsx` e `BolaDeTenis.tsx`, SVG próprio): bola
+  amarela com a costura branca, de 72 a 80 px, ao lado do campo de senha, com a
+  palavra **Entrar** embaixo (clicar na palavra também entra). É o botão de
+  enviar do formulário (`type="submit"`), então **Enter** no campo de senha
+  também entra. O nome para leitor de tela é "Entrar como Francisco" (ou
+  "Entrar no sistema"). Mouse por cima: a bola sobe e gira; enquanto entra, ela
+  gira sem parar e o texto vira "Entrando…" (só com movimento liberado no
+  sistema).
+- **Demonstração:** "Quem está entrando?" com três botões (foto, primeiro nome
+  e o selo Dono, Recepção ou Professor); a pessoa escolhida fica com a borda
+  laranja e um ✓, e embaixo aparece o nome completo, o cargo e o que o perfil
+  vê. O aviso "qualquer senha serve" ficou numa linha.
+- **Modo Supabase:** e-mail e senha (campos grandes, com ícone), a mesma bola;
+  o erro aparece logo abaixo, em letra grande, com borda vermelha. A lógica de
+  autenticação não mudou.
 
 ### O Início
 
 O dono pediu que a tela inicial lembre a do sistema antigo, que ele usa há
 anos: as quadras desenhadas no topo e um mosaico de botões grandes laranja.
+No redesign 3 ele pediu que o Início tenha **só isso** e, embaixo, um alerta
+em forma de placa triangular de exclamação que **só aparece quando há algo**.
 A tela continua no endereço `/dashboard`; o nome em todo lugar é **Início**
 (aba, barra do celular, Configurações › Permissões e o botão "Voltar ao
 Início"). Saíram os cartões de indicadores, os cartões de ocupação do dia e a
-lista "Próximos horários" (a Diária da agenda mostra o dia inteiro).
+lista "Próximos horários" (a Diária da agenda mostra o dia inteiro). A
+saudação ("Boa noite, Francisco" e a data) continua, discreta.
 
 **1. Faixa das quadras** (`components/inicio/FaixaDasQuadras.tsx` e
 `QuadraAgora.tsx`). Faixa verde com as 4 quadras e o paredão (um pouco menor)
@@ -77,7 +116,12 @@ o endereço (o site atual não tem HTTPS); vazia, o atalho não aparece. A ordem
 dos atalhos é a da lista combinada para o Início; vale conferir com o dono se
 é a mesma do sistema antigo.
 
-**3. Precisa de atenção** (embaixo), descrito a seguir.
+**3. Placa de atenção** (embaixo, `components/inicio/AtencaoDoInicio.tsx`):
+o botão grande com a placa amarela de "!" (`BotaoDeAtencao` de
+`components/ui/PlacaDeAtencao.tsx`), o número de pendências e a frase "28
+itens precisam de você". **Sem nenhuma pendência, a placa não aparece** e o
+Início fica só com as quadras e os atalhos. Clicar na placa abre a janela
+**Precisa de atenção**, descrita a seguir; Esc, o X ou um clique fora fecham.
 
 ### A navegação
 
@@ -94,13 +138,15 @@ dos atalhos é a da lista combinada para o Início; vale conferir com o dono se
   com uma pílula laranja clara atrás do ícone da aba ativa. A busca vira o
   botão de lupa no topo.
 
-### O quadro "Precisa de atenção"
+### A janela "Precisa de atenção"
 
-Junta o que pede uma ação hoje. Cada grupo mostra a contagem da lista
+Junta o que pede uma ação hoje, em letra grande, um grupo embaixo do outro.
+Só aparecem os grupos que têm algo; os que estão em dia viram uma linha verde
+no fim ("Em dia: estoque e reposições."). Cada grupo mostra a contagem da lista
 inteira; os três primeiros itens aparecem e "Mostrar todos" abre o resto. O
-número no topo do quadro ("28 itens") é a soma dos grupos (o MVP dizia 12 no
-cartão e mostrava 6 na lista; agora os números são os mesmos). No computador e
-no tablet os grupos ficam em duas colunas.
+número da placa e da janela ("28 itens") é a soma dos grupos (o MVP dizia 12
+no cartão e mostrava 6 na lista; agora os números são os mesmos). Cada item é
+um link para a tela certa (a janela fecha sozinha ao abrir a outra tela).
 
 | Grupo | O que entra | Para onde o item leva |
 | --- | --- | --- |
@@ -125,7 +171,7 @@ Configurações. Os valores iniciais são os de `CONFIGURACOES_INICIAIS`.
 | H6 | Configurações › Repasse | Só mostra a regra de cada professor; ela é ajustada na ficha do professor. |
 | H7 | Configurações › Ranking | Pontos por vitória (10) e por derrota (2), valores de teste. |
 | H8 | Configurações › Ranking | Classificados por grupo (2) e ordem dos critérios de desempate. |
-| H9 | Permissões, navegação, Início (mosaico e quadro), busca | Dono vê tudo; recepção vê agenda, alunos, financeiro a receber, estoque e ranking; professor vê agenda e alunos. A matriz é editável. |
+| H9 | Permissões, navegação, Início (mosaico e placa de atenção), busca | Dono vê tudo; recepção vê agenda, alunos, financeiro a receber, estoque e ranking; professor vê agenda e alunos. A matriz é editável. |
 | H10 | Configurações › Reservas e agenda | Impedir professor em duas aulas ao mesmo tempo (desligado: só avisa). |
 | H12 | Configurações › Reservas e agenda | Semanas da agenda criadas à frente (12). |
 | H13 | Configurações › Financeiro | Prazo para pagar o consumo do balcão (7 dias). |
@@ -166,6 +212,14 @@ Escolhas do módulo que valem conferir com a arena:
   "Site"); o que é LAP e se o atalho deve abrir a agenda filtrada por LAP; se o
   professor deve ver o Início; se "Clientes" substitui "Alunos" em todo o
   sistema; se a ordem do mosaico é a do sistema antigo.
+- **O que acende a placa de atenção (redesign 3):** hoje, qualquer item dos
+  quatro grupos (inclusive reposições que vencem em até 30 dias e produtos
+  abaixo do mínimo). Na prática a placa vai aparecer quase sempre. Vale
+  perguntar ao dono se a placa deve acender só para o que é urgente (prazo de
+  reserva vencido, mensalidade em atraso) e deixar o resto só dentro da janela.
+- **Duas bolas no login (redesign 3):** a bola do fundo é decorativa (não
+  clica) e fica mais embaixo; a de entrar fica dentro do cartão, com a palavra
+  "Entrar". Conferir no teste com o dono se ele não tenta clicar na do fundo.
 
 Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
 
@@ -188,15 +242,20 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
 
 ## Roteiro de teste
 
-1. Abra o sistema (tela de login). Devem aparecer três pessoas: Francisco
-   Menezes (Dono), Lucas Ferreira (Recepção) e Renata Coelho (Professor), cada
-   uma com o que o perfil vê. Embaixo, o aviso "Demonstração: qualquer senha
-   serve".
-2. Escolha **Francisco Menezes**, digite qualquer senha e clique em
-   **Entrar como Francisco**. Deve abrir o **Início**: no topo, a faixa verde
-   **Agora nas quadras** com a hora atual e as 5 quadras desenhadas (a Quadra 1
-   azul, as outras laranja); no meio, o mosaico laranja; embaixo, **Precisa de
-   atenção**. Na barra do topo, a aba **Início** está com a pílula laranja.
+1. Abra o sistema (tela de login). O fundo é uma quadra de saibro com a linha
+   branca em "T" e uma bola amarela; no meio, o cartão branco com a logo.
+   Devem aparecer três pessoas: Francisco (Dono), Lucas (Recepção) e Renata
+   (Professor). Clique em **Lucas**: ele fica com a borda laranja e o ✓, e
+   embaixo aparece "Lucas Ferreira · Recepção · …" com o que o perfil vê.
+   Embaixo da senha, o aviso "Demonstração: qualquer senha serve".
+2. Passe o mouse sobre a **bola de tênis** ao lado da senha: ela sobe e gira, e
+   a palavra **Entrar** embaixo dela fica laranja. Escolha **Francisco**,
+   digite qualquer senha e aperte **Enter** (ou clique na bola). Deve abrir o
+   **Início**: no topo, a faixa verde **Agora nas quadras** com a hora atual e
+   as 5 quadras desenhadas (a Quadra 1 azul, as outras laranja); no meio, o
+   mosaico laranja; embaixo, a placa preta **Atenção** com o triângulo amarelo
+   e o número de pendências. Na barra do topo, a aba **Início** está com a
+   pílula laranja.
 3. Na faixa, confira uma quadra **Em jogo**: aparecem até dois nomes (com "+n"
    se houver mais gente), o tipo na cor da legenda, "até HH:MM" e o professor.
    Abra a **Diária** em outra aba e confira que é o mesmo horário. Clique na
@@ -206,10 +265,13 @@ Campo novo no modelo: `SiglaReposicao.desativada` (opcional; vazio = ativa).
    Ranking, Torneio e LAP). O **Site** não aparece enquanto o endereço não for
    confirmado. Clique em **Torneio**: abre o Ranking na aba de torneios. Volte e
    clique em **LAP**: abre a agenda filtrada por LAP.
-5. Em **Precisa de atenção**, o número no topo (ex.: 28 itens) é a soma dos
-   quatro grupos (ex.: 9 + 5 + 7 + 7). No grupo **Mensalidades em atraso**,
-   clique em **Mostrar todos**: aparecem todas as linhas do número do grupo.
-   Clique numa delas: abre a ficha do aluno.
+5. Clique na placa **Atenção**: abre a janela **Precisa de atenção**. O número
+   da placa (ex.: 28) é a soma dos grupos da janela (ex.: 9 + 5 + 7 + 7).
+   Aperte **Esc**: a janela fecha. Abra de novo e feche pelo **X**. Abra mais
+   uma vez; no grupo **Mensalidades em atraso**, clique em **Mostrar todos**:
+   aparecem todas as linhas do número do grupo. Clique numa delas: abre a
+   ficha do aluno. (Sem nenhuma pendência, a placa não aparece; isso está
+   provado no teste `components/inicio/AtencaoDoInicio.test.ts`.)
 6. Clique nas abas **Agenda**, **Clientes** e **Ranking / Torneio**: a pílula
    laranja desliza até a aba clicada. Abra **Professores** (pelo mosaico): a
    aba **Clientes** fica marcada.

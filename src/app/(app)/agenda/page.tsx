@@ -1,13 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiltrosDaAgenda } from "@/components/agenda/FiltrosDaAgenda";
+import { BarraDaAgenda } from "@/components/agenda/BarraDaAgenda";
+import { FaixaDeProfessores, FaixaDeQuadras } from "@/components/agenda/FaixaDeAssunto";
+import {
+  LinhaDeFiltrosAtivos,
+  descricaoDosFiltros,
+  filtrosAtivosDaAgenda,
+} from "@/components/agenda/FiltrosDaAgenda";
 import { GradeDeColunas, type MeiaHoraEscolhida } from "@/components/agenda/GradeDeColunas";
-import { colunasDaDiaria, colunasDaSemana, fimSugerido, pxPorMinuto } from "@/components/agenda/grade";
-import { IconeChuva, IconeImpressora, IconeTablet } from "@/components/agenda/Icones";
-import { Legenda } from "@/components/agenda/Legenda";
+import {
+  colunasDaDiaria,
+  colunasDaSemana,
+  colunasDosProfessores,
+  fimSugerido,
+  pxPorMinuto,
+} from "@/components/agenda/grade";
 import { ListaDoDia } from "@/components/agenda/ListaDoDia";
 import { ModalBloquearQuadra } from "@/components/agenda/ModalBloquearQuadra";
 import { ModalChuva } from "@/components/agenda/ModalChuva";
@@ -16,25 +25,16 @@ import {
   type PreenchimentoNovoHorario,
 } from "@/components/agenda/ModalNovoHorario";
 import { ModalReservas } from "@/components/agenda/ModalReservas";
+import { OpcoesDaAgenda } from "@/components/agenda/OpcoesDaAgenda";
 import { PainelDoHorario } from "@/components/agenda/PainelDoHorario";
-import { SeletorDaVisao } from "@/components/agenda/SeletorDaVisao";
 import { useAgora } from "@/components/agenda/useAgora";
-import { useLarguraDaAgenda, useToque } from "@/components/agenda/useMidia";
+import { useLarguraDaAgenda, useMidia, useToque } from "@/components/agenda/useMidia";
 import { VisaoMensal } from "@/components/agenda/VisaoMensal";
 import { plural } from "@/components/agenda/estilos";
 import { useAvisos } from "@/components/ui/Avisos";
 import { Card } from "@/components/ui/Card";
 import { Carregando } from "@/components/ui/Carregando";
-import {
-  IconeAgenda,
-  IconeAlerta,
-  IconeAnterior,
-  IconeCadeado,
-  IconeMais,
-  IconeProximo,
-  IconeRelogio,
-} from "@/components/ui/Icons";
-import { Segmentado } from "@/components/ui/Segmentado";
+import { IconeAgenda } from "@/components/ui/Icons";
 import { HOJE } from "@/lib/banco/constantes";
 import { liberarReservasVencidas } from "@/lib/banco/operacoes/agenda";
 import {
@@ -46,7 +46,6 @@ import {
   reservasAguardandoPagamento,
   resumirAgenda,
   type ItemAgenda,
-  type ResumoDaAgenda,
 } from "@/lib/consultas/agenda";
 import {
   enderecoDaAgenda,
@@ -72,8 +71,6 @@ import { useApp } from "@/store/AppStore";
 
 type Janela = "bloqueio" | "chuva" | "reservas";
 
-const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
-
 export default function PaginaAgenda() {
   return (
     <Suspense fallback={<Carregando />}>
@@ -94,8 +91,11 @@ function filtrarPorData(
  * A agenda. O ENDERECO e a fonte da verdade (visao, data, quadra, professor,
  * filtros e o painel aberto: ver `consultas/enderecoDaAgenda.ts`); cada clique
  * reescreve o endereco com `history.replaceState` e a tela acompanha. So o que
- * e passageiro (janelas abertas, qual dos dois dias aparece no tablet em pe)
- * fica no estado do componente.
+ * e passageiro (janelas abertas, "Mais opcoes", qual dos dois dias aparece no
+ * tablet em pe) fica no estado do componente.
+ *
+ * Redesign 3 (pedido do dono: "a agenda maior, menos botaozinho"): uma barra
+ * enxuta em cima, o resto em "Mais opcoes", e a grade com quase toda a tela.
  */
 function Agenda() {
   const parametros = useSearchParams();
@@ -104,6 +104,7 @@ function Agenda() {
   const agora = useAgora();
   const largura = useLarguraDaAgenda();
   const toque = useToque();
+  const computadorLargo = useMidia("(min-width: 1280px)", true);
 
   // Hipotese H9: o professor ve so as proprias aulas e nao altera a agenda.
   const podeEditar = colaborador.perfil !== "professor";
@@ -119,6 +120,10 @@ function Agenda() {
     [banco, consulta, ctx],
   );
   const { visao, data } = estado;
+  // Visao Professores sem professor escolhido: hoje e amanha com todos (H20).
+  // Com um professor: a semana dele.
+  const semanaDoProfessor = visao === "professor" && Boolean(estado.professorId);
+  const doisDias = visao === "diaria" || (visao === "professor" && !estado.professorId);
 
   const quadras = useMemo(() => quadrasDaArena(banco), [banco]);
   const professores = useMemo(() => professoresAtivos(banco), [banco]);
@@ -127,6 +132,9 @@ function Agenda() {
   const [janela, setJanela] = useState<Janela | null>(null);
   // Diaria com um dia por vez (tablet em pe e celular): mostra o segundo dia?
   const [segundoDia, setSegundoDia] = useState(false);
+  // "Mais opcoes" sempre comeca fechado (a grade e o que importa). Chegando
+  // por um link ja filtrado (o LAP do Inicio), uma linha curta diz o filtro.
+  const [opcoesAbertas, setOpcoesAbertas] = useState(false);
 
   // --- Endereco: cada mudanca vira um novo endereco ---------------------------
   const irPara = useCallback((novo: EstadoDaAgenda) => {
@@ -165,8 +173,8 @@ function Agenda() {
   const diaVisivel = segundoDia ? diasDaDiaria[1] : diasDaDiaria[0];
   const semana = useMemo(() => datasDaSemana(data), [data]);
   const datas = useMemo(
-    () => (visao === "mes" ? gradeDoMes(data) : visao === "diaria" ? diasDaDiaria : semana),
-    [visao, data, diasDaDiaria, semana],
+    () => (visao === "mes" ? gradeDoMes(data) : doisDias ? diasDaDiaria : semana),
+    [visao, data, doisDias, diasDaDiaria, semana],
   );
 
   // --- Leitura: so o periodo visivel, indexado por data ------------------------
@@ -187,7 +195,7 @@ function Agenda() {
     [banco, datas, quadraDaVisao, estado.professorId, agora],
   );
   // O que ocupa a quadra decide onde se pode marcar: sem o filtro de tipo e,
-  // fora da visao Professor, sem o filtro de professor.
+  // fora da visao Professores, sem o filtro de professor.
   const ocupadoPorData = useMemo(
     () =>
       visao === "professor" || !estado.professorId || !podeEditar
@@ -200,11 +208,21 @@ function Agenda() {
           ),
     [visao, estado.professorId, podeEditar, porData, banco, datas, quadraDaVisao, agora],
   );
-  // Os contadores contam as canceladas mesmo quando a grade as esconde.
+  // Os contadores contam as canceladas mesmo quando a grade as esconde. Na
+  // visao Professores com todos, so contam as aulas com professor ativo.
+  const idsDosProfessores = useMemo(() => new Set(professores.map((p) => p.id)), [professores]);
+  const soDosProfessores = visao === "professor" && !estado.professorId;
   const porDataDoTipo = useMemo(
     () =>
-      estado.tipo === "todos" ? porData : filtrarPorData(porData, (i) => i.ocupacao.tipo === estado.tipo),
-    [porData, estado.tipo],
+      estado.tipo === "todos" && !soDosProfessores
+        ? porData
+        : filtrarPorData(
+            porData,
+            (i) =>
+              (estado.tipo === "todos" || i.ocupacao.tipo === estado.tipo) &&
+              (!soDosProfessores || idsDosProfessores.has(i.ocupacao.professorId ?? "")),
+          ),
+    [porData, estado.tipo, soDosProfessores, idsDosProfessores],
   );
   const porDataVisivel = useMemo(
     () => (estado.mostrarCanceladas ? porDataDoTipo : filtrarPorData(porDataDoTipo, (i) => !i.cancelada)),
@@ -214,9 +232,9 @@ function Agenda() {
   const umDiaPorVez = largura !== "larga";
   const datasDoResumo = useMemo(() => {
     if (visao === "mes") return datas.filter((d) => mesmoMes(d, data));
-    if (visao === "diaria") return umDiaPorVez ? [diaVisivel] : diasDaDiaria;
+    if (doisDias) return umDiaPorVez ? [diaVisivel] : diasDaDiaria;
     return largura === "estreita" ? [data] : semana;
-  }, [visao, datas, data, umDiaPorVez, diaVisivel, diasDaDiaria, largura, semana]);
+  }, [visao, datas, data, doisDias, umDiaPorVez, diaVisivel, diasDaDiaria, largura, semana]);
   const resumo = useMemo(
     () => resumirAgenda(porDataDoTipo, datasDoResumo, visao === "quadra" ? 1 : quadras.length),
     [porDataDoTipo, datasDoResumo, visao, quadras.length],
@@ -248,17 +266,20 @@ function Agenda() {
 
   // --- Grade -------------------------------------------------------------------
   const grupos = useMemo(() => {
-    if (visao === "diaria") return colunasDaDiaria(umDiaPorVez ? [diaVisivel] : diasDaDiaria, quadras);
+    const dias = umDiaPorVez ? [diaVisivel] : diasDaDiaria;
+    if (visao === "diaria") return colunasDaDiaria(dias, quadras);
     if (visao === "quadra") {
       const quadra = quadras.find((q) => q.id === estado.quadraId) ?? quadras[0];
       return quadra ? colunasDaSemana(semana, { quadra }) : [];
     }
     if (visao === "professor") {
+      if (!estado.professorId) return colunasDosProfessores(dias, professores);
       const professor = banco.professores.find((p) => p.id === estado.professorId);
       return professor ? colunasDaSemana(semana, { professor }) : [];
     }
     return [];
-  }, [visao, umDiaPorVez, diaVisivel, diasDaDiaria, quadras, estado.quadraId, estado.professorId, semana, banco.professores]);
+  }, [visao, umDiaPorVez, diaVisivel, diasDaDiaria, quadras, professores, estado.quadraId, estado.professorId, semana, banco.professores]);
+  const semColunas = grupos.every((g) => g.colunas.length === 0);
   const realce = visao === "diaria" && estado.quadraId ? `${data}|${estado.quadraId}` : undefined;
 
   // --- Acoes ---------------------------------------------------------------------
@@ -296,12 +317,38 @@ function Agenda() {
     },
     [banco, ctx, irPara],
   );
+  /** Visao Professores: um professor abre a semana dele; sem professor, os dois dias com todos. */
+  /**
+   * Dos 2 dias com todos os professores, abrir a semana de um deles EMPILHA
+   * um endereco (o "Voltar" do tablet retorna a todos); "Todos os
+   * professores" desempilha quando foi assim. Trocar de um professor para
+   * outro troca o endereco no lugar.
+   */
+  const escolherProfessor = useCallback(
+    (professorId: string | undefined) => {
+      setSegundoDia(false);
+      const atual = estadoAtual.current;
+      const novo = { ...atual, professorId, ocupacaoId: undefined };
+      const endereco = enderecoDaAgenda(novo, HOJE);
+      if (atual.visao === "professor" && !atual.professorId && professorId) {
+        const base = enderecoDaAgenda({ ...atual, ocupacaoId: undefined }, HOJE);
+        window.history.pushState({ semanaDoProfessor: base }, "", endereco);
+        return;
+      }
+      if (!professorId && window.history.state?.semanaDoProfessor === endereco) {
+        window.history.back();
+        return;
+      }
+      irPara(novo);
+    },
+    [irPara],
+  );
 
   const marcar = useCallback(
     (escolha: Partial<MeiaHoraEscolhida>) => {
       let quadraId = escolha.quadraId;
       const horaFim = escolha.horaFim ?? (escolha.horaInicio && fimSugerido(escolha.horaInicio));
-      // Na visao Professor a coluna nao tem quadra: sugere a primeira livre.
+      // Na visao Professores a coluna nao tem quadra: sugere a primeira livre.
       if (!quadraId && escolha.data && escolha.horaInicio && horaFim) {
         const livres = disponibilidadeDasQuadras(banco, {
           data: escolha.data,
@@ -329,15 +376,19 @@ function Agenda() {
   function navegar(direcao: -1 | 1) {
     setSegundoDia(false);
     mudar({
-      data:
-        visao === "diaria"
-          ? // Um dia por vez: anda a partir do dia que esta na tela.
-            somarDias(umDiaPorVez ? diaVisivel : data, direcao)
-          : visao === "mes"
-            ? somarMeses(data, direcao)
-            : somarDias(data, 7 * direcao),
+      data: doisDias
+        ? // Um dia por vez: anda a partir do dia que esta na tela.
+          somarDias(umDiaPorVez ? diaVisivel : data, direcao)
+        : visao === "mes"
+          ? somarMeses(data, direcao)
+          : somarDias(data, 7 * direcao),
       ocupacaoId: undefined,
     });
+  }
+
+  function irParaData(nova: string) {
+    setSegundoDia(false);
+    mudar({ data: nova, ocupacaoId: undefined });
   }
 
   /** Depois de gravar: vai para a data do horario se ela nao esta na tela. */
@@ -345,13 +396,13 @@ function Agenda() {
     const visivel =
       visao === "mes"
         ? mesmoMes(nova, data)
-        : visao === "diaria"
+        : doisDias
           ? diasDaDiaria.includes(nova)
-          : // No celular, Quadra e Professor mostram um dia so da semana.
+          : // No celular, Quadra e a semana do professor mostram um dia so.
             largura === "estreita"
             ? nova === data
             : semana.includes(nova);
-    if (visao === "diaria" && visivel) setSegundoDia(nova !== data);
+    if (doisDias && visivel) setSegundoDia(nova !== data);
     if (!visivel) {
       setSegundoDia(false);
       mudar({ data: nova });
@@ -359,18 +410,22 @@ function Agenda() {
   }
 
   const curto = (d: string) => `${DIAS_SEMANA_CURTO[diaDaSemana(d)]} ${formatarDiaMes(d)}`;
-  const titulo =
-    visao === "diaria"
-      ? umDiaPorVez
-        ? curto(diaVisivel)
-        : `${curto(diasDaDiaria[0])} e ${curto(diasDaDiaria[1])}`
-      : visao === "mes"
-        ? formatarMesAno(data)
-        : `${formatarDiaMes(semana[0])} — ${formatarDiaMes(semana[6])}`;
+  const titulo = doisDias
+    ? umDiaPorVez
+      ? curto(diaVisivel)
+      : `${curto(diasDaDiaria[0])} e ${curto(diasDaDiaria[1])}`
+    : visao === "mes"
+      ? formatarMesAno(data)
+      : `${formatarDiaMes(semana[0])} — ${formatarDiaMes(semana[6])}`;
+  // Tablet deitado: sem o dia da semana (o cabecalho grande da grade ja diz).
+  const tituloCurto =
+    doisDias && !umDiaPorVez
+      ? `${formatarDiaMes(diasDaDiaria[0])} e ${formatarDiaMes(diasDaDiaria[1])}`
+      : undefined;
   const periodo =
     visao === "mes"
       ? "neste mês"
-      : visao === "diaria"
+      : doisDias
         ? umDiaPorVez
           ? diaVisivel === HOJE
             ? "hoje"
@@ -381,203 +436,118 @@ function Agenda() {
         : largura === "estreita"
           ? "neste dia"
           : "nesta semana";
-  const passo = visao === "diaria" ? "dia" : visao === "mes" ? "mês" : "semana";
+  const passo = doisDias ? "dia" : visao === "mes" ? "mês" : "semana";
   const professorTravado = professorDoPerfil
-    ? professores.find((p) => p.id === professorDoPerfil)?.nome
+    ? banco.professores.find((p) => p.id === professorDoPerfil)
     : undefined;
+  const professorDaSemana = semanaDoProfessor
+    ? banco.professores.find((p) => p.id === estado.professorId)
+    : undefined;
+  const professorFora =
+    professorDaSemana && !professores.some((p) => p.id === professorDaSemana.id)
+      ? professorDaSemana
+      : undefined;
+  const textoDasVencidas = computadorLargo
+    ? plural(reservasVencidas, "reserva vencida", "reservas vencidas")
+    : plural(reservasVencidas, "vencida", "vencidas");
 
-  // As janelas ficam fora do `space-y-4`: a margem que ele poe entre os filhos
+  // Faixa de cima da grade: de quem e a semana (ou, no celular, os professores).
+  const faixa =
+    visao === "quadra" ? (
+      <FaixaDeQuadras
+        quadras={quadras}
+        valor={estado.quadraId}
+        aoMudar={(quadraId) => mudar({ quadraId, ocupacaoId: undefined })}
+      />
+    ) : visao === "professor" && (semanaDoProfessor || largura === "estreita") ? (
+      <FaixaDeProfessores
+        professores={professores}
+        valor={estado.professorId}
+        aoMudar={escolherProfessor}
+        travado={professorTravado}
+        professorFora={professorFora}
+      />
+    ) : null;
+
+  // As janelas ficam fora do `space-y-*`: a margem que ele poe entre os filhos
   // deslocaria as camadas fixas (painel e modais).
   return (
     <>
-      <div className="space-y-4">
-        {/* Cabecalho: titulo, contadores numa linha e a navegacao */}
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-3xl font-bold leading-none text-areia-900 sm:text-4xl">
-              Agenda
-            </h1>
-            <ResumoEmLinha
-              resumo={resumo}
-              periodo={periodo}
-              mostrarCanceladas={estado.mostrarCanceladas}
-              horasDeAula={visao === "professor"}
-            />
-          </div>
+      {/* Margens menores em volta (a grade ganha largura e altura). */}
+      <div className="-mt-3 space-y-2.5 sm:-mt-5 md:-mx-2 lg:-mx-3 2xl:-mx-6">
+        <BarraDaAgenda
+          visao={visao}
+          aoMudarVisao={escolherVisao}
+          titulo={titulo}
+          tituloCurto={tituloCurto}
+          passo={passo}
+          aoNavegar={navegar}
+          aoHoje={() => irParaData(HOJE)}
+          vencidas={podeEditar ? reservasVencidas : 0}
+          textoDasVencidas={textoDasVencidas}
+          aoAbrirReservas={() => setJanela("reservas")}
+          aoNovoHorario={
+            podeEditar
+              ? () => marcar({ data: doisDias ? diaVisivel : data, ...assuntoDaVisao })
+              : undefined
+          }
+          novoHorarioNoCelular={visao === "mes"}
+          professorTravado={professorTravado?.nome}
+          opcoesAbertas={opcoesAbertas}
+          aoAlternarOpcoes={() => setOpcoesAbertas((aberto) => !aberto)}
+          filtrosAtivos={filtrosAtivosDaAgenda(estado, Boolean(professorDoPerfil))}
+        />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <SeletorDaVisao valor={visao} aoMudar={escolherVisao} />
-
-            <div className="flex items-center gap-1 rounded-xl border border-areia-200 bg-white p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={() => navegar(-1)}
-                className="btn-fantasma px-2 py-1.5"
-                aria-label={passo === "dia" ? "Dia anterior" : passo === "mês" ? "Mês anterior" : "Semana anterior"}
-              >
-                <IconeAnterior className="h-4 w-4" />
-              </button>
-              <span
-                className="min-w-[124px] text-center text-sm font-semibold text-areia-800 first-letter:uppercase"
-                aria-live="polite"
-              >
-                {titulo}
-              </span>
-              <button
-                type="button"
-                onClick={() => navegar(1)}
-                className="btn-fantasma px-2 py-1.5"
-                aria-label={passo === "dia" ? "Próximo dia" : passo === "mês" ? "Próximo mês" : "Próxima semana"}
-              >
-                <IconeProximo className="h-4 w-4" />
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSegundoDia(false);
-                mudar({ data: HOJE, ocupacaoId: undefined });
-              }}
-              className="btn-secundario py-2"
-            >
-              Hoje
-            </button>
-
-            <input
-              type="date"
-              value={data}
-              onChange={(e) => {
-                if (!DATA_ISO.test(e.target.value)) return;
-                setSegundoDia(false);
-                mudar({ data: e.target.value });
-              }}
-              className="campo hidden w-auto py-1.5 xl:block"
-              aria-label="Ir para a data"
-            />
-
-            {podeEditar && (
-              <button
-                type="button"
-                onClick={() =>
-                  marcar({ data: visao === "diaria" ? diaVisivel : data, ...assuntoDaVisao })
-                }
-                // No celular a lista do dia ja tem o botao "Marcar" (fica so no Mes).
-                className={`btn-primario py-2 ${visao === "mes" ? "" : "hidden md:inline-flex"}`}
-              >
-                <IconeMais className="h-4 w-4" />
-                Novo horário
-              </button>
+        {!opcoesAbertas && (
+          <LinhaDeFiltrosAtivos
+            filtros={descricaoDosFiltros(
+              estado,
+              Boolean(professorDoPerfil),
+              banco.professores.find((p) => p.id === estado.professorId)?.nome,
             )}
-          </div>
-        </div>
-
-        {/* Acoes da agenda: no celular, uma linha que rola para o lado */}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 rolagem-suave sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
-          {podeEditar && (
-            <>
-              <button
-                type="button"
-                onClick={() => setJanela("bloqueio")}
-                className="btn-secundario shrink-0 px-3 py-2 text-xs"
-              >
-                <IconeCadeado className="h-4 w-4" />
-                Bloquear quadra
-              </button>
-              <button
-                type="button"
-                onClick={() => setJanela("chuva")}
-                className="btn-secundario shrink-0 px-3 py-2 text-xs"
-              >
-                <IconeChuva className="h-4 w-4" />
-                Cancelar por chuva
-              </button>
-              <button
-                type="button"
-                onClick={() => setJanela("reservas")}
-                className="btn-secundario shrink-0 px-3 py-2 text-xs"
-              >
-                <IconeRelogio className="h-4 w-4" />
-                Reservas sem pagamento
-                {reservas.length > 0 && (
-                  <span
-                    className={`rounded-full px-1.5 text-[11px] font-bold ${
-                      reservasVencidas > 0
-                        ? "bg-tijolo-600 text-white"
-                        : "bg-amber-100 text-amber-900"
-                    }`}
-                  >
-                    {reservas.length}
-                  </span>
-                )}
-              </button>
-            </>
-          )}
-          <Link
-            href={`/agenda/imprimir?data=${visao === "diaria" ? diaVisivel : data}`}
-            className="btn-secundario shrink-0 px-3 py-2 text-xs"
-          >
-            <IconeImpressora className="h-4 w-4" />
-            Imprimir o dia
-          </Link>
-          <Link
-            href={`/agenda/quadra?quadra=${estado.quadraId ?? "1"}${data !== HOJE ? `&data=${data}` : ""}`}
-            className="btn-secundario shrink-0 px-3 py-2 text-xs"
-          >
-            <IconeTablet className="h-4 w-4" />
-            Modo quadra
-          </Link>
-
-          {/* Hipotese H5: reserva com prazo vencido entra em alerta; quem decide e a recepcao. */}
-          {podeEditar && reservasVencidas > 0 && (
-            <button
-              type="button"
-              onClick={() => setJanela("reservas")}
-              className="alvo-de-toque flex shrink-0 items-center gap-2 rounded-xl border border-tijolo-200 bg-tijolo-50 px-3 py-2 text-xs font-semibold text-tijolo-800 transition-colors hover:bg-tijolo-100 md:ml-auto"
-              title="A reserva só entra em alerta: a recepção decide se libera o horário (Hipótese H5)."
-            >
-              <IconeAlerta className="h-4 w-4 shrink-0 text-tijolo-600" />
-              {plural(
-                reservasVencidas,
-                "reserva passou do prazo de pagamento",
-                "reservas passaram do prazo de pagamento",
-              )}
-              <span className="underline underline-offset-2">Ver</span>
-            </button>
-          )}
-        </div>
-
-        {!podeEditar && (
-          <p className="rounded-2xl border border-saibro-200 bg-saibro-50 px-4 py-2.5 text-sm text-saibro-900">
-            Perfil de professor: você vê só as suas aulas e não altera a agenda (Hipótese H9).
-          </p>
+            aoVer={() => setOpcoesAbertas(true)}
+            aoLimpar={() => {
+              setSegundoDia(false);
+              mudar({
+                tipo: "todos",
+                mostrarCanceladas: true,
+                // Na visao Professores o professor escolhido e o assunto, nao filtro.
+                ...(visao !== "professor" && !professorDoPerfil ? { professorId: undefined } : {}),
+                ocupacaoId: undefined,
+              });
+            }}
+          />
         )}
 
-        <Card>
-          <FiltrosDaAgenda
-            estado={estado}
-            aoMudar={(parcial) => mudar({ ...parcial, ocupacaoId: undefined })}
-            quadras={quadras}
-            professores={professores}
-            professorTravado={professorTravado}
-            professorFora={banco.professores.find((p) => p.id === estado.professorId)?.nome}
-            extra={
-              visao === "diaria" && largura === "media" ? (
-                <Segmentado
-                  aria="Qual dia"
-                  valor={segundoDia ? "segundo" : "primeiro"}
-                  aoMudar={(v) => setSegundoDia(v === "segundo")}
-                  opcoes={[
-                    { valor: "primeiro", rotulo: diasDaDiaria[0] === HOJE ? "Hoje" : curto(diasDaDiaria[0]) },
-                    {
-                      valor: "segundo",
-                      rotulo: diasDaDiaria[1] === somarDias(HOJE, 1) ? "Amanhã" : curto(diasDaDiaria[1]),
-                    },
-                  ]}
-                />
-              ) : undefined
-            }
-          />
+        <OpcoesDaAgenda
+          aberto={opcoesAbertas}
+          podeEditar={podeEditar}
+          aoAbrirJanela={(qual) => {
+            // Abriu uma janela pelo painel: o painel fecha (como no estoque e no financeiro).
+            setJanela(qual);
+            setOpcoesAbertas(false);
+          }}
+          reservas={reservas.length}
+          reservasVencidas={reservasVencidas}
+          linkImprimir={`/agenda/imprimir?data=${doisDias ? diaVisivel : data}`}
+          linkModoQuadra={`/agenda/quadra?quadra=${estado.quadraId ?? "1"}${data !== HOJE ? `&data=${data}` : ""}`}
+          data={data}
+          aoIrParaData={irParaData}
+          estado={estado}
+          aoMudar={(parcial) => {
+            setSegundoDia(false);
+            mudar({ ...parcial, ocupacaoId: undefined });
+          }}
+          professores={professores}
+          professorTravado={professorTravado?.nome}
+          professorFora={banco.professores.find((p) => p.id === estado.professorId)?.nome}
+          resumo={resumo}
+          periodo={periodo}
+          horasDeAula={visao === "professor"}
+        />
+
+        <Card className="overflow-hidden">
+          {faixa}
 
           {visao === "mes" ? (
             <VisaoMensal
@@ -588,7 +558,7 @@ function Agenda() {
               aoSelecionarDia={abrirDia}
             />
           ) : largura === "estreita" ? (
-            visao === "diaria" ? (
+            doisDias ? (
               <ListaDoDia
                 datas={diasDaDiaria}
                 dia={diaVisivel}
@@ -609,8 +579,8 @@ function Agenda() {
                 aoAdicionar={marcarNaGrade && ((inicial) => marcarNaGrade({ ...inicial, ...assuntoDaVisao }))}
               />
             )
-          ) : grupos.length === 0 ? (
-            <p className="px-6 py-12 text-center text-sm text-areia-600">
+          ) : semColunas ? (
+            <p className="px-6 py-12 text-center text-base text-areia-600">
               Nenhum professor ativo cadastrado.
             </p>
           ) : (
@@ -626,21 +596,22 @@ function Agenda() {
               nomesComoLink={!toque}
               aoAbrir={abrirHorario}
               aoMarcar={marcarNaGrade}
-              aoAbrirDia={visao === "diaria" ? undefined : abrirDia}
+              aoAbrirDia={doisDias ? undefined : abrirDia}
+              aoEscolherProfessor={visao === "professor" && !professorDoPerfil ? escolherProfessor : undefined}
+              mostrarGrupo={!faixa}
             />
           )}
-
-          <div className="hidden border-t border-areia-200 px-4 py-2.5 md:block">
-            <Legenda />
-          </div>
         </Card>
 
-        <p className="flex items-start gap-2 text-xs text-areia-600">
+        <p className="flex items-start gap-2 text-sm text-areia-600">
           <IconeAgenda className="h-4 w-4 shrink-0" />
           {toque
             ? "Toque num horário para abrir o painel (presença, cancelar, remarcar e a ficha de cada aluno)"
             : "Clique num horário para abrir o painel (presença, cancelar, remarcar), no nome de um aluno para abrir a ficha"}
           {podeEditar ? " ou numa meia hora livre para marcar um novo horário." : "."}
+          {visao === "professor" && !estado.professorId && !professorDoPerfil && largura !== "estreita"
+            ? " Clique no nome de um professor para ver a semana dele."
+            : ""}
         </p>
       </div>
 
@@ -657,7 +628,7 @@ function Agenda() {
           aberto
           aoFechar={() => setJanela(null)}
           inicial={{
-            data: visao === "diaria" ? diaVisivel : data,
+            data: doisDias ? diaVisivel : data,
             quadraId: estado.quadraId,
           }}
           agora={agora}
@@ -667,7 +638,7 @@ function Agenda() {
         <ModalChuva
           aberto
           aoFechar={() => setJanela(null)}
-          dataInicial={visao === "diaria" ? diaVisivel : HOJE}
+          dataInicial={doisDias ? diaVisivel : HOJE}
           agora={agora}
         />
       )}
@@ -691,62 +662,5 @@ function Agenda() {
         agora={agora}
       />
     </>
-  );
-}
-
-/** Os contadores do periodo que esta na tela, numa linha so (libera altura para a grade). */
-function ResumoEmLinha({
-  resumo,
-  periodo,
-  mostrarCanceladas,
-  horasDeAula,
-}: {
-  resumo: ResumoDaAgenda;
-  periodo: string;
-  mostrarCanceladas: boolean;
-  /** Visao Professor: horas de aula no lugar da ocupacao das quadras. */
-  horasDeAula: boolean;
-}) {
-  const ocupacao = resumo.minutosDisponiveis
-    ? Math.round((resumo.minutosOcupados / resumo.minutosDisponiveis) * 100)
-    : 0;
-  const numero = "font-display text-base font-semibold text-areia-900";
-  const separador = <span className="text-areia-400" aria-hidden="true">·</span>;
-  return (
-    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-areia-600">
-      <span>
-        <strong className={numero}>{resumo.ativas.toLocaleString("pt-BR")}</strong>{" "}
-        {resumo.ativas === 1 ? "horário" : "horários"} {periodo}
-      </span>
-      {separador}
-      <span>
-        <strong className={numero}>{resumo.alunos.toLocaleString("pt-BR")}</strong>{" "}
-        {resumo.alunos === 1 ? "aluno" : "alunos"}
-      </span>
-      {separador}
-      {horasDeAula ? (
-        <span>
-          <strong className={numero}>{Math.round(resumo.minutosOcupados / 60)} h</strong> de aula
-        </span>
-      ) : (
-        <span title={`${Math.round(resumo.minutosOcupados / 60)} h de ${Math.round(resumo.minutosDisponiveis / 60)} h de quadra`}>
-          <strong className={numero}>{ocupacao}%</strong> de ocupação
-          {resumo.bloqueios > 0 && ` (${plural(resumo.bloqueios, "bloqueio", "bloqueios")})`}
-        </span>
-      )}
-      {separador}
-      <span>
-        <strong className={numero}>{resumo.canceladas.toLocaleString("pt-BR")}</strong>{" "}
-        {resumo.canceladas === 1 ? "cancelada" : "canceladas"}
-        {!mostrarCanceladas && resumo.canceladas > 0 && " (escondidas)"}
-      </span>
-      {separador}
-      <span className={resumo.vencidas > 0 ? "font-medium text-tijolo-700" : undefined}>
-        <strong className={resumo.vencidas > 0 ? `${numero} !text-tijolo-700` : numero}>
-          {resumo.aguardandoPagamento.toLocaleString("pt-BR")}
-        </strong>{" "}
-        a pagar{resumo.vencidas > 0 && ` (${resumo.vencidas} com prazo vencido)`}
-      </span>
-    </p>
   );
 }

@@ -51,9 +51,11 @@ const TELAS = [
   { nome: "inicio", url: "/dashboard", perfis: ["dono", "recepcao"] },
   { nome: "agenda", url: "/agenda" },
   { nome: "agenda-quadra", url: "/agenda?visao=quadra&quadra=2" },
+  { nome: "agenda-professores", url: "/agenda?visao=professor", perfis: ["dono", "recepcao"] },
   { nome: "agenda-professor", url: "/agenda?visao=professor&professor=prof-2", perfis: ["dono", "recepcao"] },
   { nome: "agenda-mes", url: "/agenda?visao=mes" },
-  { nome: "agenda-lap", url: "/agenda?tipo=LAP" },
+  // Vem de outra tela, como o atalho LAP do Inicio (a agenda abre do zero).
+  { nome: "agenda-lap", url: "/agenda?tipo=LAP", antes: "/alunos" },
   { nome: "agenda-novo-horario", url: "/agenda", acao: "novo-horario", perfis: ["dono", "recepcao"] },
   { nome: "modo-quadra", url: "/agenda/quadra?quadra=1" },
   { nome: "imprimir", url: "/agenda/imprimir", perfis: ["dono"] },
@@ -290,6 +292,7 @@ async function fotografar(pagina, arquivo, comToque) {
         erros = [];
         const inicio = Date.now();
         try {
+          if (tela.antes) await irPara(pagina, tela.antes);
           await irPara(pagina, tela.url);
           if (tela.acao === "novo-horario") {
             const botao = pagina.getByRole("button", { name: /Novo horário/ }).first();

@@ -6,8 +6,10 @@
  * A grade tem linhas de 30 em 30 minutos (como o sistema antigo da arena) e
  * colunas que podem ser:
  *  - Diaria: 2 dias x 5 quadras (cada dia e um grupo de colunas);
+ *  - Professores: 2 dias x os professores ativos (Hipotese H20, "igual a
+ *    agenda das quadras");
  *  - Quadra: 7 dias de uma quadra (um grupo so, a quadra);
- *  - Professor: 7 dias de um professor (um grupo so, o professor).
+ *  - semana de um professor: 7 dias de um professor (um grupo so).
  */
 
 import { FAIXAS_HORARIAS, HORA_ABERTURA, HORA_FECHAMENTO } from "@/lib/banco/constantes";
@@ -22,10 +24,17 @@ export const ABERTURA_EM_MINUTOS = HORA_ABERTURA * 60;
 export const FECHAMENTO_EM_MINUTOS = HORA_FECHAMENTO * 60;
 
 /**
- * Pixels por minuto. Com mouse, 36px por meia hora; com toque (tablet na
- * quadra, celular), 45px, para cada meia hora ser um alvo de pelo menos 44px.
+ * Pixels por minuto (redesign 3: "a agenda maior, para bater o olho e ler").
+ *  - Mouse (computador da recepcao), 1,7: meia hora de 51px; um horario de
+ *    1 h (o mais comum) fica com 101px, o bastante para a linha da hora e do
+ *    tipo, DUAS linhas de nomes em 16px e o professor em 14px
+ *    (`linhasDoBloco`). Numa tela de 1440 x 900 cabem perto de 12 meias horas
+ *    (6 h) sem rolar a pagina.
+ *  - Toque (tablet na quadra), 1,8: meia hora de 54px (alvo de toque bem
+ *    acima de 44px) e TRES linhas de nomes num horario de 1 h, porque as
+ *    colunas do tablet sao mais estreitas (~110px) e os nomes quebram mais.
  */
-export const PX_POR_MINUTO = { mouse: 1.2, toque: 1.5 } as const;
+export const PX_POR_MINUTO = { mouse: 1.7, toque: 1.8 } as const;
 
 export function pxPorMinuto(toque: boolean): number {
   return toque ? PX_POR_MINUTO.toque : PX_POR_MINUTO.mouse;
@@ -53,13 +62,16 @@ export interface ColunaDaGrade {
   data: string;
   /** Quadra da coluna (Diaria e semana da quadra). */
   quadra?: Quadra;
-  /** Professor da coluna (semana do professor). */
+  /** Professor da coluna (visao Professores e semana do professor). */
   professorId?: string;
+  /** Professor da coluna na visao Professores (o cabecalho mostra o nome e a cor). */
+  professor?: Professor;
 }
 
 /**
  * Grupo de colunas (primeira linha do cabecalho):
- *  - "dia": um dia da Diaria, com uma coluna por quadra;
+ *  - "dia": um dia da Diaria (uma coluna por quadra) ou da visao Professores
+ *    (uma coluna por professor);
  *  - "quadra" / "professor": a semana inteira, uma coluna por dia.
  */
 export type GrupoDeColunas =
@@ -74,6 +86,24 @@ export function colunasDaDiaria(datas: string[], quadras: Quadra[]): GrupoDeColu
     chave: data,
     data,
     colunas: quadras.map((quadra) => ({ chave: `${data}|${quadra.id}`, data, quadra })),
+  }));
+}
+
+/**
+ * Visao Professores (Hipotese H20): cada data e um grupo, com uma coluna por
+ * professor ativo, como a Diaria faz com as quadras.
+ */
+export function colunasDosProfessores(datas: string[], professores: Professor[]): GrupoDeColunas[] {
+  return datas.map((data) => ({
+    tipo: "dia",
+    chave: data,
+    data,
+    colunas: professores.map((professor) => ({
+      chave: `${data}|${professor.id}`,
+      data,
+      professorId: professor.id,
+      professor,
+    })),
   }));
 }
 
@@ -131,7 +161,13 @@ function limitar(valor: number, minimo: number, maximo: number): number {
 }
 
 /** Bloco mais baixo que isto vira uma linha so (ex.: aula de 15 minutos). */
-export const ALTURA_MINIMA_DO_BLOCO = 20;
+export const ALTURA_MINIMA_DO_BLOCO = 24;
+
+/**
+ * Medidas do texto dentro do bloco, em px (a grade e medida em px: a altura
+ * do bloco e a duracao). Folga = 4px em cima e 4px embaixo.
+ */
+export const LINHAS_DO_BLOCO = { folga: 8, cabecalho: 20, nome: 20, professor: 18 } as const;
 
 /**
  * Posicao vertical de um horario, com precisao de minuto. Deixa 1px de folga
@@ -164,33 +200,38 @@ export function posicaoHorizontal(subcoluna: { coluna: number; total: number }):
 
 /**
  * Quanto cabe no bloco, pela altura:
- *  - minima (< 30px): uma linha (hora e o primeiro nome);
- *  - compacta (< 56px): hora e marcas; nomes numa linha;
- *  - normal (< 84px): hora, tipo, nomes em ate 2 linhas e professor;
- *  - ampla: tudo, um nome por linha.
+ *  - minima (< 48px): uma linha (hora e o primeiro nome);
+ *  - compacta (< 66px): hora e marcas; nomes numa linha (meia hora);
+ *  - normal (< 96px): hora, tipo, nomes e professor;
+ *  - ampla: tudo, um nome por linha quando cabem (1 h ou mais).
  */
 export type DensidadeDoBloco = "minima" | "compacta" | "normal" | "ampla";
 
 export function densidadeDoBloco(altura: number): DensidadeDoBloco {
-  if (altura < 30) return "minima";
-  if (altura < 56) return "compacta";
-  if (altura < 84) return "normal";
+  const { folga, cabecalho, nome } = LINHAS_DO_BLOCO;
+  if (altura < folga + cabecalho + nome) return "minima";
+  if (altura < 66) return "compacta";
+  if (altura < 96) return "normal";
   return "ampla";
 }
 
 /**
  * Quantas linhas de nomes cabem no bloco e se o professor ainda cabe embaixo
- * (linha do cabecalho 14px, nomes 14px, professor 13px, 3px de folga em cima
- * e embaixo). O que nao cabe termina em reticencias (a turma inteira esta
- * no painel).
+ * (`LINHAS_DO_BLOCO`: cabecalho 20px, nomes 20px, professor 18px, 4px de
+ * folga em cima e embaixo). O que nao cabe termina em reticencias (a turma
+ * inteira esta no painel).
  */
 export function linhasDoBloco(
   altura: number,
   comProfessor: boolean,
 ): { nomes: number; professor: boolean } {
-  const util = altura - 6 - 14;
-  const professor = comProfessor && util >= 14 + 13;
-  return { nomes: Math.max(0, Math.floor((util - (professor ? 13 : 0)) / 14)), professor };
+  const { folga, cabecalho, nome, professor: linhaDoProfessor } = LINHAS_DO_BLOCO;
+  const util = altura - folga - cabecalho;
+  const professor = comProfessor && util >= nome + linhaDoProfessor;
+  return {
+    nomes: Math.max(0, Math.floor((util - (professor ? linhaDoProfessor : 0)) / nome)),
+    professor,
+  };
 }
 
 // ---------------------------------------------------------------------------

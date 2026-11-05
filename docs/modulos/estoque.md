@@ -11,28 +11,54 @@ subtraem; ajustes trazem o próprio sinal).
 
 São três lugares na tela:
 
-1. **Estoque** (`/estoque`), a tela principal:
-   - indicadores: unidades em estoque, itens que precisam de reposição, vendas
-     do mês (com o que ainda está em aberto nas contas) e valor do estoque;
-   - cartões dos produtos com o nível do saldo em **cor + rótulo + barra**
-     (esgotado, repor já, atenção, em dia), com o traço do estoque mínimo;
-   - busca (ignora acentos: "agua" acha "Água"), filtro por categoria, "Só o
-     que precisa repor" e "Mostrar inativos";
-   - em cada cartão: **Entrada**, **Perda** e **Contagem** (ajuste de
-     inventário); o nome do produto abre o detalhe;
-   - botões **Novo produto** e **Lançar consumo** (escolhe a pessoa, o produto
-     e a quantidade);
-   - lista de compras (do mais urgente ao menos, com a quantidade sugerida e um
-     botão para registrar a chegada), mais vendidos dos últimos 30 dias e
+1. **Estoque** (`/estoque`), a tela principal, de cima para baixo:
+   - **Lançar consumo**, o único botão laranja do topo (escolhe a pessoa, o
+     produto e a quantidade);
+   - três números grandes: vendas do mês, consumo em aberto nas contas e valor
+     do estoque (com as unidades, os itens ativos e o custo);
+   - **lista de compras** em destaque, com a placa amarela de atenção:
+     esgotados e abaixo do mínimo, do mais urgente ao menos, com a quantidade
+     sugerida e o botão **Dar entrada** (já vem com a sugestão). Até 9 itens
+     à vista (4 no celular) e "Ver todos". Sem nada a repor, vira uma linha
+     verde;
+   - **Produtos**: busca (ignora acentos: "agua" acha "Água") e categorias à
+     vista; em **Mais opções**, "Só o que precisa repor", "Mostrar inativos"
+     e **Novo produto** (o botão mostra quantas opções estão ligadas e, com o
+     painel fechado, a linha "Mostrando: ..." diz o que está valendo, com
+     "Voltar ao normal");
+   - cartões dos produtos limpos: nome grande, unidade e preço de venda, saldo
+     em número de placar e o nível em **cor + rótulo + barra** (esgotado,
+     repor já, atenção, em dia), com o traço do estoque mínimo. **Tocar no
+     cartão** (ou no botão **Movimentar**) abre uma janela com três botões
+     grandes: **Entrada**, **Perda** e **Contagem** (ajuste de inventário),
+     que abrem os mesmos formulários de antes. O nome do produto continua
+     levando ao detalhe. Produto inativo mostra **Reativar**;
+   - **Ver mais informações** (fechado): mais vendidos dos últimos 30 dias e
      movimentações recentes com quem registrou.
-2. **Detalhe do produto** (`/estoque/produto?id=p12`): cadastro, saldo,
-   indicadores do produto, todos os movimentos com o saldo depois de cada um
-   (e a conta a pagar ligada a cada entrada), comentários, histórico de
-   alterações e os botões Entrada, Perda, Contagem, Editar e Inativar/Reativar.
+2. **Detalhe do produto** (`/estoque/produto?id=p12`): cadastro, saldo
+   grande, indicadores do produto, todos os movimentos com o saldo depois de
+   cada um (e a conta a pagar ligada a cada entrada), comentários, histórico
+   de alterações e os botões Entrada, Perda e Contagem à vista; **Editar
+   cadastro** e **Inativar** ficam em **Mais opções** (produto inativo mostra
+   **Reativar produto** à vista).
 3. **Conta de consumo nas fichas** de aluno e de professor (componente
    `FichaConsumo`): o consumo da pessoa com a situação de cada item (em aberto,
    em atraso, pago, anulado), o total em aberto, o aviso do que está em atraso,
    **Lançar consumo** e **Fechar conta**.
+
+Por que a tela mudou (redesign 3, novembro de 2026): o dono da arena pediu
+"tudo maior" e "não tem que estar tudo na tela". Nenhuma função saiu: os três
+botões pequenos de cada cartão viraram a janela **Movimentar** (tocar no
+cartão), Novo produto e os interruptores foram para **Mais opções**, a lista
+de compras saiu da coluna da direita e ficou em destaque, e mais vendidos e
+movimentações recentes ficaram em **Ver mais informações**.
+
+Arquivos da tela: `src/app/(app)/estoque/page.tsx` e, em
+`src/components/estoque/`, `NumerosDoEstoque` (os três números),
+`ListaDeCompras`, `CardProduto`, `ModalMovimentar` (a janela com Entrada,
+Perda e Contagem), `MaisInformacoes` (mais vendidos, movimentações e a linha
+de movimento usada também no detalhe), `DetalheDoProduto` e os formulários
+(`ModalEntrada`, `ModalPerda`, `ModalInventario`, `ModalProduto`).
 
 ## Regras
 
@@ -70,7 +96,9 @@ Apresentação (não são regras de negócio, ficam nas consultas):
 - **H13 (prazo do consumo)**: `configuracoes.prazoPagamentoConsumoDias` (7
   dias, valor de teste).
 
-Nenhum parâmetro novo foi criado.
+Nenhum parâmetro novo foi criado. Constantes só de tela (redesign 3): a lista
+de compras mostra 9 itens antes de "Ver todos" (4 no celular)
+(`ITENS_VISIVEIS` em `ListaDeCompras.tsx`).
 
 ### Decisões tomadas aqui (a confirmar com a arena)
 
@@ -105,29 +133,37 @@ de uma ação em outra tela.
 
 1. Na tela de entrada, escolha **Francisco Menezes** e clique em **Entrar no
    sistema**. Clique em **Estoque** no menu.
-2. Confira os cartões: **Cerveja sem álcool** mostra **0** e o rótulo
-   **Esgotado**; **Munhequeira** mostra **4** e **Repor já**. A barra tem um
-   traço no estoque mínimo.
+2. No topo há um só botão laranja (**Lançar consumo**) e três números
+   grandes. Logo abaixo, a **Lista de compras** com a placa amarela: **Cerveja
+   sem álcool** aparece primeiro, **Esgotado**. Nos cartões dos produtos,
+   **Cerveja sem álcool** mostra **0** e **Esgotado**; **Munhequeira** mostra
+   **4** e **Repor já**. A barra tem um traço no estoque mínimo. Os cartões
+   não têm mais os três botões pequenos.
 3. Digite **agua** na busca: aparecem as três águas, mesmo sem acento. Apague
-   a busca, clique em **Cervejas** e marque **Só o que precisa repor**: ficam
-   só as cervejas abaixo do mínimo. Clique em **Todas** e desmarque a caixa.
-4. Clique em **Novo produto**. Preencha: nome **Picolé de fruta**, categoria
+   a busca, clique em **Cervejas**, clique em **Mais opções** e ligue **Só o
+   que precisa repor**: ficam só as cervejas abaixo do mínimo. Clique em
+   **Menos opções**: o botão mostra o número 1 e aparece "Mostrando: só o que
+   precisa repor". Clique em **Voltar ao normal** e em **Todas**.
+4. Clique em **Mais opções** e em **Novo produto**. Preencha: nome **Picolé de fruta**, categoria
    **Lanches**, unidade **unidade**, custo **2,50**, venda **2,00**, estoque
    mínimo **10**. Deve aparecer o aviso amarelo "A venda está abaixo do
    custo". Troque a venda para **6,00** (o aviso vira "Margem de R$ 3,50") e
    clique em **Cadastrar produto**. Deve aparecer o aviso verde e o cartão do
    picolé, com 0 e **Esgotado**.
-5. **Erro de regra**: clique de novo em **Novo produto** e use o nome **agua
+5. **Erro de regra**: clique de novo em **Mais opções** → **Novo produto** e use o nome **agua
    mineral SEM GAS** (preencha o resto). Ao salvar, deve aparecer o aviso
    vermelho **Já existe um produto chamado "Água mineral sem gás"** e nada é
    gravado. Clique em **Cancelar**.
-6. No cartão **Munhequeira**, clique em **Entrada**. Quantidade **10**, marque
+6. Toque em qualquer parte do cartão **Munhequeira** (fora do nome): abre a
+   janela com **Entrada**, **Perda** e **Contagem**. Clique em **Entrada**.
+   Quantidade **10**, marque
    **Lançar conta a pagar ao fornecedor**, confira o fornecedor sugerido, o
    valor (custo × quantidade = R$ 120,00) e escolha um vencimento. Clique em
    **Registrar entrada**: o cartão passa a mostrar **14** e **Em dia**.
-7. No cartão **Água de coco**, clique em **Perda**, escolha **Vencido** e
-   clique em **Registrar perda**: o saldo cai 1.
-8. No cartão **Chocolate**, clique em **Contagem** e digite **25** (o mesmo
+7. No cartão **Água de coco**, clique em **Movimentar** → **Perda**, escolha
+   **Vencido** e clique em **Registrar perda**: o saldo cai 1. (No cartão da
+   **Cerveja sem álcool**, com 0, o botão Perda da janela fica apagado.)
+8. No cartão **Chocolate**, clique em **Movimentar** → **Contagem** e digite **25** (o mesmo
    número do sistema). Ao salvar, deve aparecer o aviso vermelho "O saldo
    contado é igual ao do sistema (25): não há o que ajustar". Troque para
    **23** (aparece "−2 (faltou)") e salve: o cartão mostra **23**.
@@ -136,18 +172,19 @@ de uma ação em outra tela.
    (esgotada). Escolha **Água mineral sem gás**, clique em **+** (quantidade
    2) e confira "vence em" (hoje + 7 dias). Clique em **Lançar R$ 10,00 na
    conta**.
-10. Em **Movimentações recentes**, as ações dos passos 6 a 9 aparecem no topo,
-    com o seu nome. Na **Lista de compras**, clique no botão ao lado de
-    **Cerveja sem álcool**: a quantidade já vem com a sugestão (24). Registre.
+10. No fim da tela, clique em **Ver mais informações**: em **Movimentações
+    recentes**, as ações dos passos 6 a 9 aparecem no topo, com o seu nome. Na
+    **Lista de compras**, clique em **Dar entrada** na **Cerveja sem álcool**:
+    a quantidade já vem com a sugestão (24). Registre.
 11. Clique no nome **Munhequeira**. No detalhe aparecem os movimentos com o
     saldo depois de cada um e, na entrada de hoje, a conta a pagar. Escreva um
     comentário e clique em **Adicionar comentário**.
-12. Clique em **Editar cadastro**, troque o preço de venda para **30,00** e
+12. Clique em **Mais opções** → **Editar cadastro**, troque o preço de venda para **30,00** e
     salve. Em **Histórico** aparece "Preço de venda: 28 → 30".
-13. Clique em **Inativar** e confirme. Volte ao estoque: a munhequeira sumiu
-    do catálogo, e em **Lançar consumo** ela não aparece na busca. Marque
-    **Mostrar inativos**: o cartão aparece tracejado, com **Inativo** e o
-    botão **Reativar**. Clique em **Reativar**.
+13. Clique em **Mais opções** → **Inativar** e confirme. Volte ao estoque: a
+    munhequeira sumiu do catálogo, e em **Lançar consumo** ela não aparece na
+    busca. Em **Mais opções**, ligue **Mostrar inativos**: o cartão aparece
+    tracejado, com **Inativo** e o botão **Reativar**. Clique em **Reativar**.
 14. No menu **Alunos**, abra **Guilherme Lima**. No quadro **Consumo no
     balcão** está a água do passo 9, **Em aberto**, com o vencimento. Clique em
     **Lançar consumo** e lance um **Chocolate**.

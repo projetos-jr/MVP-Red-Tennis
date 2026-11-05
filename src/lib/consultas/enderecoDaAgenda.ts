@@ -5,13 +5,14 @@
  * tela, e "voltar" e "recarregar" nao perdem o lugar.
  *
  * Visoes: Diaria (hoje e amanha lado a lado, uma coluna por quadra; padrao),
- * Quadra (a semana de uma quadra), Professor (a semana de um professor) e
- * Mes. Os links antigos continuam valendo (ver `estadoDaAgendaPelaUrl`).
+ * Professores (hoje e amanha lado a lado, uma coluna por professor; com um
+ * professor escolhido, a semana dele), Quadra (a semana de uma quadra) e Mes.
+ * Os links antigos continuam valendo (ver `estadoDaAgendaPelaUrl`).
  */
 
 import { dataValida } from "../banco/regras/agenda";
 import type { Banco, QuadraId, TipoOcupacao } from "../banco/tipos";
-import { professorPelaUrl, professoresAtivos, quadraPelaUrl, quadrasDaArena } from "./agenda";
+import { professorPelaUrl, quadraPelaUrl, quadrasDaArena } from "./agenda";
 
 export type VisaoDaAgenda = "diaria" | "quadra" | "professor" | "mes";
 
@@ -23,7 +24,10 @@ export interface EstadoDaAgenda {
   data: string;
   /** Quadra: a quadra da semana. Diaria: a coluna realcada (link do Inicio). */
   quadraId?: QuadraId;
-  /** Professor: o professor da semana. Nas outras visoes: filtro por professor. */
+  /**
+   * Professores: sem professor, os dois dias com uma coluna por professor;
+   * com professor, a semana dele. Nas outras visoes: filtro por professor.
+   */
   professorId?: string;
   tipo: TipoOcupacao | "todos";
   mostrarCanceladas: boolean;
@@ -33,7 +37,7 @@ export interface EstadoDaAgenda {
 
 export interface ContextoDaAgenda {
   hoje: string;
-  /** Perfil de professor (Hipotese H9): ve so as proprias aulas e abre na visao Professor. */
+  /** Perfil de professor (Hipotese H9): ve so as proprias aulas e abre na semana dele. */
   professorTravado?: string;
 }
 
@@ -74,12 +78,14 @@ function tipoPelaUrl(valor: string | null): TipoOcupacao | undefined {
  * | `?visao=semana`                  | Quadra 1                              |
  * | `?quadra=`                       | Quadra                                |
  * | `?data=&quadra=`                 | Diaria com a coluna da quadra realcada|
- * | `?professor=` (id ou nome)       | Professor                             |
+ * | `?visao=professor`               | Professores: hoje e amanha, todos     |
+ * | `?visao=professor&professor=`    | Professores: a semana daquele professor|
+ * | `?professor=` (id ou nome)       | A semana daquele professor            |
  * | `?tipo=LAP`                      | Diaria filtrada por LAP               |
  * | `?ocupacao=`                     | Abre o painel do horario (na data dele)|
  *
  * O professor logado (perfil professor) fica travado nas proprias aulas e,
- * sem `?visao=`, abre na visao Professor.
+ * sem `?visao=`, abre na semana dele.
  */
 export function estadoDaAgendaPelaUrl(
   banco: Banco,
@@ -100,6 +106,7 @@ export function estadoDaAgendaPelaUrl(
     travado: Boolean(ctx.professorTravado),
   });
 
+  // Visao Professores sem professor: os dois dias com todos (Hipotese H20).
   const professorId = ctx.professorTravado ?? professorDaUrl;
   return {
     visao,
@@ -111,8 +118,7 @@ export function estadoDaAgendaPelaUrl(
         : visao === "diaria"
           ? quadraId
           : undefined,
-    professorId:
-      visao === "professor" ? (professorId ?? professoresAtivos(banco)[0]?.id) : professorId,
+    professorId,
     tipo: tipoPelaUrl(parametros.get("tipo")) ?? "todos",
     mostrarCanceladas: !["0", "nao", "não", "false"].includes(
       (parametros.get("canceladas") ?? "").toLowerCase(),
@@ -166,10 +172,10 @@ export function enderecoDaAgenda(estado: EstadoDaAgenda, hoje: string): string {
 
 /**
  * Troca de visao: leva o que faz sentido e descarta o resto. Sair da visao
- * Professor tira o professor (senao a Diaria ficaria filtrada sem a pessoa
+ * Professores tira o professor (senao a Diaria ficaria filtrada sem a pessoa
  * perceber); sair da visao Quadra tira a quadra. Entrar na Quadra usa a
- * quadra realcada (ou a Quadra 1); entrar na Professor, o professor do
- * filtro (ou o primeiro).
+ * quadra realcada (ou a Quadra 1); entrar na Professores abre os dois dias
+ * com todos, ou a semana do professor do filtro, se havia um.
  */
 export function trocarVisao(
   banco: Banco,
@@ -179,12 +185,7 @@ export function trocarVisao(
 ): EstadoDaAgenda {
   if (visao === estado.visao) return estado;
   const professorId =
-    ctx.professorTravado ??
-    (visao === "professor"
-      ? (estado.professorId ?? professoresAtivos(banco)[0]?.id)
-      : estado.visao === "professor"
-        ? undefined
-        : estado.professorId);
+    ctx.professorTravado ?? (estado.visao === "professor" ? undefined : estado.professorId);
   const quadraId =
     visao === "quadra" ? (estado.quadraId ?? quadrasDaArena(banco)[0]?.id) : undefined;
   return { ...estado, visao, professorId, quadraId, ocupacaoId: undefined };

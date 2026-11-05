@@ -107,7 +107,7 @@ export function Modal({
       aria-labelledby={`${id}-titulo`}
     >
       <div
-        className="flex min-h-full items-start justify-center p-4 sm:items-center"
+        className="flex min-h-full items-start justify-center px-3 py-6 sm:items-center sm:px-4 sm:py-10"
         onClick={(evento) => {
           if (evento.target === evento.currentTarget && pilha[pilha.length - 1] === id) {
             aoFechar();
@@ -121,18 +121,19 @@ export function Modal({
         >
           <header className="flex items-start justify-between gap-4 border-b border-areia-200 px-5 py-4">
             <div>
-              <h2 id={`${id}-titulo`} className="font-display text-lg font-bold leading-tight text-areia-900">
+              {/* Titulo grande: a janela e lida de relance pelo dono da arena. */}
+              <h2 id={`${id}-titulo`} className="font-display text-2xl font-bold leading-tight text-areia-900">
                 {titulo}
               </h2>
-              {descricao && <p className="mt-0.5 text-sm text-areia-600">{descricao}</p>}
+              {descricao && <p className="mt-1 text-base text-areia-600">{descricao}</p>}
             </div>
             <button
               type="button"
               onClick={aoFechar}
-              className="btn-fantasma shrink-0 px-2 py-1.5"
+              className="btn-fantasma alvo-de-toque -mr-1 shrink-0 px-2.5 py-2"
               aria-label="Fechar"
             >
-              <IconeFechar className="h-4 w-4" />
+              <IconeFechar className="h-6 w-6" />
             </button>
           </header>
 

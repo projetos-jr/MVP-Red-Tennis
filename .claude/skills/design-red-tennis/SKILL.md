@@ -10,6 +10,24 @@ quadras desenhadas e um **mosaico de botões grandes laranja**, e a agenda do di
 lado a lado. Ele pediu **cores vivas (nada de pastel)** e o básico que funcione. O nosso visual
 traz essa estrutura com acabamento atual e uma personalidade de clube de tênis, **sem exagero**.
 
+## Para quem é (leia antes de desenhar)
+
+Quem mais usa é o **dono da arena, um senhor de idade**. Ele precisa bater o olho e entender.
+Pedido dele (novembro): "pode ter os botões, mas quando está tudo fechado, deixa tudo bem grande".
+
+- **Grande por padrão.** Texto de conteúdo nas telas principais com pelo menos `text-base`
+  (16px; 17px no computador); títulos, números e cabeçalhos em `font-display` grandes. Nada
+  essencial em `text-xs` ou `text-[11px]` (só selos pequenos de apoio).
+- **Uma ação principal à vista** por tela (`.btn-primario`). Filtros, ações raras e números de
+  apoio ficam atrás de **"Mais opções"** (`BotaoMaisOpcoes` + `PainelDeOpcoes`, em
+  `components/ui/MaisOpcoes.tsx`). Aberto, o conteúdo pode ser menor.
+- **Alertas** com a placa triangular (`BotaoDeAtencao`/`PlacaDeAtencao`, em
+  `components/ui/PlacaDeAtencao.tsx`), e **só quando há algo**: sem pendência, nada aparece.
+- **Menos coisa na tela**: listas longas mostram o essencial e "Mostrar mais"; seções de apoio
+  (gráficos, últimos movimentos, por forma de pagamento) começam fechadas.
+- **Letras**: o computador já usa 17px de base; "Letras maiores" (menu do usuário) sobe para
+  18–19px. Meça em `rem` (classes do Tailwind) para tudo acompanhar; `px` só na grade da agenda.
+
 Princípio: **vivo onde se age, calmo onde se lê.** Botões, mosaico, abas, blocos da agenda e
 quadras são vivos; tabelas, formulários, cartões e textos ficam em fundo branco e neutro, para
 a recepção ler rápido o dia inteiro.
@@ -57,6 +75,14 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
   `StatCard`, `Segmentado` (ativo laranja cheio), `BotaoFiltro`, `MostrarMais`, `EstadoVazio`,
   `Carregando`, `Modal`, `Confirmacao`, `EtiquetaDeSituacao` (situações: pago, pendente, em
   atraso... sempre com ícone e texto) e `EtiquetaNeutra`.
+- `BotaoMaisOpcoes` + `PainelDeOpcoes` (`components/ui/MaisOpcoes.tsx`): guardam o que não é
+  do dia a dia. O botão mostra quantos filtros estão ativos lá dentro.
+- `SecaoRecolhida` (`components/ui/SecaoRecolhida.tsx`): seção de apoio que começa fechada
+  (relatórios, últimos movimentos); o cabeçalho inteiro abre e fecha.
+- `BotaoGrande` (`components/ui/BotaoGrande.tsx`): botão com ícone, título e uma linha dizendo o
+  que faz; para escolhas dentro de "Mais opções" e janelas (Entrada / Perda / Contagem).
+- `BotaoDeAtencao` (`components/ui/PlacaDeAtencao.tsx`): placa amarela com "!" e a contagem;
+  `variante="grande"` (Início) ou `"compacto"` (barras). Com `quantidade` 0 não desenha nada.
 - `InterruptorBola` (`components/ui/InterruptorBola.tsx`): liga/desliga com a bola de tênis.
   Use em toda opção sim/não (Configurações, "Mostrar canceladas"). Caixas de seleção ficam
   para listas e matrizes (permissões).
@@ -85,6 +111,14 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
 - Situações no bloco: prazo vencido = anel duplo (branco + vermelho) e ⚠; cancelada = fundo
   branco, borda tracejada na cor do tipo, riscada; passado = película leve por trás.
 - Linhas de 30 minutos, colunas = quadras (Diária) ou dias (Quadra/Professor).
+
+## Truques que já pegaram a equipe
+
+- **Consulta de container** (`[@container(min-width:…)]:` com `@container` no pai) funciona no
+  Tailwind 3.4: use quando o tamanho da COLUNA importa mais que o da tela (blocos da agenda).
+- `leading-none` + `xl:text-3xl`: o tamanho responsivo troca também a altura da linha; repita
+  `xl:leading-none`.
+- `PainelDeOpcoes` fechado não desenha nada: coloque `grid`/`flex` à vontade no `className`.
 
 ## Tamanhos de tela e toque
 

@@ -223,3 +223,47 @@ com toque, 900 e celular 390; perfis dono, recepção e professor; também no
   de cada gravação). Já era assim antes do redesign; entra na semana de
   desempenho (meta da agenda: menos de 2 s).
 - A mensagem "Alice foi inativado" (concordância de gênero), que já existia.
+
+## Redesign 3 (novembro): o dono da arena pediu "tudo grande, menos coisa na tela"
+
+Depois de ver as telas, o dono da arena (um senhor de idade) pediu: letras e
+agenda maiores, menos botões à vista ("um botão que abre os outros"), login
+com a bola de tênis e a quadra de saibro de fundo, Início só com as quadras,
+os atalhos e uma placa de atenção, agenda dos professores igual à das
+quadras e o ranking em pirâmide com a foto dentro de uma raquete.
+
+**Peças novas** (em `components/ui`, descritas na skill `design-red-tennis`,
+seção "Para quem é"): `BotaoMaisOpcoes`/`PainelDeOpcoes`, `BotaoDeAtencao`
+(placa triangular, só quando há algo), `SecaoRecolhida`, `BotaoGrande`;
+letra de 17px no computador e a opção "Letras maiores" (18–19px) no menu do
+usuário. As janelas ganharam título grande e botão de fechar de 44px.
+
+**Revisão independente** (um agente que não escreveu o código, rodando o
+sistema em 1440, 1366, 1180, 1024, 900 e 390 px, três perfis, com e sem
+Letras maiores, relógio simulado): testou de verdade horário novo,
+cancelamento por chuva, entrada e contagem de estoque, pagamento de reserva
+(cada gravação acontece uma vez só) e não achou aviso do React. Achados e o
+que foi feito:
+
+| Achado | O que foi feito |
+| --- | --- |
+| Em 1366×768 (e com Letras maiores) a barra da agenda quebra em duas linhas e a grade passava do fim da tela | A grade mede onde começa e vai até o pé da tela, seja qual for a altura de cima |
+| Financeiro contava reservas vencidas só pela data; agenda e Início, pela hora | O financeiro passou a usar a hora (mesma contagem nas três telas, com teste) |
+| "Letras maiores" não era alcançável pelas setas do menu | Setas passam por todos os itens |
+| O atalho LAP abria a agenda com "Mais opções" aberto e a grade quase sumia | Painel fechado e uma linha "Filtro: LAP · Ver filtros · Limpar" |
+| Entre 1024 e 1112 px o nome das quadras era cortado | Dois dias lado a lado a partir de 1150 px; cabeçalho com tamanho de letra por coluna |
+| Clientes com Letras maiores em 1280 px: plano espremido | Cartões até 1400 px com Letras maiores |
+| Placa da agenda com nome acessível diferente do texto visível; placa do financeiro anunciando janela | Corrigidos |
+| A placa do Início balançava sem parar | Balança duas vezes ao aparecer e para |
+| "Registrar pagamento" (Início) abria a lista fora da tela no celular | A lista rola para a vista |
+| Voltar da semana de um professor saía da agenda | Volta aos dois dias com todos os professores |
+
+**Números** (conferência das telas desta rodada, 3 tamanhos × perfis):
+0 erros, 0 rolagem lateral, 0 textos abaixo do contraste, **0 alvos de toque
+menores que 44px** (antes da rodada: 572 no sistema todo). Agenda a 1440×900:
+a grade passou de 53% para 75% da altura da tela, cada meia hora de 36 para
+51 px, o nome do dia de 19 para 32 px.
+
+**Fica para decidir com o cliente:** 2ª fileira da pirâmide com 3 ou 2
+(H19); agenda dos professores (H20); a placa do Início acender também para
+reposições perto de vencer e produtos abaixo do mínimo (ou só o urgente).

@@ -1,7 +1,8 @@
 # Módulo Agenda
 
 Versão de 29/10/2026, com o redesign das visões de 04/11/2026 (Diária,
-Quadra, Professor e Mês). A agenda do MVP mostrava um molde semanal ("toda terça
+Quadra, Professor e Mês) e o redesign 3 de 05/11/2026 (agenda maior, barra
+enxuta com "Mais opções" e a visão **Professores** igual à das quadras). A agenda do MVP mostrava um molde semanal ("toda terça
 às 10h"). Agora ela mostra **as aulas de cada data**, lidas de
 `banco.ocupacoes`: cancelar a aula do dia 10 não mexe nas outras semanas, e
 dá para bloquear uma quadra num dia, marcar presença e falta e ver o
@@ -14,9 +15,49 @@ histórico de verdade. A especificação é a seção 2 ("Agenda") de
 
 | Endereço | Para que serve |
 | --- | --- |
-| `/agenda` | A agenda, em quatro visões: **Diária** (padrão), **Quadra**, **Professor** e **Mês**. |
+| `/agenda` | A agenda, em quatro visões: **Diária** (padrão), **Professores**, **Quadra** e **Mês**. |
 | `/agenda/quadra?quadra=2` | Modo quadra: as aulas do dia de uma quadra, com botões grandes de presença e falta, para o tablet na beira da quadra. |
 | `/agenda/imprimir?data=2026-10-29` | A agenda de um dia em formato de papel (uma coluna por quadra), com botão **Imprimir**. |
+
+**Redesign 3 (05/11/2026), pedido do dono da arena**: "Gostei, está bem do
+jeito que ele gosta: 2 dias, 4 quadras e o paredão. Porém quero que a agenda
+esteja maior, que pegue mais espaço da tela. Tem muito botãozinho que dá
+para ficar menor ou em outra disposição. Aumentar o tamanho de tudo,
+principalmente dos dias. As colunas das quadras maiores também. E a agenda
+dos professores: deixe igual à agenda das quadras."
+
+- **Barra de cima enxuta**, numa linha só no computador e no tablet deitado:
+  as quatro visões em botões grandes (**Diária | Professores | Quadra |
+  Mês**), a data grande com ‹ › ("Qui 05/11 e Sex 06/11"; no tablet deitado,
+  "05/11 e 06/11") e **Hoje**; à direita, a **placa amarela** com as
+  reservas de prazo vencido (só quando há alguma; abre a janela de
+  Reservas), **+ Novo horário** (só quem pode alterar) e **Mais opções**. O
+  título "Agenda" saiu da tela (a aba do topo já diz onde se está) e ficou
+  só para o leitor de tela.
+- **Mais opções** (fechado por padrão) guarda o resto: Bloquear quadra,
+  Cancelar por chuva, Reservas sem pagamento (com a contagem), Imprimir o
+  dia, Modo quadra, Ir para a data, os **filtros** (professor, tipo, Mostrar
+  canceladas), os **números** do período e a **legenda**. O botão mostra
+  quantos filtros estão ligados. Quem chega por um link já filtrado (o LAP
+  do Início) encontra o painel aberto, com o filtro à vista.
+- **Grade maior**: ocupa quase toda a altura que sobra da tela, com margens
+  menores em volta; o dia em letra de placar grande ("Quinta-feira, 05/11" +
+  selo **HOJE**), cabeçalho das quadras maior (Quadra 1 em azul, de cimento;
+  as outras e o paredão em laranja, de saibro; com a contagem), horas cheias
+  grandes e blocos com letra de 15–16 px (hora e nomes) e 14 px (professor).
+- **Blocos sem "…" no tipo**: o tipo usa rótulos curtos (Indiv., Mensal,
+  Dupla, LAP, Avulsa, Ranking, Plano, Bloqueio) e, quando nem ele cabe, some
+  inteiro (a cor já diz o tipo); a hora nunca some. Numa coluna estreita,
+  quem tem vários alunos aparece como "Natália Q., Pedro L." e o professor
+  como "Renata C."; numa coluna larga, os nomes inteiros. Um aluno sozinho
+  aparece com o nome inteiro, em até duas ou três linhas.
+- **Medidas** (1440 × 900, dono, Diária, sem rolar a página): antes, a grade
+  começava a 427 px do topo, ocupava 53% da altura da tela, mostrava 11
+  meias horas de 36 px e o cabeçalho do dia tinha 32 px (letra de 19 px);
+  depois, começa a 206 px, ocupa 75%, mostra 11,5 meias horas de 51 px e o
+  cabeçalho do dia tem 49 px (letra de 32 px); as quadras passaram de 15
+  para 21 px e os nomes de 13 para 16 px. No tablet deitado (1180 × 820):
+  de 6 para 9,8 meias horas visíveis (de 54 px), de 40% para 75% da altura.
 
 **As visões** (redesign de novembro, pedido do cliente: "como o sistema
 antigo", com cores vivas)
@@ -25,16 +66,24 @@ antigo", com cores vivas)
   (Quadra 1 a 4 e Paredão) e **linhas de 30 em 30 minutos**, das 07h às 22h,
   como no sistema antigo da arena. O cabeçalho de cada coluna tem a cor do
   piso (Quadra 1 de cimento em azul; as de saibro em laranja) e quantos
-  horários ela tem. A partir de 1024 px de largura aparecem as 10 colunas; no
-  tablet em pé (768 a 1023 px), um dia por vez com **Hoje | Amanhã**; no
+  horários ela tem. A partir de 1150 px de largura (o tablet deitado da arena,
+  1180) aparecem as 10 colunas; entre 768 e 1149 px (tablet em pé, iPad
+  deitado), um dia por vez com **Hoje | Amanhã**; no
   celular, a **lista do dia**, com uma régua para trocar entre os dois dias.
-- **Quadra**: a semana inteira de uma quadra (pílulas Q1 a Q4 e Paredão; abre
-  na Quadra 1). Clicar no cabeçalho de um dia abre a Diária daquele dia com a
+- **Professores** (Hipótese H20, "igual à agenda das quadras"): **hoje e
+  amanhã lado a lado, uma coluna por professor ativo**, como a Diária faz
+  com as quadras. O cabeçalho de cada coluna tem o nome e a cor do
+  professor; cada bloco mostra a quadra (Q1, Q2… PAR). Clicar no nome de um
+  professor (ou escolhê-lo em Mais opções) abre a **semana dele**, com a
+  faixa "Todos os professores | Alexandre Pires | Renata Coelho | …" em
+  cima para trocar ou voltar. No tablet em pé, um dia por vez; no celular,
+  a lista do dia com a mesma faixa de professores. O professor logado
+  (perfil de professor) abre direto na semana dele, travado nas próprias
+  aulas.
+- **Quadra**: a semana inteira de uma quadra (faixa com Quadra 1 a 4 e
+  Paredão em cima da grade, a escolhida pintada na cor do piso; abre na
+  Quadra 1). Clicar no cabeçalho de um dia abre a Diária daquele dia com a
   coluna da quadra realçada.
-- **Professor**: a semana de um professor (escolhido numa lista dos
-  professores ativos). Cada bloco mostra a quadra (Q1, Q2…). O professor
-  logado (perfil de professor) abre direto nesta visão, travado nas aulas
-  dele.
 - **Mês**: quantos horários cada dia tem, a divisão por tipo e o que pede
   atenção (canceladas, chuva, bloqueio, reservas a pagar). Clicar abre a
   Diária do dia.
@@ -54,8 +103,8 @@ antigo", com cores vivas)
   e uma **película cinza** sobre o que já passou. Ao abrir, a grade rola até
   o agora (ou até o primeiro horário do período).
 - **Meia hora livre**: clicar (ou tocar) abre o **Novo horário** já com a
-  data, a hora (inclusive :30) e a quadra; na visão Professor, com o
-  professor (e a primeira quadra livre naquele horário). O término sugerido
+  data, a hora (inclusive :30) e a quadra; na visão Professores, com o
+  professor da coluna (e a primeira quadra livre naquele horário). O término sugerido
   é 1 hora depois, mas para no início do próximo horário daquela coluna (no
   mínimo 30 min): o formulário nunca abre já em conflito. Só aparece de hoje
   em diante, como a regra de gravação.
@@ -69,21 +118,24 @@ antigo", com cores vivas)
   do horário. No toque (tablet e celular) o bloco inteiro abre o painel, e lá
   cada nome abre a ficha: um nome dentro de um bloco seria um alvo pequeno
   demais para o dedo.
-- Com toque, cada meia hora tem 45 px de altura (alvo mínimo de 44 px); com
-  mouse, 36 px.
+- Cada meia hora tem 51 px com mouse e 54 px com toque (alvo mínimo de
+  44 px). Um horário de 1 h fica com espaço para a hora e o tipo, **duas
+  linhas de nomes** e o professor no computador; **três linhas** no tablet,
+  onde as colunas são mais estreitas (`PX_POR_MINUTO` em `grade.ts`).
 
-**Em todas as visões**
+**Em todas as visões** (em "Mais opções")
 
-- **Filtros**: professor (menos na visão Professor), tipo e **Mostrar
-  canceladas** (interruptor com a bola de tênis).
+- **Filtros**: professor (na visão Professores, ele escolhe a semana de
+  quem), tipo e **Mostrar canceladas** (interruptor com a bola de tênis).
 - **Legenda**: um quadradinho na cor de cada tipo (mais o bloqueio, listrado)
   e as marcas: aguardando pagamento (relógio), prazo vencido (alerta), pago
   (✓) e reposição. Toda marca tem ícone e texto; a cor nunca é o único sinal.
-- **Contadores numa linha** embaixo do título: horários, alunos, ocupação das
-  quadras (na visão Professor, horas de aula), canceladas e reservas a pagar,
-  sempre do período que está na tela.
-- **Navegação** ‹ ›: um dia na Diária, uma semana na Quadra e na Professor,
-  um mês no Mês. **Hoje** volta para hoje.
+- **Números**: horários, alunos, ocupação das quadras (na visão
+  Professores, horas de aula), canceladas e reservas a pagar, sempre do
+  período que está na tela.
+- **Navegação** ‹ › (na barra de cima): um dia na Diária e na Professores
+  com todos, uma semana na Quadra e na semana de um professor, um mês no
+  Mês. **Hoje** volta para hoje.
 
 **Endereço (URL)**: o endereço é quem manda na tela. Cada clique que muda a
 visão, a data, a quadra, o professor, um filtro ou abre um horário reescreve
@@ -93,13 +145,14 @@ continuam valendo:
 
 | Endereço recebido | Abre |
 | --- | --- |
-| `/agenda` | Diária de hoje (professor logado: visão Professor) |
+| `/agenda` | Diária de hoje (professor logado: a semana dele) |
 | `?visao=dia&data=AAAA-MM-DD` | Diária a partir da data |
 | `?visao=semana&quadra=2` | Quadra 2 (a semana com todas as quadras saiu) |
 | `?quadra=2` | Quadra 2 |
 | `?data=AAAA-MM-DD&quadra=2` (link do Início) | Diária da data com a coluna da Quadra 2 realçada |
-| `?professor=prof-2` (ou o nome) | Professor |
-| `?visao=professor` | Professor (o primeiro da lista) |
+| `?professor=prof-2` (ou o nome; link da ficha do professor) | A semana daquele professor |
+| `?visao=professor` (mosaico do Início) | Professores: hoje e amanhã, uma coluna por professor |
+| `?visao=professor&professor=prof-2` | A semana daquele professor |
 | `?tipo=LAP` (atalho LAP do Início) | Diária filtrada por LAP |
 | `?visao=mes` | Mês |
 | `?ocupacao=<id>` | Abre o painel daquele horário (na data dele) |
@@ -132,8 +185,8 @@ continuam valendo:
 | Parte | Arquivo |
 | --- | --- |
 | Telas | `src/app/(app)/agenda/page.tsx`, `quadra/page.tsx`, `imprimir/page.tsx` |
-| Componentes | `src/components/agenda/` (grade: `GradeDeColunas.tsx`; blocos e cartões: `CartaoOcupacao.tsx`; celular: `ListaDoDia.tsx`; mês: `VisaoMensal.tsx`; `SeletorDaVisao.tsx`, `FiltrosDaAgenda.tsx`) |
-| Lógica da grade (sem tela) | `src/components/agenda/grade.ts` (colunas, posições, meias horas, agora, o que pode ser marcado) e `estilos.ts` (`estiloDoBloco`) |
+| Componentes | `src/components/agenda/` (barra de cima: `BarraDaAgenda.tsx` e `SeletorDaVisao.tsx`; Mais opções: `OpcoesDaAgenda.tsx` e `FiltrosDaAgenda.tsx`; faixa da semana: `FaixaDeAssunto.tsx`; grade: `GradeDeColunas.tsx`; blocos e cartões: `CartaoOcupacao.tsx`; celular: `ListaDoDia.tsx`; mês: `VisaoMensal.tsx`) |
+| Lógica da grade (sem tela) | `src/components/agenda/grade.ts` (colunas da Diária, dos Professores e da semana, posições, tamanhos, linhas que cabem no bloco, agora, o que pode ser marcado) e `estilos.ts` (`estiloDoBloco`) |
 | Endereço | `src/lib/consultas/enderecoDaAgenda.ts` (`estadoDaAgendaPelaUrl`, `enderecoDaAgenda`, `trocarVisao`) |
 | Leitura (consultas) | `src/lib/consultas/agenda.ts` |
 | Gravação (operações) | `src/lib/banco/operacoes/agenda.ts` |
@@ -195,6 +248,15 @@ salvar. Com `bloquearProfessorEmDuasAulas` ligado, a operação recusa.
 **H11 – Tablet.** O modo quadra foi pensado para tablet de 10" na horizontal
 (1180 × 820): botões de 56 px de altura.
 
+**H20 – Agenda dos professores "igual à das quadras".** Pedido do dono:
+"deixe a agenda dos professores igual à agenda das quadras". Entendemos
+como: a visão **Professores** abre em **hoje e amanhã, uma coluna por
+professor ativo** (como a Diária com as quadras), e a semana de um professor
+fica a um clique (no nome dele). Só os professores ativos ganham coluna;
+locações e ranking (sem professor) não aparecem nela. A confirmar com a
+arena; se ele preferir abrir direto na semana de um professor, o link
+`/agenda?professor=<id>` continua valendo.
+
 **H12 – Até quando a agenda é criada.** Um horário fixo novo vira uma aula
 por semana até o fim da semana que fica `semanasGeradasAFrente` semanas à
 frente (o mesmo limite dos dados de exemplo). A extensão automática depois
@@ -249,24 +311,40 @@ Os dados voltam ao início a cada recarga da página (modo demonstração). Faç
 os passos em sequência, navegando pelos botões da própria agenda.
 
 1. **Diária**: entre como **Recepção** e clique em **Agenda**. Deve aparecer
-   a **Diária**: hoje e amanhã lado a lado, cinco colunas em cada dia
-   (Quadra 1 em azul; 2, 3, 4 e Paredão em laranja), linhas de 30 em 30
-   minutos, a linha vermelha do agora com a bolinha amarela, o que já passou
-   com uma película cinza e a grade rolada até o agora. Embaixo do título, a
-   linha com os contadores ("… horários hoje e amanhã · … alunos · …% de
-   ocupação · … canceladas · … a pagar").
+   a **Diária** ocupando quase a tela toda: em cima, só uma linha (Diária |
+   Professores | Quadra | Mês, a data grande com ‹ ›, Hoje, a placa amarela
+   das reservas vencidas, + Novo horário e Mais opções). Embaixo, hoje e
+   amanhã lado a lado em letra grande ("Quinta-feira, 05/11" com o selo
+   HOJE), cinco colunas em cada dia (Quadra 1 em azul; 2, 3, 4 e Paredão em
+   laranja), linhas de 30 em 30 minutos, a linha vermelha do agora com a
+   bolinha amarela, o que já passou com uma película cinza e a grade rolada
+   até o agora. Nenhum tipo aparece cortado ("IN…"): ou "INDIV." inteiro, ou
+   nada.
+   **Mais opções**: clique. Abre um painel com as ações (Bloquear quadra,
+   Cancelar por chuva, Reservas sem pagamento, Imprimir o dia, Modo quadra,
+   Ir para a data), os filtros, os números ("… horários hoje e amanhã · …
+   alunos · …% de ocupação · … canceladas · … a pagar") e a legenda. Clique
+   em **Renata Coelho** nos filtros: a grade fica só com as aulas dela.
+   Clique em **Menos opções**: o painel fecha e o botão mostra "1" (um
+   filtro ligado). Abra de novo e volte para **Todos**.
 2. **Clique às 07:30**: amanhã, passe o mouse numa meia hora livre que começa
    às **07:30** (aparece "+ 07:30") e clique. O **Novo horário** abre com a
    data de amanhã, início **07:30**, término 08:30 e a quadra daquela coluna
    já marcada. Feche.
-3. **Quadra**: clique em **Quadra**. Aparece a semana da Quadra 1 (cabeçalho
-   azul); clique em **Paredão**: a semana do paredão. Clique no cabeçalho de
+3. **Quadra**: clique em **Quadra**. Aparece a semana da Quadra 1 (botão
+   "Quadra 1" pintado de azul na faixa de cima); clique em **Paredão**: a
+   semana do paredão. Clique no cabeçalho de
    um dia: abre a **Diária** daquele dia com a coluna do paredão realçada em
    amarelo.
-4. **Professor**: clique em **Professor** e escolha **Renata Coelho**. Aparece
-   a semana dela, com a quadra em cada bloco (Q2, PAR…). Clique numa meia
-   hora livre: o Novo horário abre com **Individual**, a Renata como
-   professora e a primeira quadra livre naquele horário.
+4. **Professores**: clique em **Professores**. Aparecem hoje e amanhã lado a
+   lado, **uma coluna por professor** (Alexandre Pires, Renata Coelho, Márcio
+   Bueno), cada cabeçalho na cor do professor, e cada bloco com a quadra
+   (Q2, PAR…). Clique numa meia hora livre na coluna da Renata: o Novo
+   horário abre com **Individual**, a Renata como professora e a primeira
+   quadra livre naquele horário. Feche. Clique no nome **Renata Coelho** no
+   cabeçalho: abre a **semana dela** (sete dias), com a faixa "Todos os
+   professores | … | Renata Coelho" em cima. Clique em **Todos os
+   professores**: volta para os dois dias.
 5. **Mês e filtros**: clique em **Mês** e depois num dia: abre a Diária do
    dia. Os dias de chuva dos dados de exemplo (4, 19 e 33 dias atrás) mostram
    "Chuva" no mês e, na Diária, blocos brancos tracejados com a sigla **CH**.
@@ -325,23 +403,31 @@ os passos em sequência, navegando pelos botões da própria agenda.
     escolha **Faixa de horário** 17:00 às 19:00 e todas as quadras. Confirme:
     aparece o resumo com o número de aulas, de alunos e as horas de
     reposição.
-19. **Reservas sem pagamento**: clique no botão (ou no aviso vermelho "… passaram
-    do prazo de pagamento · Ver", ao lado dos botões). A reserva com prazo vencido vem primeiro; clique em
+19. **Reservas sem pagamento**: clique na **placa amarela** "… reserva(s)
+    vencida(s)" da barra de cima (ou em Mais opções → Reservas sem
+    pagamento). A reserva com prazo vencido vem primeiro; clique em
     **Liberar horário** e confirme: ela é cancelada com "Sem pagamento no
-    prazo".
-20. **Modo quadra** (no tablet): clique em **Modo quadra**, escolha a quadra
+    prazo" e a placa some quando não sobra nenhuma vencida.
+20. **Modo quadra** (no tablet): em Mais opções, clique em **Modo quadra**, escolha a quadra
     e marque **Presente** e **Falta** nos botões grandes.
-21. **Imprimir**: clique em **Imprimir o dia** e depois em **Imprimir**. A
+21. **Imprimir**: em Mais opções, clique em **Imprimir o dia** e depois em **Imprimir**. A
     folha sai deitada, uma coluna por quadra, sem os menus do sistema.
 22. **Perfil de professor**: saia, entre como **Renata Coelho** e abra a
-    Agenda: abre a visão **Professor** com só as aulas dela ("Só as suas
-    aulas"), sem botões de alteração nem meias horas clicáveis, e o aviso
-    de que o perfil só consulta. Na Diária e no Mês também só aparecem as
+    Agenda: abre a **semana dela** ("Só as suas aulas" na barra de cima),
+    sem "+ Novo horário" nem meias horas clicáveis; em Mais opções não há
+    Bloquear quadra, Cancelar por chuva nem Reservas, e aparece o aviso de
+    que o perfil só consulta. Na Diária e no Mês também só aparecem as
     aulas dela.
-23. **Tablet e celular**: no tablet deitado (1180 px) a Diária mostra as 10
-    colunas e cada meia hora tem 45 px; no tablet em pé, **Hoje | Amanhã**;
-    no celular, a lista do dia com a régua "Hoje | Amanhã" (nas visões Quadra
-    e Professor, a régua com os 7 dias). Nenhuma tela rola para o lado.
+23. **Tablet e celular**: no tablet deitado (1180 px) a barra de cima cabe
+    numa linha, a Diária mostra as 10 colunas e cada meia hora tem 54 px; no
+    tablet em pé, um dia por vez (as setas ‹ › andam um dia); no celular, a
+    barra empilhada (visões, data, placa e Mais opções) e a lista do dia com
+    a régua "Hoje | Amanhã" (nas visões Quadra e semana do professor, a
+    régua com os 7 dias; na Professores, a faixa com os professores em
+    cima). Nenhuma tela rola para o lado.
+24. **Links antigos**: `/agenda?professor=prof-2` (ficha do professor) abre
+    a semana da Renata; `/agenda?visao=professor` (mosaico do Início,
+    "Agenda Professores") abre os dois dias com todos os professores.
 
 ## Para os outros módulos
 
@@ -364,7 +450,9 @@ os passos em sequência, navegando pelos botões da própria agenda.
   da aula apaga o uso (os minutos voltam); encerrar horário fixo apaga
   créditos e usos das aulas que saem. A auditoria guarda tudo.
 - **Professores**: o atalho "Ver agenda deste professor" usa
-  `/agenda?professor=<id>` (o nome também funciona): abre a visão Professor.
+  `/agenda?professor=<id>` (o nome também funciona): abre a semana dele na
+  visão Professores. O mosaico do Início ("Agenda Professores") usa
+  `/agenda?visao=professor`: hoje e amanhã com todos (H20).
 - **Configurações**: a agenda lê `siglas`, `validadeReposicaoMeses`,
   `prazoPagamentoReservaHoras`, `liberarReservaAutomaticamente`,
   `semanasGeradasAFrente`, `bloquearProfessorEmDuasAulas`,

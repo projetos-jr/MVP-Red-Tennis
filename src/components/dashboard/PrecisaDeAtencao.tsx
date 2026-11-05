@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardHeader } from "@/components/ui/Card";
 import { EtiquetaDeSituacao, type Situacao } from "@/components/ui/EtiquetaDeSituacao";
 import {
   IconeAgenda,
-  IconeAlerta,
   IconeCheck,
   IconeEstoque,
   IconeFinanceiro,
@@ -20,6 +18,7 @@ import type { Configuracoes } from "@/lib/banco/tipos";
 import { nivelDoEstoque } from "@/lib/consultas/estoque";
 import type {
   AlunoResumido,
+  GrupoDeAtencao,
   MensalidadeEmAtraso,
   PrecisaDeAtencao as DadosDeAtencao,
   ProdutoAbaixoDoMinimo,
@@ -37,11 +36,32 @@ import {
 /** Itens visiveis antes do "Mostrar todos": a contagem do grupo sempre e a da lista inteira. */
 const ITENS_RECOLHIDOS = 3;
 
-/** Contagem de cada grupo: vermelha quando ha o que fazer, verde quando nao ha. */
-const CONTAGEM = {
-  comItens: "border-tijolo-200 bg-tijolo-50 text-tijolo-800",
-  vazia: "border-emerald-200 bg-emerald-50 text-emerald-800",
-} as const;
+/** Titulo de cada grupo. */
+const NOME_DO_GRUPO: Record<GrupoDeAtencao["tipo"], string> = {
+  reservas: "Reservas sem pagamento",
+  mensalidades: "Mensalidades em atraso",
+  produtos: "Produtos abaixo do mínimo",
+  reposicoes: "Reposições perto de vencer",
+};
+
+/** Nome curto do assunto, na linha "Em dia" dos grupos sem nada. */
+const ASSUNTO_DO_GRUPO: Record<GrupoDeAtencao["tipo"], string> = {
+  reservas: "reservas",
+  mensalidades: "mensalidades",
+  produtos: "estoque",
+  reposicoes: "reposições",
+};
+
+/** "a", "a e b", "a, b e c". */
+function juntar(partes: string[]): string {
+  return partes.length <= 1 ? (partes[0] ?? "") : `${partes.slice(0, -1).join(", ")} e ${partes[partes.length - 1]}`;
+}
+
+/**
+ * Etiquetas um pouco maiores que as das tabelas (a janela e para ler de
+ * relance); no celular um pouco menores, para caber numa linha so.
+ */
+const ETIQUETA = "px-2 py-0.5 text-[0.8125rem] sm:px-2.5 sm:py-1 sm:text-sm";
 
 function plural(quantidade: number, singular: string, formaPlural: string): string {
   return `${quantidade} ${quantidade === 1 ? singular : formaPlural}`;
@@ -70,18 +90,18 @@ function rotuloDoPrazo(reserva: ReservaSemPagamento): { texto: string; situacao?
 function FotoDoAluno({ aluno }: { aluno?: AlunoResumido }) {
   if (!aluno) {
     return (
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-areia-100 text-areia-500">
-        <IconeAgenda className="h-4 w-4" />
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-areia-100 text-areia-500">
+        <IconeAgenda className="h-5 w-5" />
       </span>
     );
   }
-  return <Avatar id={aluno.id} nome={aluno.nome} src={aluno.fotoUrl} tamanho="sm" />;
+  return <Avatar id={aluno.id} nome={aluno.nome} src={aluno.fotoUrl} tamanho="md" />;
 }
 
 /**
  * Linha clicavel de um item: foto, nome, detalhe e o selo (prazo, atraso...)
  * embaixo do texto; a direita fica so o valor, para o nome nao ser cortado
- * na coluna estreita do tablet.
+ * no celular.
  */
 function Item({
   href,
@@ -102,18 +122,18 @@ function Item({
     <li>
       <Link
         href={href}
-        className="flex items-start gap-3 rounded-xl border border-areia-200 bg-white p-2.5 transition-colors hover:border-saibro-300 hover:bg-saibro-50"
+        className="flex items-start gap-3 rounded-2xl border border-areia-200 bg-white p-3 transition-colors hover:border-saibro-300 hover:bg-saibro-50 sm:gap-4 sm:p-3.5"
       >
         <span aria-hidden="true">{foto}</span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-baseline justify-between gap-2">
-            <span className="truncate text-sm font-medium text-areia-900">{titulo}</span>
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-base font-semibold text-areia-900 sm:text-lg">{titulo}</span>
             {valor && (
-              <span className="shrink-0 text-sm font-semibold tabular-nums text-areia-900">{valor}</span>
+              <span className="shrink-0 text-base font-bold tabular-nums text-areia-900 sm:text-lg">{valor}</span>
             )}
           </span>
-          <span className="block truncate text-xs text-areia-500">{detalhe}</span>
-          <span className="mt-1 flex">{marca}</span>
+          <span className="block text-sm text-areia-600 sm:text-base">{detalhe}</span>
+          <span className="mt-1.5 flex">{marca}</span>
         </span>
       </Link>
     </li>
@@ -124,14 +144,12 @@ function Grupo({
   icone,
   titulo,
   detalhe,
-  vazio,
   itens,
   links,
 }: {
   icone: ReactNode;
   titulo: string;
   detalhe: string;
-  vazio: string;
   itens: ReactNode[];
   links: Array<{ href: string; rotulo: string }>;
 }) {
@@ -140,38 +158,32 @@ function Grupo({
   const quantidade = itens.length;
 
   return (
-    <section className="bg-white px-5 py-4" aria-label={`${titulo}: ${quantidade}`}>
-      <header className="flex items-start gap-2.5">
-        <span className="mt-0.5 text-areia-500">{icone}</span>
+    <section className="px-4 py-5 sm:px-6" aria-label={`${titulo}: ${quantidade}`}>
+      <header className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-saibro-50 text-saibro-700">
+          {icone}
+        </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-areia-900">{titulo}</h3>
-          <p className="text-xs text-areia-500">{detalhe}</p>
+          <h3 className="font-display text-xl font-bold leading-tight text-areia-900 sm:text-2xl">{titulo}</h3>
+          <p className="text-sm text-areia-600 sm:text-base">{detalhe}</p>
         </div>
         <span
-          className={`chip shrink-0 border tabular-nums ${
-            quantidade > 0 ? CONTAGEM.comItens : CONTAGEM.vazia
-          }`}
+          className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full bg-tijolo-700 px-2.5 font-display text-lg font-bold tabular-nums text-white"
+          aria-hidden="true"
         >
           {quantidade}
         </span>
       </header>
 
-      {quantidade === 0 ? (
-        <p className="mt-2.5 flex items-center gap-2 text-xs text-emerald-800">
-          <IconeCheck className="h-4 w-4" />
-          {vazio}
-        </p>
-      ) : (
-        <ul className="mt-3 space-y-2">{visiveis}</ul>
-      )}
+      <ul className="mt-4 space-y-2.5">{visiveis}</ul>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
         {quantidade > ITENS_RECOLHIDOS && (
           <button
             type="button"
             onClick={() => setTodos((atual) => !atual)}
             aria-expanded={todos}
-            className="alvo-de-toque text-xs font-semibold text-areia-700 hover:underline"
+            className="alvo-de-toque text-base font-semibold text-areia-800 underline-offset-2 hover:underline"
           >
             {todos ? "Mostrar menos" : `Mostrar todos os ${quantidade}`}
           </button>
@@ -180,9 +192,9 @@ function Grupo({
           <Link
             key={link.href}
             href={link.href}
-            className="alvo-de-toque inline-flex items-center gap-1 text-xs font-semibold text-saibro-700 underline-offset-2 hover:underline"
+            className="alvo-de-toque inline-flex items-center gap-1 text-base font-semibold text-saibro-700 underline-offset-2 hover:underline"
           >
-            {link.rotulo} <IconeSeta className="h-3.5 w-3.5" />
+            {link.rotulo} <IconeSeta className="h-4 w-4" />
           </Link>
         ))}
       </div>
@@ -201,14 +213,13 @@ function GrupoDeReservas({
 }) {
   return (
     <Grupo
-      icone={<IconeAgenda className="h-4 w-4" />}
-      titulo="Reservas sem pagamento"
-      detalhe={`Prazo para pagar: ${configuracoes.prazoPagamentoReservaHoras} h (H5). ${
+      icone={<IconeAgenda className="h-6 w-6" />}
+      titulo={NOME_DO_GRUPO.reservas}
+      detalhe={`Prazo para pagar: ${configuracoes.prazoPagamentoReservaHoras} h. ${
         configuracoes.liberarReservaAutomaticamente
           ? "Vencido o prazo, o horário é liberado sozinho."
           : "Vencido o prazo, a recepção decide se libera o horário."
       }`}
-      vazio="Nenhuma reserva aguardando pagamento."
       itens={itens.map((reserva) => {
         const prazo = rotuloDoPrazo(reserva);
         const { ocupacao } = reserva;
@@ -221,7 +232,7 @@ function GrupoDeReservas({
             detalhe={`${reserva.rotuloQuadra} · ${quando(ocupacao.data)} · ${ocupacao.horaInicio}–${ocupacao.horaFim}`}
             valor={formatarMoeda(reserva.valor)}
             marca={
-              <EtiquetaDeSituacao situacao={prazo.situacao} pequena>
+              <EtiquetaDeSituacao situacao={prazo.situacao} className={ETIQUETA}>
                 {prazo.texto}
               </EtiquetaDeSituacao>
             }
@@ -230,7 +241,7 @@ function GrupoDeReservas({
       })}
       links={[
         { href: "/agenda", rotulo: "Abrir agenda" },
-        ...(podeRegistrarPagamento ? [{ href: "/financeiro", rotulo: "Registrar pagamento" }] : []),
+        ...(podeRegistrarPagamento ? [{ href: "/financeiro?reservas=abrir", rotulo: "Registrar pagamento" }] : []),
       ]}
     />
   );
@@ -239,10 +250,9 @@ function GrupoDeReservas({
 function GrupoDeMensalidades({ itens, valorTotal }: { itens: MensalidadeEmAtraso[]; valorTotal: number }) {
   return (
     <Grupo
-      icone={<IconeFinanceiro className="h-4 w-4" />}
-      titulo="Mensalidades em atraso"
-      detalhe={itens.length > 0 ? `${formatarMoeda(valorTotal)} em aberto` : "Vencidas e sem pagamento"}
-      vazio="Nenhuma mensalidade em atraso."
+      icone={<IconeFinanceiro className="h-6 w-6" />}
+      titulo={NOME_DO_GRUPO.mensalidades}
+      detalhe={`${formatarMoeda(valorTotal)} em aberto`}
       itens={itens.map(({ lancamento, aluno, diasEmAtraso }) => (
         <Item
           key={lancamento.id}
@@ -252,7 +262,7 @@ function GrupoDeMensalidades({ itens, valorTotal }: { itens: MensalidadeEmAtraso
           detalhe={lancamento.item}
           valor={formatarMoeda(lancamento.valor)}
           marca={
-            <EtiquetaDeSituacao situacao="em_atraso" pequena>
+            <EtiquetaDeSituacao situacao="em_atraso" className={ETIQUETA}>
               Venceu em {formatarData(lancamento.vencimento)} · {plural(diasEmAtraso, "dia", "dias")} de atraso
             </EtiquetaDeSituacao>
           }
@@ -266,10 +276,9 @@ function GrupoDeMensalidades({ itens, valorTotal }: { itens: MensalidadeEmAtraso
 function GrupoDeProdutos({ itens }: { itens: ProdutoAbaixoDoMinimo[] }) {
   return (
     <Grupo
-      icone={<IconeEstoque className="h-4 w-4" />}
-      titulo="Produtos abaixo do mínimo"
+      icone={<IconeEstoque className="h-6 w-6" />}
+      titulo={NOME_DO_GRUPO.produtos}
       detalhe="Saldo menor que o estoque mínimo do cadastro"
-      vazio="Todos os produtos acima do mínimo."
       itens={itens.map(({ produto, saldo }) => {
         const cor = ESTILO_CATEGORIA_PRODUTO[produto.categoria];
         // Mesmas cores do estoque: "Esgotado" e "Repor já".
@@ -280,24 +289,17 @@ function GrupoDeProdutos({ itens }: { itens: ProdutoAbaixoDoMinimo[] }) {
             href="/estoque"
             foto={
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
                 style={{ color: cor.cor, backgroundColor: cor.fundo, borderColor: cor.borda }}
               >
-                <IconeEstoque className="h-4 w-4" />
+                <IconeEstoque className="h-5 w-5" />
               </span>
             }
             titulo={produto.nome}
             detalhe={`Saldo ${saldo} · mínimo ${produto.estoqueMinimo} (${produto.unidade})`}
             marca={
-              <Badge
-                cor={nivel.cor}
-                fundo={nivel.fundo}
-                borda={nivel.borda}
-                className="px-2 py-0.5 text-[11px]"
-              >
-                {saldo <= 0
-                  ? "Esgotado"
-                  : `Faltam ${produto.estoqueMinimo - saldo} para o mínimo`}
+              <Badge cor={nivel.cor} fundo={nivel.fundo} borda={nivel.borda} className={ETIQUETA}>
+                {saldo <= 0 ? "Esgotado" : `Faltam ${produto.estoqueMinimo - saldo} para o mínimo`}
               </Badge>
             }
           />
@@ -311,10 +313,9 @@ function GrupoDeProdutos({ itens }: { itens: ProdutoAbaixoDoMinimo[] }) {
 function GrupoDeReposicoes({ itens }: { itens: ReposicaoAVencer[] }) {
   return (
     <Grupo
-      icone={<IconeRelogio className="h-4 w-4" />}
-      titulo="Reposições perto de vencer"
+      icone={<IconeRelogio className="h-6 w-6" />}
+      titulo={NOME_DO_GRUPO.reposicoes}
       detalhe="Créditos de aula que vencem em até 30 dias"
-      vazio="Nenhum crédito de reposição vence nos próximos 30 dias."
       itens={itens.map(({ aluno, minutos, validade, diasParaVencer }) => (
         <Item
           key={aluno.id}
@@ -323,7 +324,7 @@ function GrupoDeReposicoes({ itens }: { itens: ReposicaoAVencer[] }) {
           titulo={aluno.nome}
           detalhe={`${formatarMinutos(minutos)} de reposição para marcar`}
           marca={
-            <EtiquetaDeSituacao tom={diasParaVencer <= 7 ? "atencao" : "neutro"} pequena>
+            <EtiquetaDeSituacao tom={diasParaVencer <= 7 ? "atencao" : "neutro"} className={ETIQUETA}>
               {diasParaVencer === 0
                 ? "Vence hoje"
                 : `Vence em ${plural(diasParaVencer, "dia", "dias")} (${formatarDiaMes(validade)})`}
@@ -337,9 +338,11 @@ function GrupoDeReposicoes({ itens }: { itens: ReposicaoAVencer[] }) {
 }
 
 /**
- * Quadro "Precisa de atenção" (embaixo, no Início): junta o que pede uma acao
- * hoje. Cada grupo mostra a contagem da lista inteira e cada item leva a tela
- * certa. O total no topo e a soma dos grupos.
+ * Conteudo da janela "Precisa de atenção" (aberta pela placa do Início):
+ * junta o que pede uma acao hoje. So os grupos com algo aparecem, cada um
+ * com a contagem da lista inteira, os tres primeiros itens e "Mostrar todos";
+ * cada item leva a tela certa. Os grupos sem nada viram uma linha "Em dia"
+ * no fim, para a pessoa saber que foram conferidos.
  */
 export function PrecisaDeAtencao({
   atencao,
@@ -350,47 +353,39 @@ export function PrecisaDeAtencao({
   configuracoes: Configuracoes;
   podeRegistrarPagamento: boolean;
 }) {
+  const comItens = atencao.grupos.filter((g) => g.itens.length > 0);
+  const emDia = atencao.grupos.filter((g) => g.itens.length === 0);
+
   return (
-    <Card>
-      <CardHeader
-        titulo="Precisa de atenção"
-        descricao="O que pede uma ação hoje."
-        icone={<IconeAlerta className="h-5 w-5" />}
-        acao={
-          <span className={`chip border ${atencao.total > 0 ? CONTAGEM.comItens : CONTAGEM.vazia}`}>
-            {plural(atencao.total, "item", "itens")}
-          </span>
+    <div className="divide-y divide-areia-200">
+      {comItens.map((grupo) => {
+        switch (grupo.tipo) {
+          case "reservas":
+            return (
+              <GrupoDeReservas
+                key={grupo.tipo}
+                itens={grupo.itens}
+                configuracoes={configuracoes}
+                podeRegistrarPagamento={podeRegistrarPagamento}
+              />
+            );
+          case "mensalidades":
+            return <GrupoDeMensalidades key={grupo.tipo} itens={grupo.itens} valorTotal={grupo.valorTotal} />;
+          case "produtos":
+            return <GrupoDeProdutos key={grupo.tipo} itens={grupo.itens} />;
+          case "reposicoes":
+            return <GrupoDeReposicoes key={grupo.tipo} itens={grupo.itens} />;
         }
-      />
-      {atencao.grupos.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-areia-500">
-          Nada para acompanhar nas áreas do seu perfil.
+      })}
+      {emDia.length > 0 && (
+        <p className="flex items-start gap-2.5 rounded-b-2xl bg-quadra-50 px-4 py-4 text-base text-quadra-800 sm:px-6">
+          <IconeCheck className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            <strong className="font-semibold">Em dia:</strong>{" "}
+            {juntar(emDia.map((g) => ASSUNTO_DO_GRUPO[g.tipo]))}.
+          </span>
         </p>
-      ) : (
-        // Grupos em grade (2 colunas no computador e no tablet); o fundo cinza
-        // entre as celulas faz as linhas divisorias.
-        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-b-2xl bg-areia-200 lg:grid-cols-2">
-          {atencao.grupos.map((grupo) => {
-            switch (grupo.tipo) {
-              case "reservas":
-                return (
-                  <GrupoDeReservas
-                    key={grupo.tipo}
-                    itens={grupo.itens}
-                    configuracoes={configuracoes}
-                    podeRegistrarPagamento={podeRegistrarPagamento}
-                  />
-                );
-              case "mensalidades":
-                return <GrupoDeMensalidades key={grupo.tipo} itens={grupo.itens} valorTotal={grupo.valorTotal} />;
-              case "produtos":
-                return <GrupoDeProdutos key={grupo.tipo} itens={grupo.itens} />;
-              case "reposicoes":
-                return <GrupoDeReposicoes key={grupo.tipo} itens={grupo.itens} />;
-            }
-          })}
-        </div>
       )}
-    </Card>
+    </div>
   );
 }

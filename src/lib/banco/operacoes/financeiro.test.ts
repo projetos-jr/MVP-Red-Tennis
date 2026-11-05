@@ -15,6 +15,7 @@ import {
   recebidoPorForma,
   relatorioDeProfessores,
   totalizar,
+  reservasAguardandoPagamento,
 } from "../../consultas/financeiro";
 import { HOJE } from "../constantes";
 import { executarOperacao, type ContextoOperacao, type Operacao } from "../executar";
@@ -572,5 +573,19 @@ describe("planilha (CSV)", () => {
     expect(linha).toContain("A receber;Pago;10/11/2026;01/11/2026;Guilherme Lima;'=SOMA(A1)");
     expect(linha).toContain('"Aula; ""especial"""');
     expect(linha).toContain(";1.234,50;864,15;");
+  });
+});
+
+describe("reservas aguardando pagamento no financeiro", () => {
+  it("o prazo vence na hora (como na agenda e no Início), não só no dia seguinte", () => {
+    const banco = bancoLimpo({ ocupacoes: [reservaAguardando()] });
+    // Prazo 11/11 às 18:00.
+    const antes = reservasAguardandoPagamento(banco, "2026-11-11", "2026-11-11T17:59:00")[0];
+    expect(antes).toMatchObject({ prazoVencido: false, prazoHoje: true });
+    const depois = reservasAguardandoPagamento(banco, "2026-11-11", "2026-11-11T18:01:00")[0];
+    expect(depois).toMatchObject({ prazoVencido: true, prazoHoje: false });
+    // Sem a hora (chamada antiga): vale só a data.
+    expect(reservasAguardandoPagamento(banco, "2026-11-11")[0].prazoVencido).toBe(false);
+    expect(reservasAguardandoPagamento(banco, "2026-11-12")[0].prazoVencido).toBe(true);
   });
 });

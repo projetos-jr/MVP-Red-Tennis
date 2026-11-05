@@ -16,6 +16,23 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Letras para o dono da arena ler sem esforço. No computador (recepção)
+     tudo um pouco maior por padrão; "Letras maiores" (menu do usuário)
+     aumenta mais. Tudo que é rem acompanha: textos, botões e espaços. */
+  @media (min-width: 1280px) {
+    html {
+      font-size: 106.25%; /* 17px */
+    }
+  }
+  html[data-letra="grande"] {
+    font-size: 112.5%; /* 18px */
+  }
+  @media (min-width: 1280px) {
+    html[data-letra="grande"] {
+      font-size: 118.75%; /* 19px */
+    }
+  }
+
   body {
     @apply bg-areia-100 text-areia-900 font-sans;
   }

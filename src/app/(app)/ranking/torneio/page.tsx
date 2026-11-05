@@ -67,15 +67,17 @@ function ListaDeInscricoes({ inscricoes, comGrupo }: { inscricoes: InscricaoNaTe
         <li key={inscricao.id} className="flex items-center gap-3 px-5 py-2.5">
           <span className="w-5 shrink-0 text-right text-xs tabular-nums text-areia-500">{i + 1}</span>
           <AvataresDoLado alunos={alunos} tamanho="sm" />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-areia-900">
-            {alunos.length === 1 ? (
-              <Link href={`/alunos/${alunos[0].id}`} className="hover:text-saibro-700 hover:underline">
-                {nome}
-              </Link>
-            ) : (
-              nome
-            )}
-          </span>
+          {/* O nome abre a ficha; no toque, o link tem a altura minima de 44px. */}
+          {alunos.length === 1 ? (
+            <Link
+              href={`/alunos/${alunos[0].id}`}
+              className="alvo-de-toque flex min-w-0 flex-1 items-center text-sm font-medium text-areia-900 hover:text-saibro-700 hover:underline"
+            >
+              <span className="truncate">{nome}</span>
+            </Link>
+          ) : (
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-areia-900">{nome}</span>
+          )}
           {alunos.length === 1 && alunos[0].categoriaRanking && (
             <span
               className="hidden shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold sm:inline"

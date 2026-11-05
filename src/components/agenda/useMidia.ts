@@ -40,14 +40,16 @@ export function useToque(): boolean {
 
 /**
  * Largura da agenda:
- *  - "larga" (>= 1024px): Diaria com os dois dias lado a lado (10 colunas);
- *  - "media" (768 a 1023px): grade com um dia por vez;
+ *  - "larga" (>= 1150px): Diaria com os dois dias lado a lado (10 colunas);
+ *  - "media" (768 a 1149px): grade com um dia por vez;
  *  - "estreita" (< 768px, celular): lista do dia.
  */
 export type LarguraDaAgenda = "larga" | "media" | "estreita";
 
 export function useLarguraDaAgenda(): LarguraDaAgenda {
-  const larga = useMidia("(min-width: 1024px)", true);
+  // 1150px: o tablet deitado da arena (1180) ve os dois dias; iPad deitado
+  // (1024–1112) ve um dia por vez, sem cortar o nome das quadras.
+  const larga = useMidia("(min-width: 1150px)", true);
   const media = useMidia("(min-width: 768px)", true);
   return larga ? "larga" : media ? "media" : "estreita";
 }

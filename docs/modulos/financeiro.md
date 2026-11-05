@@ -5,9 +5,28 @@ Tela `/financeiro`, migrada do MVP para o modelo novo (seção 2 "Financeiro" de
 pagar, com vencimento. A situação (pago, pendente, em atraso, anulado) nunca é
 digitada: sai das datas.
 
+## Como a tela está organizada (redesign 3, novembro de 2026)
+
+O dono da arena pediu "tudo maior" e "não tem que estar tudo na tela". Nenhuma
+função saiu; algumas mudaram de lugar:
+
+| O quê | Onde está agora |
+| --- | --- |
+| Mês de referência | Embaixo do título, em letra grande, com setas grandes. |
+| **Novo lançamento** | Único botão laranja do topo (a ação principal). |
+| Gerar mensalidades, Exportar planilha | Botão **Mais opções** do topo (botões grandes com uma linha explicando cada um). Exportar não aparece na aba Professores. |
+| Cartões Recebido, A receber, Em atraso, A pagar | No mesmo lugar, maiores e clicáveis como antes. |
+| Abas A receber, A pagar, Professores | No mesmo lugar, maiores. |
+| Reservas aguardando pagamento | Fechadas: um resumo grande ("6 reservas aguardando pagamento · 1 com prazo vencido") com a **placa amarela** "Ver N vencidas" quando há prazo vencido. **Ver reservas** (ou a placa) abre a lista, com as vencidas primeiro. Sem reservas, o quadro não aparece. Link direto: `/financeiro?reservas=abrir`. |
+| Busca da lista | À vista, grande. |
+| Situação, Categoria, Forma de pagamento, Período | Botão **Mais filtros** ao lado da busca, com o número de filtros ligados. Com o painel fechado, a linha "Mostrando: Em atraso · Todos os meses" diz o que está valendo, com **Limpar filtros**. |
+| Forma de pagamento e convênio de cada lançamento | Na linha de baixo do item ("Mensalidade · Stone · convênio R$ 364,00"), não mais numa coluna. |
+| Recebido por forma de pagamento | Fechado, no fim da tela: **Ver por forma de pagamento** (o resumo já mostra o total do mês). |
+| Repasse dos professores | Professor, Previsto, Pago e Situação à vista; **Mais detalhes** acrescenta Aulas dadas, Horas, Diferença, a regra de cada professor e a explicação das contas. **Fechar repasse** continua à vista. |
+
 ## O que o módulo faz
 
-- **Mês de referência**: as setas ao lado do título trocam o mês. Os
+- **Mês de referência**: as setas embaixo do título trocam o mês. Os
   indicadores, a lista, o relatório de professores e o "recebido por forma"
   seguem o mês escolhido.
 - **Indicadores do mês** (cartões no topo). Cada cartão é um atalho: clicar
@@ -22,8 +41,8 @@ digitada: sai das datas.
     último dia do mês, inclusive as que atrasaram antes (nas contas a pagar
     não há cartão separado de atrasadas).
 - **Abas**: *A receber*, *A pagar* e *Professores*.
-- **Lista de lançamentos**: busca (aluno ou professor, quem pagou/favorecido,
-  item; sem ligar para acentos), filtros por situação (todas, em aberto,
+- **Lista de lançamentos**: busca à vista (aluno ou professor, quem
+  pagou/favorecido, item; sem ligar para acentos); em **Mais filtros**, filtros por situação (todas, em aberto,
   pendentes, em atraso, pagos, anulados), categoria, forma de pagamento e
   período (só o mês, até o mês, todos os meses); ordem por vencimento (clique
   no cabeçalho para inverter); 20 linhas por vez com "Mostrar mais"; no
@@ -32,7 +51,7 @@ digitada: sai das datas.
   - **Período**: vale a data do pagamento; o que ainda não foi pago entra
     pelo vencimento. Assim "recebido em outubro" é o que entrou no caixa em
     outubro.
-- **Exportar planilha**: baixa a lista filtrada em CSV (arquivo de verdade,
+- **Exportar planilha** (em Mais opções): baixa a lista filtrada em CSV (arquivo de verdade,
   gerado no navegador): separador `;`, datas `dd/mm/aaaa`, valores `1.234,56`
   e marca UTF-8 — o Excel em português abre direto, com acentos.
 - **Novo lançamento**: a receber (aluno com busca, quem paga — pode ser outra
@@ -49,19 +68,21 @@ digitada: sai das datas.
 - **Detalhe do lançamento** (clique no item): todos os dados, a que registro
   ele está ligado (reserva, matrícula, consumo, torneio, fechamento de
   repasse), ações, **comentários** e **histórico de alterações**.
-- **Gerar mensalidades do mês**: escolhe o mês, mostra antes quantas serão
+- **Gerar mensalidades do mês** (em Mais opções): escolhe o mês, mostra antes quantas serão
   criadas, o total, quantas já existiam e quem está com o plano congelado;
   depois mostra o resultado e leva à lista. Rodar de novo não duplica.
 - **Relatório de professores** (aba Professores): por mês, aulas dadas,
   horas, previsto, pago, diferença e situação, com link para a ficha do
   professor. Mês terminado e sem fechamento ganha o botão **Fechar repasse**.
-- **Reservas aguardando pagamento**: todas as reservas avulsas que esperam o
-  pagamento, com o prazo (vencido em destaque) e o atalho "Registrar
-  pagamento".
-- **Recebido por forma de pagamento**: relatório simples do mês (mesmo total
-  do cartão "Recebido"), com a parte coberta por convênio.
+- **Reservas aguardando pagamento**: resumo com a contagem; aberto, todas as
+  reservas avulsas que esperam o pagamento, com o prazo (vencido em destaque e
+  primeiro) e o atalho "Registrar pagamento".
+- **Recebido por forma de pagamento** (fechado, "Ver por forma de
+  pagamento"): relatório simples do mês (mesmo total do cartão "Recebido"),
+  com a parte coberta por convênio.
 - **Link direto**: `/financeiro?aba=pagar`, `?situacao=em_atraso`,
-  `?mes=2026-09` e `?lancamento=<id>` (abre o detalhe). Outros módulos podem
+  `?mes=2026-09`, `?lancamento=<id>` (abre o detalhe) e `?reservas=abrir`
+  (abre a lista de reservas aguardando pagamento). Outros módulos podem
   apontar para cá.
 
 ## Regras (o que as operações recusam)
@@ -134,22 +155,28 @@ Os exemplos entre parênteses são de 29/10/2026.
 
 1. Abra o sistema, escolha **Francisco Menezes** e clique em **Entrar no
    sistema**. Clique na aba **Financeiro**.
-2. No topo devem aparecer o mês ("Outubro de 2026") e quatro cartões:
-   Recebido, A receber, Em atraso e A pagar.
+2. No topo devem aparecer o mês ("Outubro de 2026") em letra grande, um só
+   botão laranja (**Novo lançamento**), o botão **Mais opções** e quatro
+   cartões: Recebido, A receber, Em atraso e A pagar. Clique em **Mais
+   opções**: aparecem **Gerar mensalidades** e **Exportar planilha**. Clique
+   de novo (agora "Menos opções") e eles somem.
 3. Anote o número do cartão **Em atraso** (ex.: R$ 7.718,00 e "17
-   lançamentos vencidos") e clique nele. A lista deve mostrar a situação "Em
-   atraso", o período "Todos os meses" e, no rodapé, **a mesma quantidade e o
-   mesmo total** do cartão. Faça o mesmo com os outros três cartões.
+   lançamentos vencidos") e clique nele. Embaixo da busca aparece "Mostrando:
+   **Em atraso · Todos os meses**", o botão **Mais filtros** mostra o número 2
+   e, no rodapé da lista, **a mesma quantidade e o mesmo total** do cartão.
+   Clique em **Mais filtros**: Situação "Em atraso" e Período "Todos os
+   meses". Faça o mesmo com os outros três cartões.
 4. Na primeira linha da lista, clique em **Receber**. Sem escolher a forma de
    pagamento, clique em **Registrar pagamento**: deve aparecer o aviso
    vermelho "Escolha a forma de pagamento." Escolha **Stone** e registre: deve
    aparecer "Pagamento registrado." e o cartão Em atraso diminui um.
-5. Volte para a aba **A receber**. No quadro **Reservas aguardando
-   pagamento**, a reserva com o prazo vencido aparece em vermelho. Clique em
-   **Registrar pagamento** nela: a janela avisa que a reserva fica confirmada
+5. Volte para a aba **A receber**. O quadro **Reservas aguardando pagamento**
+   aparece fechado, com a quantidade e, se houver prazo vencido, a placa
+   amarela **Ver N vencidas**. Clique na placa: a lista abre com a reserva de
+   prazo vencido primeiro, em vermelho. Clique em **Registrar pagamento** nela: a janela avisa que a reserva fica confirmada
    na agenda. Escolha **Dinheiro** e registre: deve aparecer "Pagamento
    registrado. A reserva está confirmada na agenda." e a reserva sai do
-   quadro.
+   quadro. **Esconder reservas** fecha a lista.
 6. No quadro de reservas, clique no texto "Locação avulsa..." de outra
    reserva para abrir o detalhe e clique em **Anular**. Escreva um motivo e
    confirme: deve aparecer o erro "Esta cobrança é de uma reserva que ainda
@@ -161,13 +188,14 @@ Os exemplos entre parênteses são de 29/10/2026.
    **Anular lançamento**: aparece o erro "Escreva o motivo da anulação."
    Escreva "Lançado em dobro" e confirme: o detalhe mostra "Anulado", o valor
    riscado e, no **Histórico**, "Alterou · Anular lançamento por Francisco
-   Menezes". O lançamento continua na lista (filtro Situação: Anulados).
+   Menezes". O lançamento continua na lista (Mais filtros → Situação:
+   Anulados).
 9. Clique em **Novo lançamento**. Em Aluno, digite "guil" e escolha um aluno.
    Escreva o item "Aula avulsa de sábado" e clique em **Lançar** sem valor:
    aparece "O valor precisa ser maior que zero." Digite 90, marque **Já foi
    pago**, escolha a forma **Dinheiro** e clique em **Lançar**: aparece
    "Lançamento criado, já como pago."
-10. Clique em **Gerar mensalidades**. O mês sugerido é o próximo (ex.:
+10. Clique em **Mais opções** e em **Gerar mensalidades**. O mês sugerido é o próximo (ex.:
     novembro de 2026). Confira a prévia: quantas serão geradas (ex.: 85), o
     total e quantos alunos estão com o plano congelado. Clique em **Gerar**.
     Aparece o resultado; clique em **Ver na lista**: a lista mostra as
@@ -175,29 +203,35 @@ Os exemplos entre parênteses são de 29/10/2026.
     congelado". Abra **Gerar mensalidades** de novo: aparece "Todas as
     matrículas vigentes já têm a mensalidade de novembro de 2026. Nada a
     gerar." Clique em **Voltar ao mês atual**.
-11. Clique em **Exportar planilha**. Um arquivo `.csv` é baixado; abra no
+11. Clique em **Mais opções** e em **Exportar planilha**. Um arquivo `.csv` é baixado; abra no
     Excel: as colunas aparecem separadas, com acentos, datas e valores em
     reais.
 12. Clique no cartão **A pagar**. A aba A pagar mostra as contas que vencem
     até o fim do mês, inclusive uma conta atrasada do mês passado
     ("Manutenção do saibro"). Clique em **Pagar** nela, escolha **Bradesco**
     e registre.
-13. Clique na aba **Professores**. O mês atual aparece "em andamento", com o
+13. Clique na aba **Professores**. Aparecem professor, previsto, pago e
+    situação; clique em **Mais detalhes** para ver aulas dadas, horas,
+    diferença e a regra de cada um. O mês atual aparece "em andamento", com o
     aviso de que o mês anterior ainda tem repasse a fechar. Clique em **Ver o
     mês anterior** e depois em **Fechar repasse de setembro**. Confira os
     valores e confirme: aparece "Repasse de setembro de 2026 fechado: 3 contas
     a pagar lançadas" e cada professor fica "Fechado · a pagar". O botão de
-    fechar some (o mês não fecha duas vezes). Na aba **A pagar**, filtre a
-    categoria **Repasse** e o período **Todos os meses**: os repasses de
-    setembro estão lá.
+    fechar some (o mês não fecha duas vezes). Na aba **A pagar**, em **Mais
+    filtros**, escolha a categoria **Repasse** e o período **Todos os
+    meses**: os repasses de setembro estão lá.
 14. Clique no nome de um professor: abre a ficha dele.
 15. Saia (ícone no canto superior direito), entre como **Lucas Ferreira**
     (recepção) e abra o Financeiro: não aparecem a aba A pagar, a aba
     Professores nem o cartão A pagar.
 16. Saia e entre como **Renata Coelho** (professora): o Financeiro mostra "Sem
     acesso ao financeiro".
-17. No celular, abra o Financeiro: os cartões ficam dois por linha, a lista
-    vira cartões e os botões continuam ao alcance do dedo.
+17. No celular, abra o Financeiro: os cartões ficam dois por linha, as abas
+    cabem numa linha, a lista vira cartões e os botões continuam ao alcance do
+    dedo.
+18. No fim da tela, clique em **Ver por forma de pagamento**: abre o
+    relatório do mês (o total é o do cartão Recebido). Clique de novo para
+    fechar.
 
 ## Notas para a migração ao Supabase
 
@@ -219,7 +253,10 @@ Os exemplos entre parênteses são de 29/10/2026.
 - Tela: `src/app/(app)/financeiro/page.tsx`
 - Componentes: `src/components/financeiro/` (indicadores, filtros, lista,
   detalhe, modais de novo lançamento, pagamento, anulação, mensalidades e
-  fechamento, relatório de professores, reservas, recebido por forma).
+  fechamento, relatório de professores, reservas, recebido por forma). Peças
+  do redesign 3 usadas também no estoque: `SecaoRecolhida` (seção de apoio
+  que começa fechada) e `BotaoGrande` (botão com ícone, título e uma linha de
+  explicação). Teste dos filtros guardados: `FiltrosDaLista.test.ts`.
 - Leitura: `src/lib/consultas/financeiro.ts`
 - Gravação: `src/lib/banco/operacoes/financeiro.ts` (testes em
   `financeiro.test.ts`)

@@ -40,11 +40,20 @@ const config: Config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        // Placa de atencao: balanca de leve, como uma placa ao vento.
+        atencao: {
+          "0%, 70%, 100%": { transform: "rotate(0deg) scale(1)" },
+          "78%": { transform: "rotate(-6deg) scale(1.06)" },
+          "86%": { transform: "rotate(5deg) scale(1.06)" },
+          "93%": { transform: "rotate(-2deg) scale(1.02)" },
+        },
       },
       animation: {
         "conflito-pulse": "conflito-pulse 1.6s ease-in-out infinite",
         "fade-up": "fade-up 0.35s ease-out both",
         "fade-in": "fade-in 0.4s ease-out both",
+        // Balanca duas vezes ao aparecer e para (movimento automatico < 5 s).
+        atencao: "atencao 2.4s ease-in-out 2",
       },
     },
   },

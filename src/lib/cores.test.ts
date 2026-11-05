@@ -1,9 +1,11 @@
 import coresDoTailwind from "tailwindcss/colors";
 import { describe, expect, it } from "vitest";
 import { TONS } from "@/components/ui/EtiquetaDeSituacao";
+import { gerarBancoInicial } from "./banco/semente";
 import { contraste, misturar, textoLegivelSobre } from "./cores";
 import { BRANCO, LADRILHO, PALETA, TINTA } from "./paleta";
 import {
+  CORES_AVATAR,
   ESTILO_CATEGORIA,
   ESTILO_CATEGORIA_PRODUTO,
   ESTILO_MOVIMENTO,
@@ -80,6 +82,13 @@ describe("tokens da paleta", () => {
     esperarContraste(BRANCO, LADRILHO.base);
   });
 
+  it("placa de atenção: \"!\" na bola, textos claros no fundo escuro do botão", () => {
+    esperarContraste(PALETA.areia[900], PALETA.bola[300]);
+    esperarContraste(BRANCO, PALETA.areia[900]);
+    esperarContraste(PALETA.areia[200], PALETA.areia[900]);
+    esperarContraste(BRANCO, PALETA.tijolo[600]);
+  });
+
   it("anel de foco visível sobre o branco e o fundo do app (3:1)", () => {
     esperarContraste(PALETA.saibro[600], BRANCO, GRANDE);
     esperarContraste(PALETA.saibro[600], PALETA.areia[100], GRANDE);
@@ -113,5 +122,58 @@ describe("etiquetas e estilos dos módulos", () => {
 
   it("reposição (violeta nativo do Tailwind): marcador da agenda e coluna de Clientes", () => {
     esperarContraste(coresDoTailwind.violet[800], coresDoTailwind.violet[100]);
+  });
+
+  it("base (login e Início): rodapé sobre o saibro, erro do login, aviso, janela de atenção", () => {
+    // Login: rodapé branco na pílula escura sobre o saibro; "Entrar" laranja no hover.
+    esperarContraste(BRANCO, PALETA.saibro[900]);
+    esperarContraste(PALETA.saibro[700], BRANCO);
+    // Login: erro grande e aviso da demonstração.
+    esperarContraste(PALETA.tijolo[800], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[700], PALETA.areia[100]);
+    // Janela "Precisa de atenção": contagem branca no vermelho e a linha "Em dia".
+    esperarContraste(BRANCO, PALETA.tijolo[700]);
+    esperarContraste(PALETA.quadra[800], PALETA.quadra[50]);
+  });
+
+  it("ranking: pirâmide de raquetes (nome, pontos, posição na bolinha, faixa de saibro)", () => {
+    // Faixa de saibro atrás do topo (pior caso: saibro-100) e o resto em branco.
+    for (const fundo of [PALETA.saibro[100], PALETA.saibro[50], BRANCO]) {
+      esperarContraste(PALETA.areia[900], fundo); // nome e pontos em negrito
+      esperarContraste(PALETA.areia[700], fundo); // "pontos", texto de apoio
+      esperarContraste(PALETA.saibro[700], fundo); // nome ao passar o mouse
+      esperarContraste(PALETA.saibro[800], fundo); // dica "Arraste para o lado"
+    }
+    // Número da posição na bolinha de tênis.
+    esperarContraste(PALETA.areia[900], PALETA.bola[300]);
+    // Iniciais (sem foto) sobre a cor do avatar.
+    for (const cor of CORES_AVATAR) esperarContraste(textoLegivelSobre(cor), cor);
+  });
+
+  it("financeiro e estoque (redesign 3): faixas de alerta, painéis de opções e números grandes", () => {
+    // Cabeçalho da lista de compras e resumo das reservas com prazo vencido (fundo tijolo-50).
+    esperarContraste(PALETA.areia[800], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[600], PALETA.tijolo[50]);
+    esperarContraste(PALETA.tijolo[700], PALETA.tijolo[50]);
+    esperarContraste(PALETA.areia[900], PALETA.tijolo[50]);
+    // Painéis de "Mais opções"/"Mais filtros" (areia-50) e descrição dos botões grandes.
+    esperarContraste(PALETA.areia[700], PALETA.areia[50]);
+    esperarContraste(PALETA.areia[600], PALETA.areia[50]);
+    esperarContraste(PALETA.areia[600], BRANCO);
+    // Lista de compras vazia (faixa verde) e números de placar dos cartões.
+    esperarContraste(PALETA.areia[800], PALETA.quadra[50]);
+    esperarContraste(PALETA.quadra[700], PALETA.quadra[50]);
+    esperarContraste(PALETA.saibro[700], BRANCO);
+  });
+
+  it("agenda: cabeçalho de cada professor na cor dele (visão Professores) e a faixa da semana", () => {
+    // A cor vem do cadastro do professor; o texto e o que for mais legivel sobre ela.
+    for (const professor of gerarBancoInicial().professores) {
+      esperarContraste(textoLegivelSobre(professor.cor), professor.cor);
+    }
+    // Hora ":30" da grade, dias da semana e contagens dos cabecalhos.
+    esperarContraste(PALETA.areia[600], BRANCO);
+    esperarContraste(PALETA.areia[700], BRANCO);
+    esperarContraste(PALETA.saibro[800], PALETA.saibro[50]);
   });
 });
