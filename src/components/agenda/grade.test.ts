@@ -15,6 +15,7 @@ import {
   celulasDoDia,
   colunasDaDiaria,
   colunasDaSemana,
+  colunasDosProfessores,
   densidadeDoBloco,
   fimLivre,
   fimSugerido,
@@ -69,10 +70,16 @@ describe("linhas e medidas", () => {
     expect(MEIAS_HORAS.at(-1)).toBe("21:30");
   });
 
-  it("no toque, cada meia hora tem pelo menos 44px; com mouse, 36px", () => {
+  it("no toque, cada meia hora tem pelo menos 44px; com mouse, 51px (agenda maior)", () => {
     expect(PASSO * PX_POR_MINUTO.toque).toBeGreaterThanOrEqual(44);
-    expect(PASSO * PX_POR_MINUTO.mouse).toBe(36);
-    expect(alturaDaGrade(PX_POR_MINUTO.mouse)).toBe(15 * 60 * 1.2);
+    expect(PASSO * PX_POR_MINUTO.mouse).toBeCloseTo(51);
+    expect(alturaDaGrade(PX_POR_MINUTO.mouse)).toBeCloseTo(15 * 60 * 1.7);
+  });
+
+  it("um horario de 1 h cabe hora, 2 linhas de nomes e o professor (3 linhas no toque)", () => {
+    const umaHora = (px: number) => posicaoVertical({ horaInicio: "08:00", horaFim: "09:00" }, px).height;
+    expect(linhasDoBloco(umaHora(PX_POR_MINUTO.mouse), true)).toEqual({ nomes: 2, professor: true });
+    expect(linhasDoBloco(umaHora(PX_POR_MINUTO.toque), true)).toEqual({ nomes: 3, professor: true });
   });
 });
 
@@ -109,6 +116,20 @@ describe("colunas", () => {
     expect(grupo.colunas[0].quadra).toBeUndefined();
   });
 
+  it("Professores: 2 dias x os professores, cada dia um grupo (Hipotese H20)", () => {
+    const outro = { id: "prof-1", nome: "Alexandre Pires" } as Professor;
+    const grupos = colunasDosProfessores(["2026-11-04", "2026-11-05"], [outro, PROFESSOR]);
+    expect(grupos.map((g) => g.tipo)).toEqual(["dia", "dia"]);
+    expect(grupos.flatMap((g) => g.colunas)).toHaveLength(4);
+    expect(grupos[1].colunas[1]).toMatchObject({
+      chave: "2026-11-05|prof-2",
+      data: "2026-11-05",
+      professorId: "prof-2",
+      professor: PROFESSOR,
+    });
+    expect(grupos[0].colunas[0].quadra).toBeUndefined();
+  });
+
   it("cada coluna recebe os horarios da sua quadra ou do seu professor", () => {
     const doDia = [
       item({ horaInicio: "08:00", horaFim: "09:00", quadraId: "1", professorId: "prof-2" }),
@@ -119,6 +140,8 @@ describe("colunas", () => {
     expect(itensDaColuna(diaria.colunas[1], doDia)).toEqual([doDia[1]]);
     const [prof] = colunasDaSemana(["2026-11-04"], { professor: PROFESSOR });
     expect(itensDaColuna(prof.colunas[0], doDia)).toEqual([doDia[0], doDia[2]]);
+    const [professores] = colunasDosProfessores(["2026-11-04"], [PROFESSOR]);
+    expect(itensDaColuna(professores.colunas[0], doDia)).toEqual([doDia[0], doDia[2]]);
   });
 });
 
@@ -139,7 +162,7 @@ describe("posicoes", () => {
 
   it("nunca sai da grade e nunca fica menor que uma linha", () => {
     expect(posicaoVertical({ horaInicio: "06:00", horaFim: "07:30" }, 1.2).top).toBe(1);
-    expect(posicaoVertical({ horaInicio: "21:50", horaFim: "22:00" }, 1.2).height).toBe(20);
+    expect(posicaoVertical({ horaInicio: "21:50", horaFim: "22:00" }, 1.2).height).toBe(24);
   });
 
   it("divide a largura entre horarios sobrepostos", () => {
@@ -151,20 +174,23 @@ describe("posicoes", () => {
   });
 
   it("densidade pela altura do bloco", () => {
-    expect(densidadeDoBloco(20)).toBe("minima");
-    expect(densidadeDoBloco(35)).toBe("compacta"); // meia hora com mouse
-    expect(densidadeDoBloco(44)).toBe("compacta"); // meia hora no toque
-    expect(densidadeDoBloco(71)).toBe("normal"); // 1 hora com mouse
-    expect(densidadeDoBloco(89)).toBe("ampla"); // 1 hora no toque
+    expect(densidadeDoBloco(24)).toBe("minima"); // 15 minutos
+    expect(densidadeDoBloco(50)).toBe("compacta"); // meia hora com mouse
+    expect(densidadeDoBloco(53)).toBe("compacta"); // meia hora no toque
+    expect(densidadeDoBloco(75.5)).toBe("normal"); // 45 minutos com mouse
+    expect(densidadeDoBloco(101)).toBe("ampla"); // 1 hora com mouse
+    expect(densidadeDoBloco(107)).toBe("ampla"); // 1 hora no toque
   });
 
   it("linhas de nomes e professor que cabem no bloco", () => {
-    expect(linhasDoBloco(35, true)).toEqual({ nomes: 1, professor: false });
-    expect(linhasDoBloco(44, true)).toEqual({ nomes: 1, professor: false });
-    expect(linhasDoBloco(71, true)).toEqual({ nomes: 2, professor: true });
-    expect(linhasDoBloco(71, false)).toEqual({ nomes: 3, professor: false });
-    expect(linhasDoBloco(89, true)).toEqual({ nomes: 4, professor: true });
-    expect(linhasDoBloco(20, true).nomes).toBe(0);
+    expect(linhasDoBloco(50, true)).toEqual({ nomes: 1, professor: false });
+    expect(linhasDoBloco(53, true)).toEqual({ nomes: 1, professor: false });
+    expect(linhasDoBloco(75.5, true)).toEqual({ nomes: 1, professor: true });
+    expect(linhasDoBloco(75.5, false)).toEqual({ nomes: 2, professor: false });
+    expect(linhasDoBloco(101, true)).toEqual({ nomes: 2, professor: true });
+    expect(linhasDoBloco(101, false)).toEqual({ nomes: 3, professor: false });
+    expect(linhasDoBloco(107, true)).toEqual({ nomes: 3, professor: true });
+    expect(linhasDoBloco(24, true).nomes).toBe(0);
   });
 
   it("aula cancelada fica ao lado da que ocupou o lugar dela", () => {

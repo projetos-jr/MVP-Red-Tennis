@@ -37,11 +37,14 @@ describe("links aceitos pela agenda", () => {
     ["visao=quadra", { visao: "quadra", quadraId: "1" }],
     // Link do Inicio ("Precisa de atencao"): o dia com a coluna da quadra realcada.
     ["data=2026-11-06&quadra=2", { visao: "diaria", data: "2026-11-06", quadraId: "2" }],
-    // Ficha do professor: pelo id ou, como no MVP, pelo nome.
+    // Ficha do professor: a semana dele, pelo id ou, como no MVP, pelo nome.
     ["professor=prof-1", { visao: "professor", professorId: "prof-1" }],
     ["professor=Renata%20Coelho", { visao: "professor", professorId: "prof-2" }],
     ["professor=renata coelho", { visao: "professor", professorId: "prof-2" }],
-    ["visao=professor", { visao: "professor", professorId: "prof-1" }],
+    // Mosaico do Inicio ("Agenda Professores"): hoje e amanha com todos (H20).
+    ["visao=professor", { visao: "professor", professorId: undefined, data: HOJE }],
+    ["visao=professor&professor=prof-2", { visao: "professor", professorId: "prof-2" }],
+    ["visao=professor&data=2026-11-10", { visao: "professor", professorId: undefined, data: "2026-11-10" }],
     // Mosaico do Inicio: LAP abre a Diaria filtrada.
     ["tipo=LAP", { visao: "diaria", tipo: "LAP" }],
     ["tipo=locacao%20avulsa", { visao: "diaria", tipo: "Locação Avulsa" }],
@@ -75,8 +78,9 @@ describe("links aceitos pela agenda", () => {
     });
   });
 
-  it("perfil de professor: abre na visao Professor e fica travado nas proprias aulas", () => {
+  it("perfil de professor: abre na semana dele e fica travado nas proprias aulas", () => {
     expect(ler("", professora)).toMatchObject({ visao: "professor", professorId: "prof-2" });
+    expect(ler("visao=professor", professora)).toMatchObject({ visao: "professor", professorId: "prof-2" });
     expect(ler("professor=prof-1", professora)).toMatchObject({ professorId: "prof-2" });
     expect(ler("visao=dia", professora)).toMatchObject({ visao: "diaria", professorId: "prof-2" });
     expect(ler("visao=mes", professora)).toMatchObject({ visao: "mes", professorId: "prof-2" });
@@ -92,6 +96,8 @@ describe("endereco gravado pela tela", () => {
     { visao: "professor", data: "2026-11-20", professorId: "prof-2", tipo: "Locação Mensal", mostrarCanceladas: true },
     { visao: "mes", data: "2026-12-01", tipo: "todos", mostrarCanceladas: true },
     { visao: "diaria", data: HOJE, tipo: "todos", mostrarCanceladas: true, ocupacaoId: ocupacao.id },
+    // Professores sem professor: os dois dias com todos (H20).
+    { visao: "professor", data: "2026-11-06", tipo: "todos", mostrarCanceladas: true },
   ];
 
   it.each(estados)("le de volta o mesmo estado (%o)", (estado) => {
@@ -103,6 +109,9 @@ describe("endereco gravado pela tela", () => {
 
   it("so poe a data quando nao e hoje (ou com um painel aberto)", () => {
     expect(enderecoDaAgenda(estados[0], HOJE)).toBe("/agenda?visao=diaria");
+    expect(
+      enderecoDaAgenda({ visao: "professor", data: HOJE, tipo: "todos", mostrarCanceladas: true }, HOJE),
+    ).toBe("/agenda?visao=professor");
     expect(enderecoDaAgenda(estados[1], HOJE)).toContain("data=2026-11-12");
     expect(enderecoDaAgenda(estados[6], HOJE)).toContain(`data=${HOJE}`);
   });
@@ -124,12 +133,21 @@ describe("troca de visao", () => {
     expect(trocarVisao(banco, quadra, "diaria", ctx).quadraId).toBeUndefined();
   });
 
-  it("da Professor para a Diaria: tira o professor; para o Mes com filtro, mantem", () => {
+  it("da Professores para a Diaria: tira o professor; para o Mes com filtro, mantem", () => {
     const professor = ler("professor=prof-3");
     expect(trocarVisao(banco, professor, "diaria", ctx).professorId).toBeUndefined();
     const filtrada = { ...ler("visao=dia"), professorId: "prof-1" };
     expect(trocarVisao(banco, filtrada, "mes", ctx).professorId).toBe("prof-1");
-    expect(trocarVisao(banco, ler(""), "professor", ctx).professorId).toBe("prof-1");
+  });
+
+  it("entrar na Professores: os dois dias com todos; com filtro de professor, a semana dele", () => {
+    expect(trocarVisao(banco, ler(""), "professor", ctx)).toMatchObject({
+      visao: "professor",
+      professorId: undefined,
+      data: HOJE,
+    });
+    const filtrada = { ...ler("visao=dia"), professorId: "prof-1" };
+    expect(trocarVisao(banco, filtrada, "professor", ctx).professorId).toBe("prof-1");
   });
 
   it("o professor logado continua travado em qualquer visao", () => {
