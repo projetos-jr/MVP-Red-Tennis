@@ -3,7 +3,7 @@
 import { IconeFinanceiro } from "@/components/ui/Icons";
 import { nomeDoMes, type RecebidoPorFormas } from "@/lib/consultas/financeiro";
 import { formatarMoeda } from "@/lib/theme";
-import { SecaoRecolhida } from "./SecaoRecolhida";
+import { SecaoRecolhida } from "@/components/ui/SecaoRecolhida";
 
 /**
  * Relatório simples do mês: o recebido dividido por forma de pagamento.

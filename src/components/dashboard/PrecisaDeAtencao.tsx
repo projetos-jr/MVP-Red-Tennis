@@ -241,7 +241,7 @@ function GrupoDeReservas({
       })}
       links={[
         { href: "/agenda", rotulo: "Abrir agenda" },
-        ...(podeRegistrarPagamento ? [{ href: "/financeiro", rotulo: "Registrar pagamento" }] : []),
+        ...(podeRegistrarPagamento ? [{ href: "/financeiro?reservas=abrir", rotulo: "Registrar pagamento" }] : []),
       ]}
     />
   );

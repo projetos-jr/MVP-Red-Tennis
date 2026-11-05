@@ -9,7 +9,7 @@ import { ModaisDoEstoque, type AcaoDoEstoque } from "@/components/estoque/Modais
 import { ModalMovimentar } from "@/components/estoque/ModalMovimentar";
 import { NumerosDoEstoque } from "@/components/estoque/NumerosDoEstoque";
 import { SemAcessoAoEstoque } from "@/components/estoque/SemAcessoAoEstoque";
-import { BotaoGrande } from "@/components/financeiro/BotaoGrande";
+import { BotaoGrande } from "@/components/ui/BotaoGrande";
 import { BotaoFiltro } from "@/components/ui/BotaoFiltro";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";
 import { InterruptorBola } from "@/components/ui/InterruptorBola";

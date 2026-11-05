@@ -77,6 +77,10 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
   atraso... sempre com ícone e texto) e `EtiquetaNeutra`.
 - `BotaoMaisOpcoes` + `PainelDeOpcoes` (`components/ui/MaisOpcoes.tsx`): guardam o que não é
   do dia a dia. O botão mostra quantos filtros estão ativos lá dentro.
+- `SecaoRecolhida` (`components/ui/SecaoRecolhida.tsx`): seção de apoio que começa fechada
+  (relatórios, últimos movimentos); o cabeçalho inteiro abre e fecha.
+- `BotaoGrande` (`components/ui/BotaoGrande.tsx`): botão com ícone, título e uma linha dizendo o
+  que faz; para escolhas dentro de "Mais opções" e janelas (Entrada / Perda / Contagem).
 - `BotaoDeAtencao` (`components/ui/PlacaDeAtencao.tsx`): placa amarela com "!" e a contagem;
   `variante="grande"` (Início) ou `"compacto"` (barras). Com `quantidade` 0 não desenha nada.
 - `InterruptorBola` (`components/ui/InterruptorBola.tsx`): liga/desliga com a bola de tênis.

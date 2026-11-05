@@ -24,7 +24,7 @@ import { ModalPagamento } from "@/components/financeiro/ModalPagamento";
 import { RecebidoPorForma } from "@/components/financeiro/RecebidoPorForma";
 import { RelatorioProfessores } from "@/components/financeiro/RelatorioProfessores";
 import { ReservasSemPagamento } from "@/components/financeiro/ReservasSemPagamento";
-import { BotaoGrande } from "@/components/financeiro/BotaoGrande";
+import { BotaoGrande } from "@/components/ui/BotaoGrande";
 import { baixarArquivo } from "@/components/financeiro/utilitarios";
 import { useAvisos } from "@/components/ui/Avisos";
 import { CabecalhoDaPagina } from "@/components/ui/CabecalhoDaPagina";

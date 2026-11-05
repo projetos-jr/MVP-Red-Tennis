@@ -10,7 +10,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { EstadoVazio } from "@/components/ui/EstadoVazio";
 import { MostrarMais } from "@/components/ui/MostrarMais";
 import { BotaoMaisOpcoes, PainelDeOpcoes } from "@/components/ui/MaisOpcoes";
-import { BotaoGrande } from "@/components/financeiro/BotaoGrande";
+import { BotaoGrande } from "@/components/ui/BotaoGrande";
 import {
   IconeAlerta,
   IconeBusca,

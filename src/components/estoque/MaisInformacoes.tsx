@@ -1,6 +1,6 @@
 "use client";
 
-import { SecaoRecolhida } from "@/components/financeiro/SecaoRecolhida";
+import { SecaoRecolhida } from "@/components/ui/SecaoRecolhida";
 import { IconeSubiu } from "@/components/ui/Icons";
 import type { ItemMaisVendido, MovimentoDetalhado } from "@/lib/consultas/estoque";
 import { ESTILO_MOVIMENTO, formatarMoeda } from "@/lib/theme";

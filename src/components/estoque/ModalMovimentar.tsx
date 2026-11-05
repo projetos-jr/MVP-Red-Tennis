@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BotaoGrande } from "@/components/financeiro/BotaoGrande";
+import { BotaoGrande } from "@/components/ui/BotaoGrande";
 import { IconeEntrada, IconeLixeira } from "@/components/ui/Icons";
 import { Modal } from "@/components/ui/Modal";
 import type { ProdutoComSaldo } from "@/lib/consultas/estoque";

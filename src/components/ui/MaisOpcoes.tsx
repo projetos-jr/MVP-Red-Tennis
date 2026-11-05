@@ -37,7 +37,7 @@ export function BotaoMaisOpcoes({
       onClick={aoAlternar}
       aria-expanded={aberto}
       aria-controls={controla}
-      className={`btn alvo-de-toque border px-4 py-2.5 text-[0.95rem] ${
+      className={`btn alvo-de-toque border px-4 py-2.5 text-base ${
         aberto
           ? "border-areia-900 bg-areia-900 text-white hover:bg-areia-800"
           : "border-areia-300 bg-white text-areia-800 hover:border-areia-400 hover:bg-areia-50"
@@ -75,15 +75,12 @@ export function PainelDeOpcoes({
   className?: string;
   rotulo?: string;
 }) {
+  // Fechado: so o elemento vazio (o aria-controls do botao continua valido).
+  // Sem as classes de quem usa: um `grid`/`flex` venceria o `hidden`.
+  if (!aberto) return <div id={id} hidden />;
   return (
-    <div
-      id={id}
-      role="region"
-      aria-label={rotulo}
-      hidden={!aberto}
-      className={`${aberto ? "motion-safe:animate-fade-up" : ""} ${className}`}
-    >
-      {aberto ? children : null}
+    <div id={id} role="region" aria-label={rotulo} className={`motion-safe:animate-fade-up ${className}`}>
+      {children}
     </div>
   );
 }
