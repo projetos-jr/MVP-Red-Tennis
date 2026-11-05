@@ -80,6 +80,13 @@ describe("tokens da paleta", () => {
     esperarContraste(BRANCO, LADRILHO.base);
   });
 
+  it("placa de atenção: \"!\" na bola, textos claros no fundo escuro do botão", () => {
+    esperarContraste(PALETA.areia[900], PALETA.bola[300]);
+    esperarContraste(BRANCO, PALETA.areia[900]);
+    esperarContraste(PALETA.areia[200], PALETA.areia[900]);
+    esperarContraste(BRANCO, PALETA.tijolo[600]);
+  });
+
   it("anel de foco visível sobre o branco e o fundo do app (3:1)", () => {
     esperarContraste(PALETA.saibro[600], BRANCO, GRANDE);
     esperarContraste(PALETA.saibro[600], PALETA.areia[100], GRANDE);

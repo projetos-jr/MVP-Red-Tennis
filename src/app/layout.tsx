@@ -6,6 +6,7 @@ import { AppProvider } from "@/store/AppStore";
 import "@fontsource-variable/inter";
 import "@fontsource/barlow-semi-condensed/600.css";
 import "@fontsource/barlow-semi-condensed/700.css";
+import { SCRIPT_DA_LETRA } from "@/lib/letra";
 import { PALETA } from "@/lib/paleta";
 import "./globals.css";
 
@@ -26,7 +27,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    // suppressHydrationWarning: o script abaixo pode marcar data-letra no
+    // <html> antes de o React assumir a pagina.
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* "Letras maiores": aplica a escolha guardada antes da primeira pintura. */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_DA_LETRA }} />
+      </head>
       <body>
         <AppProvider>
           <AvisosProvider>{children}</AvisosProvider>
