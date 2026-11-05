@@ -34,6 +34,7 @@ export function BotaoDeAtencao({
   descricao,
   variante = "grande",
   abreJanela = true,
+  rotuloAcessivel,
   className = "",
 }: {
   quantidade: number;
@@ -44,6 +45,8 @@ export function BotaoDeAtencao({
   variante?: "grande" | "compacto";
   /** O botão abre uma janela (leitor de tela avisa). Use false quando ele só abre uma lista na própria página. */
   abreJanela?: boolean;
+  /** Nome completo para leitor de tela quando o texto visível é curto (ex.: "1 vencida" no tablet). */
+  rotuloAcessivel?: string;
   className?: string;
 }) {
   if (quantidade <= 0) return null;
@@ -55,6 +58,8 @@ export function BotaoDeAtencao({
         type="button"
         onClick={aoAbrir}
         aria-haspopup={abreJanela ? "dialog" : undefined}
+        aria-label={rotuloAcessivel}
+        title={rotuloAcessivel}
         className={`btn alvo-de-toque gap-2 border-2 border-areia-900 bg-bola-300 px-3 py-2 text-areia-900 hover:bg-bola-200 ${className}`}
       >
         <PlacaDeAtencao className="h-6 w-6 shrink-0" />

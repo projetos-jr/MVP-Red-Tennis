@@ -112,6 +112,14 @@ Cores nativas do Tailwind que já têm significado continuam: `emerald` (pago), 
   branco, borda tracejada na cor do tipo, riscada; passado = película leve por trás.
 - Linhas de 30 minutos, colunas = quadras (Diária) ou dias (Quadra/Professor).
 
+## Truques que já pegaram a equipe
+
+- **Consulta de container** (`[@container(min-width:…)]:` com `@container` no pai) funciona no
+  Tailwind 3.4: use quando o tamanho da COLUNA importa mais que o da tela (blocos da agenda).
+- `leading-none` + `xl:text-3xl`: o tamanho responsivo troca também a altura da linha; repita
+  `xl:leading-none`.
+- `PainelDeOpcoes` fechado não desenha nada: coloque `grid`/`flex` à vontade no `className`.
+
 ## Tamanhos de tela e toque
 
 - Computador 1440, tablet 1180 (na quadra, com toque), celular 390. Abaixo de 768px a
