@@ -370,7 +370,11 @@ function CabecalhoDaColuna({
   if (!semana && coluna.quadra) {
     return (
       <div
-        className={`linha-de-quadra flex min-w-0 items-center justify-between gap-1 px-2 py-2.5 [container-type:inline-size] ${separador} ${
+        className={`linha-de-quadra flex min-w-0 items-center justify-between gap-1 py-2.5 pr-2 [container-type:inline-size] ${
+          // A borda grossa entre os dias come 3px: a margem compensa, para a
+          // primeira quadra do dia ter a mesma letra das outras.
+          inicioDeGrupo ? "pl-1" : "pl-2"
+        } ${separador} ${
           CLASSE_DO_PISO[coluna.quadra.piso]
         } ${realcada ? "ring-4 ring-inset ring-bola-300" : ""}`}
         title={`${coluna.quadra.nome} (${coluna.quadra.piso}) · ${contagem}`}
