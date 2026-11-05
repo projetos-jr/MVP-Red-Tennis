@@ -346,10 +346,12 @@ valor, sem programar.
 | H12 | Até quando a agenda é criada | Horários fixos viram aulas até 12 semanas à frente, estendidas automaticamente. |
 | H13 | Prazo para pagar o consumo do balcão | 7 dias (valor de teste). |
 | H14 | Pontuação atual do ranking | Na importação, cada jogador recebe um lançamento de "pontos iniciais" com a pontuação do sistema atual. A confirmar com a arena. |
-| H15 | Categorias de cliente (filtro) | **Ranking**: inscrito no ranking. **Alunos**: plano de aula (Individual, Dupla ou LAP). **Aluguel**: plano de locação, ou é o titular (primeiro nome, quem paga) de alguma locação não cancelada. **Torneio**: inscrito em algum torneio. Um cliente pode estar em mais de uma. |
+| H15 | Categorias de cliente (filtro) | **Ranking**: inscrito no ranking. **Alunos**: plano de aula (Individual, Dupla ou LAP). **Aluguel**: plano de locação, ou é o titular de alguma locação não cancelada (titular = a pessoa da cobrança da locação; sem cobrança, quem tem matrícula de plano de locação naquela data). **Torneio**: inscrito em algum torneio. Um cliente pode estar em mais de uma. |
 | H16 | Botão LAP do mosaico | Abre a agenda Diária filtrada pelo tipo LAP. |
 | H17 | Botão Site do mosaico | Abre o site atual da arena numa nova aba. Fica escondido até o endereço ser confirmado (`SITE_DA_ARENA` em `src/lib/branding.ts`). |
 | H18 | "Clientes" no lugar de "Alunos" | A lista e a aba se chamam "Clientes" (como no sistema antigo); formulários e fichas ainda dizem "aluno". Confirmar se o cliente quer "Clientes" em todo o sistema. |
+| H19 | Pirâmide do ranking | O ranking geral (contratado) é mostrado como pirâmide: 1 no topo, depois fileiras de 3, 4, 5, 6… (como a equipe descreveu o pedido), cada jogador com a foto dentro de uma raquete. A ordem vem da pontuação. Tamanhos das fileiras num parâmetro; confirmar com o cliente se a 2ª fileira tem 3 ou 2. A pirâmide como **formato de disputa** (desafiar quem está acima e trocar de lugar, quatro categorias) continua fora do contrato (seção 4.4): só com aditivo. |
+| H20 | Agenda dos professores | "Igual à agenda das quadras": hoje e amanhã lado a lado, uma coluna por professor ativo. Escolhendo um professor, abre a semana dele (como antes). O professor logado vê a própria semana. |
 
 **Divergência registrada (H5):** o plano de ação manda cancelar sozinho a
 reserva não paga no prazo. O pedido da arena fala em alertar e permitir que
