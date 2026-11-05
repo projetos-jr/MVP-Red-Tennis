@@ -1,6 +1,7 @@
 import coresDoTailwind from "tailwindcss/colors";
 import { describe, expect, it } from "vitest";
 import { TONS } from "@/components/ui/EtiquetaDeSituacao";
+import { gerarBancoInicial } from "./banco/semente";
 import { contraste, misturar, textoLegivelSobre } from "./cores";
 import { BRANCO, LADRILHO, PALETA, TINTA } from "./paleta";
 import {
@@ -163,5 +164,16 @@ describe("etiquetas e estilos dos módulos", () => {
     esperarContraste(PALETA.areia[800], PALETA.quadra[50]);
     esperarContraste(PALETA.quadra[700], PALETA.quadra[50]);
     esperarContraste(PALETA.saibro[700], BRANCO);
+  });
+
+  it("agenda: cabeçalho de cada professor na cor dele (visão Professores) e a faixa da semana", () => {
+    // A cor vem do cadastro do professor; o texto e o que for mais legivel sobre ela.
+    for (const professor of gerarBancoInicial().professores) {
+      esperarContraste(textoLegivelSobre(professor.cor), professor.cor);
+    }
+    // Hora ":30" da grade, dias da semana e contagens dos cabecalhos.
+    esperarContraste(PALETA.areia[600], BRANCO);
+    esperarContraste(PALETA.areia[700], BRANCO);
+    esperarContraste(PALETA.saibro[800], PALETA.saibro[50]);
   });
 });

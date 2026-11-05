@@ -14,7 +14,7 @@ export function Legenda({ className = "" }: { className?: string }) {
     <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${className}`}>
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Cores por tipo">
         {ORDEM_TIPOS_AGENDA.map((tipo) => (
-          <li key={tipo} className="flex items-center gap-1.5 text-xs text-areia-700">
+          <li key={tipo} className="flex items-center gap-1.5 text-sm text-areia-700">
             <span
               className="inline-block h-3.5 w-3.5 shrink-0 rounded-[4px]"
               style={{
@@ -29,13 +29,13 @@ export function Legenda({ className = "" }: { className?: string }) {
       </ul>
       <span className="hidden h-4 w-px bg-areia-200 lg:block" aria-hidden="true" />
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Marcas">
-        <li className="flex items-center gap-1.5 text-xs text-areia-700">
+        <li className="flex items-center gap-1.5 text-sm text-areia-700">
           <span className="flex h-4 w-4 items-center justify-center rounded border border-amber-300 bg-amber-50 text-amber-800">
             <IconeRelogio className="h-3 w-3" />
           </span>
           Aguardando pagamento
         </li>
-        <li className="flex items-center gap-1.5 text-xs text-areia-700">
+        <li className="flex items-center gap-1.5 text-sm text-areia-700">
           <span
             className="mx-0.5 inline-block h-3.5 w-3.5 rounded-[4px]"
             style={{
@@ -49,19 +49,19 @@ export function Legenda({ className = "" }: { className?: string }) {
           </span>
           Prazo vencido
         </li>
-        <li className="flex items-center gap-1.5 text-xs text-areia-700">
+        <li className="flex items-center gap-1.5 text-sm text-areia-700">
           <span className="flex h-4 w-4 items-center justify-center rounded border border-emerald-300 bg-emerald-50 text-emerald-800">
             <IconeCheck className="h-3 w-3" />
           </span>
           Pago
         </li>
-        <li className="flex items-center gap-1.5 text-xs text-areia-700">
+        <li className="flex items-center gap-1.5 text-sm text-areia-700">
           <span className="flex h-4 w-4 items-center justify-center rounded bg-violet-100 text-violet-800">
             <IconeReposicao className="h-3 w-3" />
           </span>
           Reposição
         </li>
-        <li className="flex items-center gap-1.5 text-xs text-areia-700">
+        <li className="flex items-center gap-1.5 text-sm text-areia-700">
           <span
             className="rounded-[4px] border-2 border-dashed bg-white px-1 text-[11px] text-areia-600 line-through"
             style={{ borderColor: ESTILO_OCUPACAO.Individual.cor }}

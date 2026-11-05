@@ -9,7 +9,7 @@ import { rotuloDaQuadra, type ItemAgenda } from "@/lib/consultas/agenda";
 import { PALETA } from "@/lib/paleta";
 import { ESTILO_OCUPACAO } from "@/lib/theme";
 import { FUNDO_BLOQUEIO, estiloDoBloco, intervalo, rotuloCurtoDaQuadra } from "./estilos";
-import { densidadeDoBloco, linhasDoBloco } from "./grade";
+import { LINHAS_DO_BLOCO, densidadeDoBloco, linhasDoBloco } from "./grade";
 import { Marcadores, MarcadoresMini } from "./Marcadores";
 
 /**
@@ -39,7 +39,11 @@ export function descricaoAcessivel(item: ItemAgenda): string {
     .join(", ");
 }
 
-/** Nome curto do tipo, para o selo dentro do bloco (o nome inteiro fica na legenda e no painel). */
+/**
+ * Nome curto do tipo, para o selo dentro do bloco (o nome inteiro fica na
+ * legenda e no painel). Rotulos curtos e legiveis: quando nem eles cabem, o
+ * selo some inteiro (a cor do bloco ja diz o tipo), nunca vira "IN…".
+ */
 const TIPO_CURTO: Record<TipoOcupacao, string> = {
   Individual: "Indiv.",
   "Locação Mensal": "Mensal",
@@ -52,9 +56,19 @@ const TIPO_CURTO: Record<TipoOcupacao, string> = {
 };
 
 /**
- * Bloco da grade (Diaria, Quadra, Professor): posicionado pela hora, com a
+ * "Renata Coelho" -> "Renata C.": para colunas estreitas (na Diaria, ~120px
+ * por quadra no computador e ~95px no tablet deitado), no lugar de "Renat…".
+ */
+export function nomeCurto(nome: string): string {
+  const partes = nome.trim().split(/\s+/);
+  return partes.length < 2 ? nome : `${partes[0]} ${partes[partes.length - 1].charAt(0)}.`;
+}
+
+/**
+ * Bloco da grade (Diaria, Professores, Quadra): posicionado pela hora, com a
  * altura da duracao, na cor cheia do tipo. Quanto texto aparece depende da
- * altura (`densidadeDoBloco`).
+ * altura (`densidadeDoBloco`, `linhasDoBloco`); as medidas sao em px, como a
+ * grade (`LINHAS_DO_BLOCO`): hora 15px, nomes 16px, professor 14px.
  *
  * `nomesComoLink`: com mouse, cada nome abre a ficha. No toque o nome seria
  * um alvo pequeno demais; o bloco abre o painel, e la cada nome abre a ficha.
@@ -69,9 +83,9 @@ export const BlocoNaGrade = memo(function BlocoNaGrade({
 }: {
   item: ItemAgenda;
   posicao: { top: number; height: number; left: string; width: string };
-  /** Selo da quadra (visao Professor: as aulas sao em quadras diferentes). */
+  /** Selo da quadra (visao Professores: as aulas sao em quadras diferentes). */
   mostrarQuadra: boolean;
-  /** Nome do professor (fica de fora na visao Professor). */
+  /** Nome do professor (fica de fora na visao Professores). */
   mostrarProfessor: boolean;
   nomesComoLink: boolean;
   aoAbrir: (item: ItemAgenda) => void;
@@ -81,44 +95,62 @@ export const BlocoNaGrade = memo(function BlocoNaGrade({
   const densidade = densidadeDoBloco(posicao.height);
   const linhas = linhasDoBloco(posicao.height, mostrarProfessor && Boolean(item.professor));
   const bloqueio = ocupacao.tipo === "Bloqueio";
-  const selo = `rounded-[3px] px-1 text-[10px] font-bold leading-[14px] ${visual.selo}`;
+  const selo = `rounded-[4px] px-1 text-[12px] font-bold leading-[18px] ${visual.selo}`;
   const riscado = visual.riscado ? "line-through" : "";
-  // Um nome por linha quando cabem todos (ou quase); senao, separados por virgula.
-  const umPorLinha = densidade === "ampla" && participantes.length <= linhas.nomes;
+  // Um nome por linha quando cabem todos; senao, separados por virgula.
+  const umPorLinha =
+    densidade === "ampla" && participantes.length > 1 && participantes.length <= linhas.nomes;
 
-  const nome = (participacao: { id: string; alunoId: string }, texto: string) =>
-    nomesComoLink ? (
+  /**
+   * Um nome. Com varios alunos no bloco, numa coluna estreita (texto com
+   * menos de 160px: a Diaria) vai a forma curta, "Natalia Q."; numa larga
+   * (Professores, semanas), "Natalia Queiroz". Sem suporte a consulta de
+   * container, fica a curta.
+   */
+  const nome = (participacao: { id: string; alunoId: string }, completo: string, encurtar: boolean) => {
+    const texto = encurtar ? (
+      <>
+        <span className="[@container(min-width:160px)]:hidden">{nomeCurto(completo)}</span>
+        <span className="hidden [@container(min-width:160px)]:inline">{nomeCompacto(completo)}</span>
+      </>
+    ) : (
+      completo
+    );
+    return nomesComoLink ? (
       <Link
         href={`/alunos/${participacao.alunoId}`}
         className={`pointer-events-auto relative underline-offset-2 hover:underline ${riscado}`}
-        title={`Abrir a ficha de ${texto}`}
+        title={`Abrir a ficha de ${completo}`}
       >
         {texto}
       </Link>
     ) : (
-      <span className={riscado}>{texto}</span>
+      <span className={riscado} title={completo}>
+        {texto}
+      </span>
     );
+  };
 
   const nomes = bloqueio ? null : participantes.length === 0 ? (
     <span className="italic">Sem alunos</span>
   ) : umPorLinha ? (
     participantes.map(({ participacao, nome: completo }) => (
       <span key={participacao.id} className="block truncate">
-        {nome(participacao, completo)}
+        {nome(participacao, completo, true)}
       </span>
     ))
   ) : (
     participantes.map(({ participacao, nome: completo }, i) => (
       <span key={participacao.id}>
         {i > 0 && ", "}
-        {nome(participacao, nomeCompacto(completo))}
+        {nome(participacao, completo, participantes.length > 1)}
       </span>
     ))
   );
 
   return (
     <article
-      className="absolute z-10 overflow-hidden rounded-md px-1.5 py-[3px] text-left transition-shadow hover:z-20 hover:shadow-card-hover focus-within:z-20"
+      className="absolute z-10 overflow-hidden rounded-md px-1.5 py-1 text-left transition-shadow [container-type:inline-size] hover:z-20 hover:shadow-card-hover focus-within:z-20"
       style={{ ...visual.style, ...posicao }}
       data-fundo-de-contraste={visual.fundoDeContraste}
     >
@@ -128,43 +160,51 @@ export const BlocoNaGrade = memo(function BlocoNaGrade({
         className="absolute inset-0 rounded-md"
         aria-label={`Abrir horário: ${descricaoAcessivel(item)}`}
       />
-      <header className="pointer-events-none relative flex h-[14px] min-w-0 items-center gap-1">
+      <header className="pointer-events-none relative flex h-5 min-w-0 items-center gap-1">
         {visual.alerta && (
-          <span className="shrink-0 text-[11px] font-bold leading-[14px]" title="Prazo de pagamento vencido">
+          <span className="shrink-0 text-[14px] font-bold leading-5" title="Prazo de pagamento vencido">
             ⚠
           </span>
         )}
-        {mostrarQuadra && (
-          <span className={`${selo} shrink-0`}>{rotuloCurtoDaQuadra(ocupacao.quadraId)}</span>
-        )}
-        <span className="shrink-0 text-[11px] font-bold tabular-nums leading-[14px]">
-          {ocupacao.horaInicio}
+        {/* Hora, quadra e tipo numa linha que quebra: o que nao cabe desce
+            para uma segunda linha escondida (o selo some inteiro, sem "…").
+            A hora vem primeiro: ela nunca some. */}
+        <span className="flex h-5 min-w-0 flex-1 flex-wrap items-center gap-x-1 overflow-hidden">
+          <span className="shrink-0 text-[15px] font-bold tabular-nums leading-5">
+            {ocupacao.horaInicio}
+          </span>
+          {mostrarQuadra && (
+            <span className={`${selo} shrink-0`}>{rotuloCurtoDaQuadra(ocupacao.quadraId)}</span>
+          )}
+          {linhas.nomes === 0 ? (
+            <span className="min-w-0 flex-1 truncate text-[14px] font-semibold leading-5">
+              {bloqueio ? (ocupacao.descricao ?? "Bloqueio") : nomes}
+            </span>
+          ) : (
+            densidade !== "minima" && (
+              <span className={`${selo} whitespace-nowrap uppercase tracking-wide`} title={ocupacao.tipo}>
+                {TIPO_CURTO[ocupacao.tipo]}
+              </span>
+            )
+          )}
         </span>
-        {(densidade === "normal" || densidade === "ampla") && (
-          <span className={`${selo} min-w-0 truncate uppercase tracking-wide`} title={ocupacao.tipo}>
-            {TIPO_CURTO[ocupacao.tipo]}
-          </span>
-        )}
-        {linhas.nomes === 0 && (
-          <span className="min-w-0 truncate text-[11px] font-medium leading-[14px]">
-            {bloqueio ? (ocupacao.descricao ?? "Bloqueio") : nomes}
-          </span>
-        )}
         <MarcadoresMini item={item} />
       </header>
 
       {linhas.nomes > 0 &&
         (bloqueio ? (
           <p
-            className="pointer-events-none relative overflow-hidden break-words text-xs font-semibold leading-[14px] hyphens-auto"
-            style={{ maxHeight: linhas.nomes * 14 }}
+            className="pointer-events-none relative overflow-hidden break-words text-[15px] font-semibold leading-5 hyphens-auto"
+            style={{ maxHeight: linhas.nomes * LINHAS_DO_BLOCO.nome }}
           >
             {densidade === "compacta" ? "Bloqueio" : (ocupacao.descricao ?? "Quadra fechada")}
           </p>
         ) : (
+          // Coluna muito estreita (dois horarios lado a lado): letra de 14px,
+          // para quebrar menos palavras no meio.
           <p
-            className={`pointer-events-none relative text-xs font-medium leading-[14px] ${
-              linhas.nomes === 1 ? "truncate" : "overflow-hidden"
+            className={`pointer-events-none relative text-[16px] font-semibold leading-5 [@container(max-width:80px)]:text-[14px] ${
+              linhas.nomes === 1 ? "truncate" : "overflow-hidden break-words"
             }`}
             style={
               linhas.nomes > 1 && !umPorLinha
@@ -177,8 +217,14 @@ export const BlocoNaGrade = memo(function BlocoNaGrade({
         ))}
 
       {linhas.professor && item.professor && (
-        <p className="pointer-events-none relative truncate text-[11px] leading-[13px]">
-          {item.professor.nome}
+        <p
+          className="pointer-events-none relative truncate text-[14px] font-medium leading-[18px]"
+          title={item.professor.nome}
+        >
+          {/* O bloco e um container: a partir de 112px de texto o nome inteiro
+              cabe em 14px; abaixo (ou sem suporte a container), o curto. */}
+          <span className="[@container(min-width:112px)]:hidden">{nomeCurto(item.professor.nome)}</span>
+          <span className="hidden [@container(min-width:112px)]:inline">{item.professor.nome}</span>
         </p>
       )}
     </article>

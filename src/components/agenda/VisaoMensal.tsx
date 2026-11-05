@@ -32,7 +32,7 @@ export function VisaoMensal({
         {ORDEM_SEMANA.map((dia) => (
           <div
             key={dia}
-            className="pb-1 text-center text-[11px] font-semibold uppercase tracking-wide text-areia-500"
+            className="pb-1 text-center text-sm font-bold uppercase tracking-wide text-areia-600 sm:text-base"
           >
             {DIAS_SEMANA_CURTO[dia]}
           </div>
@@ -71,7 +71,7 @@ export function VisaoMensal({
               type="button"
               onClick={() => aoSelecionarDia(data)}
               aria-label={`${formatarDiaMes(data)}: ${resumo}. Abrir o dia.`}
-              className={`flex min-h-[78px] flex-col rounded-xl border p-1.5 text-left transition-all hover:border-saibro-400 hover:shadow-sm sm:min-h-[96px] sm:p-2 ${
+              className={`flex min-h-[84px] flex-col rounded-xl border p-1.5 text-left transition-all hover:border-saibro-400 hover:shadow-sm sm:min-h-[112px] sm:p-2.5 ${
                 ehHoje
                   ? "border-saibro-500 bg-saibro-50 ring-2 ring-saibro-500/20"
                   : doMes
@@ -81,15 +81,16 @@ export function VisaoMensal({
             >
               <div className="flex items-center justify-between gap-1">
                 <span
-                  className={`text-sm font-semibold ${
-                    ehHoje ? "text-saibro-800" : doMes ? "text-areia-800" : "text-areia-500"
+                  className={`font-display text-xl font-bold leading-none sm:text-2xl ${
+                    ehHoje ? "text-saibro-800" : doMes ? "text-areia-900" : "text-areia-500"
                   }`}
                 >
                   {paraData(data).getUTCDate()}
                 </span>
                 {horarios > 0 && (
                   <span
-                    className={`text-[10px] font-medium ${doMes ? "text-areia-600" : "text-areia-500"}`}
+                    className={`hidden text-sm font-semibold tabular-nums sm:inline ${doMes ? "text-areia-700" : "text-areia-500"}`}
+                    title={`${horarios} ${horarios === 1 ? "horário" : "horários"}`}
                   >
                     {horarios}
                   </span>
@@ -99,14 +100,14 @@ export function VisaoMensal({
               {doMes && (
                 <div className="mt-1 flex flex-wrap gap-0.5">
                   {chuva && (
-                    <span className="inline-flex items-center gap-0.5 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-semibold text-sky-700">
+                    <span className="inline-flex items-center gap-0.5 rounded bg-sky-100 px-1 py-0.5 text-[11px] font-semibold sm:text-xs text-sky-700">
                       <IconeChuva className="h-3 w-3" />
                       <span className="hidden sm:inline">Chuva</span>
                     </span>
                   )}
                   {bloqueios > 0 && (
                     <span
-                      className="rounded px-1 py-0.5 text-[10px] font-semibold text-areia-700"
+                      className="rounded px-1 py-0.5 text-[11px] font-semibold sm:text-xs text-areia-700"
                       style={{ backgroundColor: COR_BLOQUEIO, backgroundImage: FUNDO_BLOQUEIO }}
                       data-fundo-de-contraste={COR_BLOQUEIO}
                     >
@@ -116,7 +117,7 @@ export function VisaoMensal({
                   )}
                   {aguardando.length > 0 && (
                     <span
-                      className={`rounded px-1 py-0.5 text-[10px] font-semibold ${
+                      className={`rounded px-1 py-0.5 text-[11px] font-semibold sm:text-xs ${
                         vencidas > 0 ? "bg-tijolo-600 text-white" : "bg-amber-100 text-amber-800"
                       }`}
                     >
@@ -125,7 +126,7 @@ export function VisaoMensal({
                     </span>
                   )}
                   {canceladas > 0 && !chuva && (
-                    <span className="hidden rounded bg-areia-200 px-1 py-0.5 text-[10px] font-semibold text-areia-700 sm:inline">
+                    <span className="hidden rounded bg-areia-200 px-1 py-0.5 text-[11px] font-semibold sm:text-xs text-areia-700 sm:inline">
                       {canceladas} canc.
                     </span>
                   )}
@@ -133,7 +134,7 @@ export function VisaoMensal({
               )}
 
               <div
-                className={`mt-auto flex h-1.5 w-full overflow-hidden rounded-full ${
+                className={`mt-auto flex h-2 w-full overflow-hidden rounded-full ${
                   doMes ? "bg-areia-100" : "bg-transparent"
                 }`}
               >
